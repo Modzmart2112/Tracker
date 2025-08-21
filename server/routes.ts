@@ -620,22 +620,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Check if this is a React/SPA application
         const isReactApp = html.includes('<div id="root"></div>') || html.includes('React') || html.includes('__NEXT_DATA__');
         
-        // For React/SPA applications, inform user that JavaScript content cannot be extracted
+        // For React/SPA applications, try browser automation
         if (isReactApp) {
-          console.log("Detected React/SPA application - content loads dynamically");
+          console.log("Detected React/SPA application - attempting browser automation");
           
-          return res.json({
-            products: [],
-            totalPages: 0,
-            currentPage: 1,
-            totalProducts: 0,
-            categoryName: "PRODUCTS",
-            extractedAt: new Date().toISOString(),
-            aiEnhanced: false,
-            sourceUrl: url,
-            error: "This website uses JavaScript to load content dynamically. The extraction system cannot access the actual product data without browser automation capabilities.",
-            note: "To extract real product data from JavaScript-rendered pages, you would need browser automation tools like Playwright or Puppeteer."
-          });
+          try {
+            const { browserScraper } = await import('./scraper-puppeteer');
+            const result = await browserScraper.scrapeSydneyToolsWithChromium(url);
+            
+            return res.json({
+              ...result,
+              extractedAt: new Date().toISOString(),
+              aiEnhanced: false,
+              sourceUrl: url,
+              note: `Extracted using browser automation. Found ${result.totalProducts} products.`
+            });
+          } catch (error: any) {
+            console.error("Browser automation failed:", error);
+            
+            return res.json({
+              products: [],
+              totalPages: 0,
+              currentPage: 1,
+              totalProducts: 0,
+              categoryName: "PRODUCTS",
+              extractedAt: new Date().toISOString(),
+              aiEnhanced: false,
+              sourceUrl: url,
+              error: `Browser automation failed: ${error.message}`,
+              note: "This website uses JavaScript to load content dynamically. Browser automation was attempted but failed."
+            });
+          }
         }
         
         // Fallback: Try alternative parsing methods
