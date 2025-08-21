@@ -31,7 +31,8 @@ import {
   Save,
   Tag,
   Building2,
-  Store
+  Store,
+  Minus
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -70,6 +71,7 @@ export default function ProductsPage() {
   const [categoryUrl, setCategoryUrl] = useState("");
   const [isExtractingCategory, setIsExtractingCategory] = useState(false);
   const [extractedProducts, setExtractedProducts] = useState<any[]>([]);
+  const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
   const [newProduct, setNewProduct] = useState({
     sku: "",
     name: "",
@@ -784,171 +786,178 @@ export default function ProductsPage() {
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden group">
-                    <div className="absolute inset-0 bg-gradient-to-br from-red-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <Card className="bg-white border border-gray-200 shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden">
+                    {/* Badges */}
+                    <div className="absolute top-2 left-2 z-10 flex gap-2">
+                      {product.price && product.price > 99 && (
+                        <Badge className="bg-red-600 text-white text-xs font-bold">FREE SHIPPING</Badge>
+                      )}
+                      {product.competitorLinks.length === 0 && (
+                        <Badge className="bg-red-600 text-white text-xs font-bold">EXCLUSIVE</Badge>
+                      )}
+                    </div>
                     
                     {/* Product Image */}
-                    {product.image && (
-                      <div className="h-48 w-full bg-gray-100 dark:bg-slate-800 overflow-hidden">
+                    <div className="h-48 w-full bg-white p-4 flex items-center justify-center">
+                      {product.image ? (
                         <img 
                           src={product.image} 
                           alt={product.name}
-                          className="w-full h-full object-contain p-4 group-hover:scale-110 transition-transform duration-300"
+                          className="max-h-full max-w-full object-contain"
                         />
-                      </div>
-                    )}
+                      ) : (
+                        <div className="h-full w-full bg-gray-100 flex items-center justify-center">
+                          <ImageIcon className="h-16 w-16 text-gray-400" />
+                        </div>
+                      )}
+                    </div>
                     
-                    <CardHeader className="relative">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <CardTitle className="text-xl font-bold text-slate-900 dark:text-white line-clamp-2">{product.name}</CardTitle>
-                          <CardDescription className="mt-2 flex items-center gap-2">
-                            <Badge variant="outline" className="text-xs border-slate-300 dark:border-slate-600">
-                              SKU: {product.sku}
-                            </Badge>
-                            {product.brand && product.brand !== 'Unknown' && (
-                              <Badge variant="secondary" className="text-xs">
-                                {product.brand}
-                              </Badge>
-                            )}
-                          </CardDescription>
+                    {/* Product Info */}
+                    <div className="p-4 border-t">
+                      <h3 className="text-sm font-medium text-gray-900 line-clamp-2 min-h-[2.5rem]">
+                        {product.name}
+                      </h3>
+                      
+                      {/* Price and Expand Button */}
+                      <div className="mt-3 flex items-center justify-between">
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-red-600 font-bold text-2xl">
+                            ${product.price || product.ourPrice || '0'}
+                          </span>
+                          <span className="text-xs text-gray-500 line-through">
+                            {product.originalPrice && `$${product.originalPrice}`}
+                          </span>
                         </div>
-                        <div className="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                            onClick={() => {
-                              setEditingProduct(product);
-                              setShowEditDialog(true);
-                            }}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                            onClick={() => deleteProduct.mutate(product.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-
-                      {/* Modern Price Comparison */}
-                      <div className="mt-4 p-4 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 rounded-xl border border-slate-200 dark:border-slate-600">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                              {product.ourPrice ? 'Our Price' : 'Market Price'}
-                            </p>
-                            <p className="text-2xl font-bold text-slate-900 dark:text-white">
-                              ${product.price || product.ourPrice || '0'}
-                            </p>
-                          </div>
-                          {lowestPrice && (
-                            <div className="text-right">
-                              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Lowest Competitor</p>
-                              <p className="text-2xl font-bold text-red-600 dark:text-red-400">${lowestPrice}</p>
-                            </div>
+                        
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8 rounded-full border-red-600 text-red-600 hover:bg-red-50"
+                          onClick={() => {
+                            const newExpanded = new Set(expandedProducts);
+                            if (newExpanded.has(product.id)) {
+                              newExpanded.delete(product.id);
+                            } else {
+                              newExpanded.add(product.id);
+                            }
+                            setExpandedProducts(newExpanded);
+                          }}
+                        >
+                          {expandedProducts.has(product.id) ? (
+                            <Minus className="h-4 w-4" />
+                          ) : (
+                            <Plus className="h-4 w-4" />
                           )}
-                        </div>
-                        {priceStatus && (
-                          <div className={`flex items-center gap-2 mt-3 px-3 py-2 rounded-lg ${priceStatus.color} bg-white/50 dark:bg-slate-900/50`}>
-                            <priceStatus.icon className="h-4 w-4" />
-                            <span className="text-sm font-semibold">{priceStatus.label}</span>
-                          </div>
-                        )}
+                        </Button>
                       </div>
-                    </CardHeader>
+                    </div>
 
-                    <CardContent className="relative">
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                            Competitor Links
-                          </p>
-                          <Badge variant="secondary" className="text-xs">
-                            {product.competitorLinks.length}
-                          </Badge>
-                        </div>
-                        
-                        {product.competitorLinks.map((link) => (
-                          <div
-                            key={link.id}
-                            className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors border border-slate-200 dark:border-slate-700"
-                          >
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-2">
-                                <Badge 
-                                  variant={link.status === "success" ? "default" : link.status === "error" ? "destructive" : "secondary"}
-                                  className="text-xs"
-                                >
-                                  {link.competitorName || "Extracting..."}
-                                </Badge>
-                                {link.isCategory && (
-                                  <Badge variant="outline" className="text-xs border-blue-200 text-blue-700 dark:border-blue-800 dark:text-blue-300">
-                                    <Grid className="h-3 w-3 mr-1" />
-                                    Category ({link.productCount || 0})
-                                  </Badge>
-                                )}
-                                {link.extractedPrice && (
-                                  <div className="flex items-center gap-2">
-                                    {(link as any).isOnSale && (link as any).originalPrice ? (
-                                      <div className="flex items-center gap-2">
-                                        <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                                          now ${link.extractedPrice}
-                                        </span>
-                                        <span className="text-xs text-slate-400 line-through">
-                                          was ${(link as any).originalPrice}
-                                        </span>
-                                        <Badge variant="destructive" className="text-xs px-1.5 py-0.5 bg-red-100 text-red-700 border-red-200">
-                                          SALE
-                                        </Badge>
-                                      </div>
-                                    ) : (
-                                      <span className="font-bold text-emerald-600 dark:text-emerald-400">${link.extractedPrice}</span>
-                                    )}
-                                  </div>
-                                )}
+                    {/* Expandable Details Section */}
+                    <AnimatePresence>
+                      {expandedProducts.has(product.id) && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: "auto", opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="overflow-hidden"
+                        >
+                          <CardContent className="pt-0 border-t bg-gray-50">
+                            {/* Product Details */}
+                            <div className="space-y-3">
+                              <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                  <p className="text-gray-500">SKU</p>
+                                  <p className="font-medium">{product.sku}</p>
+                                </div>
+                                <div>
+                                  <p className="text-gray-500">Brand</p>
+                                  <p className="font-medium">{product.brand || 'Unknown'}</p>
+                                </div>
+                                <div>
+                                  <p className="text-gray-500">Category</p>
+                                  <p className="font-medium">{product.category || 'Uncategorized'}</p>
+                                </div>
+                                <div>
+                                  <p className="text-gray-500">Our Price</p>
+                                  <p className="font-medium text-green-600">
+                                    ${product.ourPrice || product.price || '0'}
+                                  </p>
+                                </div>
                               </div>
-                              {link.extractedImage && (
-                                <img 
-                                  src={link.extractedImage} 
-                                  alt={link.extractedTitle || "Product"}
-                                  className="w-16 h-16 object-cover rounded-lg border border-slate-200 dark:border-slate-600 mb-2"
-                                />
+                              
+                              {/* Competitor Prices */}
+                              {product.competitorLinks.length > 0 && (
+                                <div className="mt-4 pt-4 border-t">
+                                  <p className="text-sm font-semibold text-gray-700 mb-3">
+                                    Competitor Prices ({product.competitorLinks.length})
+                                  </p>
+                                  <div className="space-y-2">
+                                    {product.competitorLinks.map((link) => (
+                                      <div
+                                        key={link.id}
+                                        className="flex items-center justify-between p-2 bg-white rounded border"
+                                      >
+                                        <div className="flex-1 min-w-0">
+                                          <div className="flex items-center gap-2">
+                                            <Badge variant="outline" className="text-xs">
+                                              {link.competitorName || "Unknown"}
+                                            </Badge>
+                                            {link.extractedPrice && (
+                                              <span className="font-bold text-red-600">
+                                                ${link.extractedPrice}
+                                              </span>
+                                            )}
+                                          </div>
+                                          <p className="text-xs text-gray-500 truncate mt-1">
+                                            {link.url}
+                                          </p>
+                                        </div>
+                                        <a
+                                          href={link.url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="ml-2 p-1 hover:bg-gray-100 rounded"
+                                        >
+                                          <ExternalLink className="h-4 w-4 text-gray-400" />
+                                        </a>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
                               )}
-                              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                                {link.url}
-                              </p>
+                              
+                              {/* Action Buttons */}
+                              <div className="flex gap-2 mt-4 pt-4 border-t">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="flex-1"
+                                  onClick={() => {
+                                    setEditingProduct(product);
+                                    setShowEditDialog(true);
+                                  }}
+                                >
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Edit
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="flex-1 text-red-600 hover:bg-red-50"
+                                  onClick={() => deleteProduct.mutate(product.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </Button>
+                              </div>
                             </div>
-                            <a
-                              href={link.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="ml-3 text-slate-400 hover:text-red-600 transition-colors"
-                            >
-                              <ExternalLink className="h-4 w-4" />
-                            </a>
-                          </div>
-                        ))}
-                        
-                        {product.competitorLinks.length === 0 && (
-                          <div className="text-center py-8">
-                            <div className="w-12 h-12 bg-slate-200 dark:bg-slate-700 rounded-lg flex items-center justify-center mx-auto mb-3">
-                              <Link className="h-6 w-6 text-slate-400" />
-                            </div>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">
-                              No competitor links added yet
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                </Card>
-              </motion.div>
+                          </CardContent>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </Card>
+                </motion.div>
             );
           })}
               </AnimatePresence>
