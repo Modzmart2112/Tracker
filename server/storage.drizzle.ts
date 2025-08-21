@@ -64,8 +64,17 @@ export class DrizzleStorage implements IStorage {
   }
 
   async deleteCompetitor(id: string): Promise<boolean> {
-    const result = await this.db.delete(competitors).where(eq(competitors.id, id)).returning();
-    return result.length > 0;
+    try {
+      // First delete related competitor listings
+      await this.db.delete(competitorListings).where(eq(competitorListings.competitorId, id));
+      
+      // Then delete the competitor
+      const result = await this.db.delete(competitors).where(eq(competitors.id, id)).returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error('Error deleting competitor:', error);
+      return false;
+    }
   }
 
   // Categories
