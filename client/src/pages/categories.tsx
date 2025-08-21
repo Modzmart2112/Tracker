@@ -33,17 +33,17 @@ export default function Categories() {
             const categoryProductTypes = getCategoryProductTypes(category.id);
             
             return (
-              <Card key={category.id} className="border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+              <Card key={category.id} className="border-gray-200 shadow-sm hover:shadow-lg transition-all hover:border-[#CB0000]/30">
                 <CardHeader className="pb-4">
                   <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                      <Folder className="text-primary" size={20} />
+                    <div className="w-12 h-12 bg-gradient-to-br from-[#CB0000] to-red-800 rounded-lg flex items-center justify-center shadow-md">
+                      <Folder className="text-white" size={20} />
                     </div>
                     <div>
-                      <CardTitle className="text-lg font-semibold text-slate-900">
+                      <CardTitle className="text-lg font-semibold text-black">
                         {category.name}
                       </CardTitle>
-                      <p className="text-sm text-slate-500">
+                      <p className="text-sm text-gray-500">
                         {categoryProductTypes.length} product type{categoryProductTypes.length !== 1 ? 's' : ''}
                       </p>
                     </div>
@@ -53,26 +53,26 @@ export default function Categories() {
                 <CardContent>
                   <div className="space-y-3">
                     {categoryProductTypes.map((productType: any) => (
-                      <div key={productType.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                      <div key={productType.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
                         <div className="flex items-center space-x-3">
-                          <Package className="text-slate-500" size={16} />
-                          <span className="font-medium text-slate-900">{productType.name}</span>
+                          <Package className="text-gray-600" size={16} />
+                          <span className="font-medium text-black">{productType.name}</span>
                         </div>
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge className="bg-[#CB0000] text-white hover:bg-red-700">
                           Active
                         </Badge>
                       </div>
                     ))}
                     
                     {categoryProductTypes.length === 0 && (
-                      <div className="text-center py-4 text-slate-500">
+                      <div className="text-center py-4 text-gray-500">
                         <p className="text-sm">No product types defined</p>
                       </div>
                     )}
                   </div>
                   
-                  <div className="mt-4 pt-4 border-t border-slate-200">
-                    <Button variant="outline" className="w-full" size="sm">
+                  <div className="mt-4 pt-4 border-t border-gray-200">
+                    <Button variant="outline" className="w-full border-gray-300 hover:bg-[#CB0000] hover:text-white hover:border-[#CB0000]" size="sm">
                       View Dashboard
                     </Button>
                   </div>

@@ -60,7 +60,7 @@ export default function Dashboard() {
     .slice(0, 10);
 
   return (
-    <div className="flex-1 overflow-auto bg-gradient-to-br from-slate-50 via-white to-slate-50">
+    <div className="flex-1 overflow-auto bg-gradient-to-br from-gray-50 via-white to-gray-100">
       <Header 
         title="Competitor Overview"
         subtitle="Real-time monitoring of all competitors and market dynamics"
@@ -70,14 +70,14 @@ export default function Dashboard() {
       <div className="p-8 space-y-8 max-w-7xl mx-auto">
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="relative border-0 shadow-lg bg-gradient-to-br from-blue-500 to-cyan-600 text-white overflow-hidden">
+          <Card className="relative border-0 shadow-lg bg-gradient-to-br from-[#CB0000] to-red-800 text-white overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16" />
             <CardContent className="p-6 relative">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-cyan-100 text-sm font-medium uppercase tracking-wider">Total Competitors</p>
+                  <p className="text-red-100 text-sm font-medium uppercase tracking-wider">Total Competitors</p>
                   <p className="text-4xl font-bold mt-2">{meta?.competitors?.length || 0}</p>
-                  <div className="h-0.5 w-8 bg-cyan-300 mt-2" />
+                  <div className="h-0.5 w-8 bg-white mt-2" />
                 </div>
                 <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
                   <Store className="text-white" size={24} />
@@ -86,14 +86,14 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="relative border-0 shadow-lg bg-gradient-to-br from-emerald-500 to-green-600 text-white overflow-hidden">
+          <Card className="relative border-0 shadow-lg bg-gradient-to-br from-gray-800 to-black text-white overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16" />
             <CardContent className="p-6 relative">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-green-100 text-sm font-medium uppercase tracking-wider">Products Tracked</p>
+                  <p className="text-gray-300 text-sm font-medium uppercase tracking-wider">Products Tracked</p>
                   <p className="text-4xl font-bold mt-2">{allProducts.length}</p>
-                  <div className="h-0.5 w-8 bg-green-300 mt-2" />
+                  <div className="h-0.5 w-8 bg-gray-400 mt-2" />
                 </div>
                 <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
                   <Package className="text-white" size={24} />
@@ -102,14 +102,14 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="relative border-0 shadow-lg bg-gradient-to-br from-orange-500 to-red-600 text-white overflow-hidden">
+          <Card className="relative border-0 shadow-lg bg-gradient-to-br from-gray-700 to-gray-900 text-white overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16" />
             <CardContent className="p-6 relative">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-orange-100 text-sm font-medium uppercase tracking-wider">Price Changes</p>
+                  <p className="text-gray-300 text-sm font-medium uppercase tracking-wider">Price Changes</p>
                   <p className="text-4xl font-bold mt-2">{recentChanges.length}</p>
-                  <p className="text-xs text-orange-200 mt-1">Last 48 hours</p>
+                  <p className="text-xs text-gray-400 mt-1">Last 48 hours</p>
                 </div>
                 <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
                   <Activity className="text-white" size={24} />
@@ -118,21 +118,21 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="relative border-0 shadow-lg bg-gradient-to-br from-purple-500 to-indigo-600 text-white overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16" />
+          <Card className="relative border-0 shadow-lg bg-gradient-to-br from-white to-gray-100 text-black overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[#CB0000]/10 rounded-full -mr-16 -mt-16" />
             <CardContent className="p-6 relative">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-purple-100 text-sm font-medium uppercase tracking-wider">Average Price</p>
+                  <p className="text-gray-700 text-sm font-medium uppercase tracking-wider">Average Price</p>
                   <p className="text-4xl font-bold mt-2">
                     ${allProducts.length > 0 
                       ? (allProducts.reduce((sum: number, p: any) => sum + (p.currentPrice || 0), 0) / allProducts.length).toFixed(0)
                       : '0'}
                   </p>
-                  <div className="h-0.5 w-8 bg-purple-300 mt-2" />
+                  <div className="h-0.5 w-8 bg-[#CB0000] mt-2" />
                 </div>
-                <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
-                  <DollarSign className="text-white" size={24} />
+                <div className="p-3 bg-[#CB0000]/20 rounded-lg backdrop-blur-sm">
+                  <DollarSign className="text-[#CB0000]" size={24} />
                 </div>
               </div>
             </CardContent>
@@ -142,12 +142,12 @@ export default function Dashboard() {
         {/* Competitor Overview Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* All Competitors */}
-          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-            <CardHeader className="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
-              <CardTitle className="text-lg font-semibold text-slate-900">
+          <Card className="border-0 shadow-xl bg-white">
+            <CardHeader className="border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+              <CardTitle className="text-lg font-semibold text-black">
                 Your Competitors
               </CardTitle>
-              <p className="text-slate-600 text-sm mt-1">
+              <p className="text-gray-600 text-sm mt-1">
                 Activity summary for each competitor
               </p>
             </CardHeader>
@@ -155,39 +155,39 @@ export default function Dashboard() {
               {competitorStats.length > 0 ? (
                 <div className="space-y-3">
                   {competitorStats.map((comp: any) => (
-                    <div key={comp.id} className="p-4 bg-slate-50 rounded-lg">
+                    <div key={comp.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-slate-900">{comp.name}</h4>
+                        <h4 className="font-medium text-black">{comp.name}</h4>
                         <Link href={`/competitors/${comp.id}`}>
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" className="hover:bg-[#CB0000]/10 hover:text-[#CB0000]">
                             View Details
                           </Button>
                         </Link>
                       </div>
                       <div className="grid grid-cols-3 gap-4 text-sm">
                         <div>
-                          <p className="text-slate-500">Products</p>
-                          <p className="font-semibold text-slate-900">{comp.productCount}</p>
+                          <p className="text-gray-500">Products</p>
+                          <p className="font-semibold text-black">{comp.productCount}</p>
                         </div>
                         <div>
-                          <p className="text-slate-500">Price Drops</p>
-                          <p className="font-semibold text-red-600">{comp.priceDrops}</p>
+                          <p className="text-gray-500">Price Drops</p>
+                          <p className="font-semibold text-green-600">{comp.priceDrops}</p>
                         </div>
                         <div>
-                          <p className="text-slate-500">Price Increases</p>
-                          <p className="font-semibold text-green-600">{comp.priceIncreases}</p>
+                          <p className="text-gray-500">Price Increases</p>
+                          <p className="font-semibold text-[#CB0000]">{comp.priceIncreases}</p>
                         </div>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-12 text-slate-500">
-                  <Store size={48} className="mx-auto mb-4 text-slate-400" />
-                  <h3 className="text-lg font-medium text-slate-900 mb-2">No competitors added</h3>
+                <div className="text-center py-12 text-gray-500">
+                  <Store size={48} className="mx-auto mb-4 text-gray-400" />
+                  <h3 className="text-lg font-medium text-black mb-2">No competitors added</h3>
                   <p className="text-sm">Add competitors to start tracking their prices</p>
                   <Link href="/competitors">
-                    <Button variant="outline" size="sm" className="mt-4">
+                    <Button variant="outline" size="sm" className="mt-4 border-[#CB0000] text-[#CB0000] hover:bg-[#CB0000] hover:text-white">
                       Add Competitors
                     </Button>
                   </Link>
@@ -197,19 +197,19 @@ export default function Dashboard() {
           </Card>
 
           {/* Important Price Changes */}
-          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
-            <CardHeader className="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
+          <Card className="border-0 shadow-xl bg-white">
+            <CardHeader className="border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-lg font-semibold text-slate-900">
+                  <CardTitle className="text-lg font-semibold text-black">
                     Important Price Changes
                   </CardTitle>
-                  <p className="text-slate-600 text-sm mt-1">
+                  <p className="text-gray-600 text-sm mt-1">
                     Last 48 hours activity
                   </p>
                 </div>
                 <Link href="/changes">
-                  <Button variant="ghost" size="sm">
+                  <Button variant="ghost" size="sm" className="hover:bg-[#CB0000]/10 hover:text-[#CB0000]">
                     View All
                   </Button>
                 </Link>
@@ -219,10 +219,10 @@ export default function Dashboard() {
               {importantPriceChanges.length > 0 ? (
                 <div className="space-y-2 max-h-96 overflow-y-auto">
                   {importantPriceChanges.map((change: any) => (
-                    <div key={change.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                    <div key={change.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
                       <div className="flex-1">
-                        <p className="font-medium text-slate-900 text-sm">{change.productTitle}</p>
-                        <p className="text-xs text-slate-500">{change.competitorName}</p>
+                        <p className="font-medium text-black text-sm">{change.productTitle}</p>
+                        <p className="text-xs text-gray-500">{change.competitorName}</p>
                       </div>
                       <div className="flex items-center gap-2">
                         {change.changeType === 'price_drop' ? (
@@ -240,8 +240,8 @@ export default function Dashboard() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-slate-500">
-                  <Activity size={32} className="mx-auto mb-3 text-slate-400" />
+                <div className="text-center py-8 text-gray-500">
+                  <Activity size={32} className="mx-auto mb-3 text-gray-400" />
                   <p>No price changes detected</p>
                   <p className="text-sm mt-1">Price changes will appear here when detected</p>
                 </div>
