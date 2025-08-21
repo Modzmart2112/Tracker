@@ -73,11 +73,11 @@ export function Header({
               <div className="flex items-center space-x-4">
                 <div className="relative group">
                   <div className="absolute -inset-1 bg-gradient-to-r from-[#CB0000] to-red-800 rounded-lg blur opacity-25 group-hover:opacity-40 transition duration-300"></div>
-                  <div className="relative bg-black/50 backdrop-blur-sm border border-[#CB0000]/30 p-3 rounded-lg">
+                  <div className="relative bg-black/50 backdrop-blur-sm border border-[#CB0000]/30 p-2 rounded-lg">
                     <img 
                       src={logoImage} 
                       alt="Sydney Tools" 
-                      className="h-8 w-auto filter brightness-0 invert opacity-90"
+                      className="h-5 w-auto filter brightness-0 invert opacity-90"
                     />
                   </div>
                 </div>
