@@ -253,3 +253,40 @@ export type ListingSnapshot = typeof listingSnapshots.$inferSelect;
 export type InsertListingSnapshot = z.infer<typeof insertListingSnapshotSchema>;
 export type ListingImage = typeof listingImages.$inferSelect;
 export type InsertListingImage = z.infer<typeof insertListingImageSchema>;
+
+// Frontend unified product interface
+export interface UnifiedProduct {
+  id: string;
+  sku: string;
+  modelNumber: string;
+  name: string;
+  ourPrice: number;
+  price: number;
+  originalPrice?: number;
+  image?: string;
+  brand: string;
+  category: string;
+  productPageUrl?: string;
+  competitorLinks?: Array<{
+    id: string;
+    url: string;
+    competitorName: string;
+    extractedTitle?: string;
+    extractedPrice?: string;
+    status: string;
+    lastScraped?: string;
+  }>;
+  competitorListings?: Array<{
+    id: string;
+    url: string;
+    competitorName: string;
+    latestSnapshot?: {
+      price: string;
+      currency: string;
+      inStock: boolean;
+      scrapedAt: Date;
+    };
+  }>;
+  createdAt: string;
+  updatedAt: string;
+}
