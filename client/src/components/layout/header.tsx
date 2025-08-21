@@ -71,15 +71,11 @@ export function Header({
             {/* Left section with logo */}
             <div className="flex items-center space-x-6">
               <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <div className="bg-black/20 backdrop-blur-sm p-2 rounded-lg">
-                    <img 
-                      src={logoImage} 
-                      alt="Sydney Tools" 
-                      className="h-5 w-auto filter brightness-0 invert opacity-90"
-                    />
-                  </div>
-                </div>
+                <img 
+                  src={logoImage} 
+                  alt="Sydney Tools" 
+                  className="h-5 w-auto filter brightness-0 invert opacity-90"
+                />
                 <div className="h-12 w-px bg-gradient-to-b from-transparent via-black/30 to-transparent" />
                 <div>
                   <h1 className="text-xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
