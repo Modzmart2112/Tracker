@@ -2,15 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Smooth page transitions */
-.page-transition {
-  animation: fadeIn 0.3s ease-in-out;
+/* Smooth page transitions with fade-up effect */
+.page-fade-up {
+  animation: fadeUp 0.4s ease-out;
 }
 
-@keyframes fadeIn {
+@keyframes fadeUp {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(20px);
   }
   to {
     opacity: 1;

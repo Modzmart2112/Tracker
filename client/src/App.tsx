@@ -16,7 +16,8 @@ import NotFound from "@/pages/not-found";
 function Router() {
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <div className="page-transition">
+      <Navbar />
+      <div className="page-fade-up flex-1">
         <Switch>
           <Route path="/" component={Dashboard} />
           <Route path="/categories" component={Categories} />

@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Download, RefreshCw, Zap, Shield, Globe2, ChartLine } from "lucide-react";
+import { Download, RefreshCw, Zap, Shield, Globe2, TrendingUp } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -96,20 +96,19 @@ export function Header({
             {/* Right section with status and actions */}
             <div className="flex items-center space-x-4">
               {/* Status indicators */}
-              <div className="flex items-center space-x-3">
-                <div className="flex items-center space-x-2 px-3 py-1.5 bg-black/30 backdrop-blur-sm border border-[#CB0000]/20 rounded-full">
-                  <div className="w-1.5 h-1.5 bg-[#CB0000] rounded-full animate-pulse" />
-                  <span className="text-xs text-gray-300 font-medium">LIVE</span>
-                </div>
-                <div className="flex items-center space-x-2 px-3 py-1.5 bg-black/30 backdrop-blur-sm border border-gray-700 rounded-full">
-                  <Shield size={12} className="text-[#CB0000]" />
-                  <span className="text-xs text-gray-300 font-medium">SECURE</span>
-                </div>
-                <div className="flex items-center space-x-2 px-3 py-1.5 bg-black/30 backdrop-blur-sm border border-gray-700 rounded-full">
-                  <Globe2 size={12} className="text-gray-400" />
-                  <span className="text-xs text-gray-300 font-medium">GLOBAL</span>
-                </div>
+              <div className="flex items-center space-x-2 px-3 py-1.5 bg-black/30 backdrop-blur-sm border border-gray-700 rounded-full">
+                <div className="w-1.5 h-1.5 bg-[#CB0000] rounded-full animate-pulse" />
+                <span className="text-xs text-gray-300 font-medium">LIVE</span>
               </div>
+              <div className="flex items-center space-x-2 px-3 py-1.5 bg-black/30 backdrop-blur-sm border border-gray-700 rounded-full">
+                <Shield size={12} className="text-[#CB0000]" />
+                <span className="text-xs text-gray-300 font-medium">SECURE</span>
+              </div>
+              <div className="flex items-center space-x-2 px-3 py-1.5 bg-black/30 backdrop-blur-sm border border-gray-700 rounded-full">
+                <Globe2 size={12} className="text-gray-400" />
+                <span className="text-xs text-gray-300 font-medium">GLOBAL</span>
+              </div>
+            
 
               {showActions && (
                 <div className="flex items-center space-x-2">
