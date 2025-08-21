@@ -927,7 +927,7 @@ export default function ProductsPage() {
               <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 to-red-600/10 opacity-0 group-data-[state=active]:opacity-100 transition-opacity duration-300" />
               <div className="relative flex items-center justify-center font-semibold text-sm">
                 <Package2 className="h-5 w-5 mr-2 group-data-[state=active]:animate-pulse" />
-                All Products
+                <span>All Products</span>
               </div>
             </TabsTrigger>
             <TabsTrigger 
@@ -938,9 +938,7 @@ export default function ProductsPage() {
               <div className="relative flex items-center justify-center font-semibold text-sm">
                 <Tag className="h-5 w-5 mr-2 group-data-[state=active]:animate-pulse" />
                 <span>Brands</span>
-                <div className="ml-2 px-2 py-1 bg-white/20 rounded-full text-xs font-bold">
-                  {uniqueBrands.length}
-                </div>
+                <span className="ml-1 text-xs opacity-75">({uniqueBrands.length})</span>
               </div>
             </TabsTrigger>
             <TabsTrigger 
@@ -951,9 +949,7 @@ export default function ProductsPage() {
               <div className="relative flex items-center justify-center font-semibold text-sm">
                 <Grid className="h-5 w-5 mr-2 group-data-[state=active]:animate-pulse" />
                 <span>Categories</span>
-                <div className="ml-2 px-2 py-1 bg-white/20 rounded-full text-xs font-bold">
-                  {uniqueCategories.length}
-                </div>
+                <span className="ml-1 text-xs opacity-75">({uniqueCategories.length})</span>
               </div>
             </TabsTrigger>
             <TabsTrigger 
@@ -964,9 +960,7 @@ export default function ProductsPage() {
               <div className="relative flex items-center justify-center font-semibold text-sm">
                 <Store className="h-5 w-5 mr-2 group-data-[state=active]:animate-pulse" />
                 <span>Competitors</span>
-                <div className="ml-2 px-2 py-1 bg-white/20 rounded-full text-xs font-bold">
-                  {competitors.length}
-                </div>
+                <span className="ml-1 text-xs opacity-75">({competitors.length})</span>
               </div>
             </TabsTrigger>
           </TabsList>
