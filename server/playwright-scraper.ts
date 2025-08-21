@@ -203,47 +203,66 @@ export class PlaywrightScraper {
             while (searchContainer && !price && level <= 4) {
               const containerText = searchContainer.textContent || '';
               
-              // Look for sale price patterns: "Normally $399", "Was $399", "RRP $399"
-              const salePatterns = [
-                /Normally\s*\$\s?(\d+\.?\d*)/i,
-                /Was\s*\$\s?(\d+\.?\d*)/i,
-                /RRP\s*\$\s?(\d+\.?\d*)/i,
-                /Originally\s*\$\s?(\d+\.?\d*)/i
-              ];
-              
-              for (const pattern of salePatterns) {
-                const saleMatch = containerText.match(pattern);
-                if (saleMatch) {
-                  originalPrice = saleMatch[1];
-                  isOnSale = true;
-                  
-                  // Look for the current sale price in green or any price element
-                  const greenPriceEl = searchContainer.querySelector('.price[style*="green"], [style*="color: green"], [style*="color:green"]');
-                  
-                  if (greenPriceEl) {
-                    const greenText = greenPriceEl.textContent || '';
-                    const greenMatch = greenText.replace(/\s+/g, '').match(/(\d+\.?\d*)/);
-                    if (greenMatch) {
-                      price = greenMatch[1];
-                      break;
-                    }
+              // Look for sale price patterns: "Normally $380.95" followed by green price
+              const normallyMatch = containerText.match(/Normally\s*\$\s?(\d+\.?\d*)/i);
+              if (normallyMatch) {
+                originalPrice = normallyMatch[1];
+                isOnSale = true;
+                
+                // Look for green price element with various green color formats
+                const greenPriceSelectors = [
+                  '.price[style*="green"]',
+                  '.price[style*="color: green"]', 
+                  '.price[style*="color:green"]',
+                  '[style*="color: green"] .price',
+                  '[style*="color:green"] .price'
+                ];
+                
+                let greenPriceEl = null;
+                for (const selector of greenPriceSelectors) {
+                  greenPriceEl = searchContainer.querySelector(selector);
+                  if (greenPriceEl) break;
+                }
+                
+                if (greenPriceEl) {
+                  // Extract all numbers from the green price element to handle format like $340.00
+                  const greenText = greenPriceEl.textContent || '';
+                  const priceMatch = greenText.match(/(\d+)\.?(\d*)/);
+                  if (priceMatch) {
+                    const dollars = priceMatch[1];
+                    const cents = priceMatch[2] || '00';
+                    price = `${dollars}.${cents}`;
+                    break;
                   }
-                  
-                  // If no green price found but we detected sale text, look for any price
-                  if (!price) {
-                    const allPrices = containerText.match(/\$\s?\d+\.?\d*/g);
-                    if (allPrices && allPrices.length >= 2) {
-                      // Take the first non-original price (usually the sale price)
-                      for (const foundPrice of allPrices) {
-                        const foundPriceNum = foundPrice.replace(/[^0-9.]/g, '');
-                        if (foundPriceNum !== originalPrice) {
-                          price = foundPriceNum;
-                          break;
-                        }
+                }
+              }
+              
+              // Check for other sale patterns if Normally pattern didn't work
+              if (!isOnSale) {
+                const otherSalePatterns = [
+                  /Was\s*\$\s?(\d+\.?\d*)/i,
+                  /RRP\s*\$\s?(\d+\.?\d*)/i,
+                  /Originally\s*\$\s?(\d+\.?\d*)/i
+                ];
+                
+                for (const pattern of otherSalePatterns) {
+                  const saleMatch = containerText.match(pattern);
+                  if (saleMatch) {
+                    originalPrice = saleMatch[1];
+                    isOnSale = true;
+                    
+                    // Look for any price element
+                    const priceEl = searchContainer.querySelector('.price');
+                    if (priceEl) {
+                      const priceText = priceEl.textContent || '';
+                      const priceMatch = priceText.match(/(\d+\.?\d*)/);
+                      if (priceMatch) {
+                        price = priceMatch[1];
+                        break;
                       }
                     }
+                    break;
                   }
-                  break;
                 }
               }
               
@@ -287,9 +306,9 @@ export class PlaywrightScraper {
               level++;
             }
             
-            // Debug first few items and failed extractions
-            if (i < 5 || !price) {
-              console.log(`Product ${i+1}: "${title.substring(0, 40)}" - price: ${price} - href: ${href.substring(50)}`);
+            // Debug first few items and sale items
+            if (i < 5 || isOnSale || !price) {
+              console.log(`Product ${i+1}: "${title.substring(0, 40)}" - price: $${price} - originalPrice: $${originalPrice} - sale: ${isOnSale}`);
             }
 
             if (!price) {
@@ -363,7 +382,7 @@ export class PlaywrightScraper {
       
     } catch (error) {
       console.error('Playwright scraping error:', error);
-      throw new Error(`Playwright scraping failed: ${error.message}`);
+      throw new Error(`Playwright scraping failed: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       if (browser) {
         await browser.close();
