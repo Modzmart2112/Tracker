@@ -72,7 +72,7 @@ export function Header({
             <div className="flex items-center space-x-6">
               <div className="flex items-center space-x-4">
                 <div className="relative">
-                  <div className="bg-black/20 backdrop-blur-sm border border-black/30 p-2 rounded-lg">
+                  <div className="bg-black/20 backdrop-blur-sm p-2 rounded-lg">
                     <img 
                       src={logoImage} 
                       alt="Sydney Tools" 
