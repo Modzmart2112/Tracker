@@ -324,9 +324,15 @@ export default function ProductsPage() {
     
     // Model number patterns (more specific patterns first)
     const patterns = [
-      // SPi Pro25, SPi-IQ, SPiDS-200 etc
+      // SP Tools models like SP61086, SP12345
+      /\b(SP\d{4,6}[A-Z]*)\b/i,
+      // NOCO GENIUS models like GENIUSPRO50, GENIUS2DAU, GENIUS2X4, GENIUS2X2
+      /\b(GENIUS(?:PRO)?\d+[A-Z0-9]*)\b/i,
+      // Matson models like AE150E, MA4INONE, MA21DCS, MA61224, IR61224, AE300E
+      /\b([A-Z]{2}\d{3,5}[A-Z]*)\b/i,
+      // SPi Pro25, SPi-IQ, SPiDS-200 etc (Schumacher)
       /\b(SP[iI][\s-]?(?:Pro|DS|IQ)?[\s-]?\d+[A-Z]*)\b/i,
-      // SPX457, GX8, MT3750 etc
+      // SPX457, SPX458, SPX460, GX8, MT3750 etc
       /\b([A-Z]{2,}X?\d{2,}[A-Z]*)\b/,
       // G1100AU, G3500AU etc
       /\b(G\d+[A-Z]+)\b/,
