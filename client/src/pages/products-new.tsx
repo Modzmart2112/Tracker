@@ -286,8 +286,10 @@ export default function ProductsPage() {
 
   // Import competitor products
   const importCompetitor = useMutation({
-    mutationFn: (data: { url: string }) => 
-      apiRequest("POST", "/api/import-competitor", data),
+    mutationFn: async (data: { url: string }) => {
+      const response = await apiRequest("POST", "/api/import-competitor", data);
+      return await response.json();
+    },
     onSuccess: (data: any) => {
       console.log("Competitor import response:", data);
       if (data.success && data.products && data.products.length > 0) {
