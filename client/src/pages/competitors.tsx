@@ -1,7 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { Header } from "@/components/layout/header";
-import { Navbar } from "@/components/layout/navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -127,15 +125,8 @@ export default function Competitors() {
   };
 
   return (
-    <div className="flex-1 overflow-auto bg-gradient-to-br from-gray-50 via-white to-gray-100">
-      <Header 
-        title="Competitors Management"
-        subtitle="Manage competitor websites and monitoring"
-        showActions={false}
-      />
-      <Navbar />
-      
-      <div className="p-8">
+    <div className="bg-gradient-to-br from-gray-50 via-white to-gray-100">
+      <div className="p-8 animate-fade-up">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-lg font-semibold text-slate-900">Active Competitors</h2>
           <Dialog open={isDialogOpen} onOpenChange={handleDialogClose}>

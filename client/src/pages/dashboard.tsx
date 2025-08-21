@@ -1,7 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
-import { Header } from "@/components/layout/header";
-import { Navbar } from "@/components/layout/navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -61,15 +59,8 @@ export default function Dashboard() {
     .slice(0, 10);
 
   return (
-    <div className="flex-1 overflow-auto bg-gradient-to-br from-gray-50 via-white to-gray-100">
-      <Header 
-        title="Competitor Overview"
-        subtitle="Real-time monitoring of all competitors and market dynamics"
-        showActions={false}
-      />
-      <Navbar />
-      
-      <div className="p-8 space-y-8">
+    <div className="bg-gradient-to-br from-gray-50 via-white to-gray-100">
+      <div className="p-8 space-y-8 animate-fade-up">
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="relative border-0 shadow-lg bg-gradient-to-br from-[#CB0000] to-red-800 text-white overflow-hidden">

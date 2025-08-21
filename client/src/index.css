@@ -128,3 +128,44 @@ nav a {
     @apply font-sans antialiased bg-background text-foreground;
   }
 }
+
+/* Page Transitions */
+.animate-fade-up {
+  animation: fadeUpStaggered 0.6s ease-out forwards;
+}
+
+.animate-fade-up > * {
+  opacity: 0;
+  animation: fadeUpItem 0.5s ease-out forwards;
+}
+
+.animate-fade-up > *:nth-child(1) { animation-delay: 0ms; }
+.animate-fade-up > *:nth-child(2) { animation-delay: 50ms; }
+.animate-fade-up > *:nth-child(3) { animation-delay: 100ms; }
+.animate-fade-up > *:nth-child(4) { animation-delay: 150ms; }
+.animate-fade-up > *:nth-child(5) { animation-delay: 200ms; }
+.animate-fade-up > *:nth-child(6) { animation-delay: 250ms; }
+.animate-fade-up > *:nth-child(7) { animation-delay: 300ms; }
+.animate-fade-up > *:nth-child(8) { animation-delay: 350ms; }
+.animate-fade-up > *:nth-child(9) { animation-delay: 400ms; }
+.animate-fade-up > *:nth-child(10) { animation-delay: 450ms; }
+
+@keyframes fadeUpStaggered {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeUpItem {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

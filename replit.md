@@ -2,7 +2,7 @@
 
 ## Overview
 
-CompetitorScope is a modern web application designed for competitive analysis and price monitoring across e-commerce competitors. The system allows users to track competitors by categories (like Automotive) and product types (like Jump Starters), monitor brand coverage, track pricing changes, and generate competitive intelligence dashboards. The application focuses on scraping competitor websites to collect product data, pricing information, and inventory status while providing insights on coverage gaps and pricing opportunities.
+CompetitorScope is a modern web application designed for competitive analysis and price monitoring across e-commerce competitors, now featuring Sydney Tools branding. The system allows users to track competitors by categories (like Automotive) and product types (like Jump Starters), monitor brand coverage, track pricing changes, and generate competitive intelligence dashboards. The application focuses on scraping competitor websites to collect product data, pricing information, and inventory status while providing insights on coverage gaps and pricing opportunities.
 
 ## User Preferences
 
@@ -38,6 +38,7 @@ Preferred communication style: Simple, everyday language.
 - **Tasks**: Scraping task management with status tracking
 
 ### Frontend Application Structure
+- **Unified Layout**: Fixed header and navbar at app level with animated page transitions
 - **Dashboard**: Main analytics view with KPI metrics, brand coverage matrix, and price band analysis
 - **Product Catalog**: Comprehensive product listing with filtering and detailed product modals
 - **Competitor Management**: CRUD operations for competitor setup and configuration
@@ -45,6 +46,7 @@ Preferred communication style: Simple, everyday language.
 - **Category Explorer**: Hierarchical view of product categories and types
 - **Change Tracking**: Recent changes view with filtering and timeline analysis
 - **Admin Panel**: System administration and configuration management
+- **Page Transitions**: Smooth slide-up and fade-in animations for content while header/navbar remain static
 
 ## External Dependencies
 
@@ -72,6 +74,8 @@ Preferred communication style: Simple, everyday language.
 - **Tailwind CSS**: Utility-first CSS framework with custom configuration
 - **PostCSS**: CSS processing with autoprefixer for browser compatibility
 - **Class Variance Authority**: Utility for creating consistent component variants
+- **Design System**: Sydney Tools branding with red (#CB0000), black, white, and grey color scheme
+- **Modern UI**: High-tech appearance with dark themes, gradient effects, and smooth animations
 
 ### Development Experience
 - **Replit Integration**: Development environment integration with error handling and live reload
