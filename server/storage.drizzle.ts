@@ -463,11 +463,13 @@ export class DrizzleStorage implements IStorage {
         
         return {
           id: product.id,
-          sku: product.id.slice(0, 8).toUpperCase(),
-          name: product.title,
-          ourPrice: 0,
+          sku: product.ourSku || product.id.slice(0, 8).toUpperCase(),
+          name: product.name || 'Unnamed Product',
+          ourPrice: product.targetPrice || 0,
+          brand: product.brandId || 'Unknown',
+          category: product.categoryId || 'Uncategorized',
           competitorLinks,
-          createdAt: new Date().toISOString(),
+          createdAt: product.createdAt?.toISOString() || new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
       })
