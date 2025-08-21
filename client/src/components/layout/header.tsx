@@ -58,11 +58,11 @@ export function Header({
   };
 
   return (
-    <header className="bg-black text-white border-b border-[#CB0000]/20">
+    <header className="bg-[#CB0000] text-white border-b border-red-800">
       <div className="relative overflow-hidden">
         {/* Tech pattern overlay */}
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0 bg-gradient-to-r from-[#CB0000]/10 via-transparent to-[#CB0000]/10" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/10 via-transparent to-black/10" />
         </div>
 
         <div className="relative px-8 py-6">
@@ -71,9 +71,8 @@ export function Header({
             {/* Left section with logo */}
             <div className="flex items-center space-x-6">
               <div className="flex items-center space-x-4">
-                <div className="relative group">
-                  <div className="absolute -inset-1 bg-gradient-to-r from-[#CB0000] to-red-800 rounded-lg blur opacity-25 group-hover:opacity-40 transition duration-300"></div>
-                  <div className="relative bg-black/50 backdrop-blur-sm border border-[#CB0000]/30 p-2 rounded-lg">
+                <div className="relative">
+                  <div className="bg-black/20 backdrop-blur-sm border border-black/30 p-2 rounded-lg">
                     <img 
                       src={logoImage} 
                       alt="Sydney Tools" 
@@ -81,7 +80,7 @@ export function Header({
                     />
                   </div>
                 </div>
-                <div className="h-12 w-px bg-gradient-to-b from-transparent via-[#CB0000]/30 to-transparent" />
+                <div className="h-12 w-px bg-gradient-to-b from-transparent via-black/30 to-transparent" />
                 <div>
                   <h1 className="text-xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
                     {title}
@@ -96,17 +95,17 @@ export function Header({
             {/* Right section with status and actions */}
             <div className="flex items-center space-x-4">
               {/* Status indicators */}
-              <div className="flex items-center space-x-2 px-3 py-1.5 bg-black/30 backdrop-blur-sm border border-gray-700 rounded-full">
-                <div className="w-1.5 h-1.5 bg-[#CB0000] rounded-full animate-pulse" />
-                <span className="text-xs text-gray-300 font-medium">LIVE</span>
+              <div className="flex items-center space-x-2 px-3 py-1.5 bg-black/30 backdrop-blur-sm border border-black/40 rounded-full">
+                <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
+                <span className="text-xs text-white font-medium">LIVE</span>
               </div>
-              <div className="flex items-center space-x-2 px-3 py-1.5 bg-black/30 backdrop-blur-sm border border-gray-700 rounded-full">
-                <Shield size={12} className="text-[#CB0000]" />
-                <span className="text-xs text-gray-300 font-medium">SECURE</span>
+              <div className="flex items-center space-x-2 px-3 py-1.5 bg-black/30 backdrop-blur-sm border border-black/40 rounded-full">
+                <Shield size={12} className="text-white" />
+                <span className="text-xs text-white font-medium">SECURE</span>
               </div>
-              <div className="flex items-center space-x-2 px-3 py-1.5 bg-black/30 backdrop-blur-sm border border-gray-700 rounded-full">
-                <Globe2 size={12} className="text-gray-400" />
-                <span className="text-xs text-gray-300 font-medium">GLOBAL</span>
+              <div className="flex items-center space-x-2 px-3 py-1.5 bg-black/30 backdrop-blur-sm border border-black/40 rounded-full">
+                <Globe2 size={12} className="text-gray-200" />
+                <span className="text-xs text-white font-medium">GLOBAL</span>
               </div>
             
 
@@ -115,7 +114,7 @@ export function Header({
                   <Button 
                     variant="ghost" 
                     onClick={handleExportCSV}
-                    className="bg-black/30 backdrop-blur-sm border border-gray-700 text-gray-300 hover:bg-black/50 hover:text-white hover:border-[#CB0000]/50 transition-all duration-200 px-3 py-1.5 h-auto text-xs"
+                    className="bg-black/30 backdrop-blur-sm border border-black/40 text-white hover:bg-black/50 hover:text-white hover:border-white/50 transition-all duration-200 px-3 py-1.5 h-auto text-xs"
                   >
                     <Download className="mr-1.5 h-3.5 w-3.5" />
                     Export
@@ -123,7 +122,7 @@ export function Header({
                   <Button 
                     onClick={handleRunScrape}
                     disabled={runScrapeMutation.isPending}
-                    className="bg-gradient-to-r from-[#CB0000] to-red-800 hover:from-red-700 hover:to-red-900 text-white border-0 shadow-lg transition-all duration-200 px-3 py-1.5 h-auto text-xs"
+                    className="bg-gradient-to-r from-black to-gray-800 hover:from-gray-800 hover:to-black text-white border-0 shadow-lg transition-all duration-200 px-3 py-1.5 h-auto text-xs"
                   >
                     <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${runScrapeMutation.isPending ? 'animate-spin' : ''}`} />
                     {runScrapeMutation.isPending ? 'Scanning...' : 'Scan'}
