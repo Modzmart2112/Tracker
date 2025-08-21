@@ -507,7 +507,7 @@ export class DrizzleStorage implements IStorage {
 
   async createUnifiedProduct(product: any): Promise<any> {
     const catalogProduct = await this.createCatalogProduct({
-      title: product.name,
+      title: product.name || product.title,
       brandId: null,
       productTypeId: null
     });
