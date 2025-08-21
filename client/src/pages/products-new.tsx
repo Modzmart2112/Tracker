@@ -978,12 +978,21 @@ export default function ProductsPage() {
                     <div className="h-48 w-full bg-white p-4 flex items-center justify-center relative">
                       {/* Floating Sale Badge on Image */}
                       {product.originalPrice && product.originalPrice > (product.price || product.ourPrice || 0) && (
-                        <div className="absolute top-2 right-2 z-10">
-                          <div 
-                            className="px-2 py-1 text-white text-xs font-bold rounded-sm shadow-lg"
-                            style={{ backgroundColor: '#008000' }}
-                          >
-                            {Math.round(((product.originalPrice - (product.price || product.ourPrice || 0)) / product.originalPrice) * 100)}% PRICE DROP
+                        <div className="absolute top-3 right-3 z-10">
+                          <div className="relative">
+                            {/* Glow effect background */}
+                            <div className="absolute inset-0 bg-green-500 rounded-lg blur-sm opacity-50"></div>
+                            
+                            {/* Main badge */}
+                            <div className="relative bg-gradient-to-r from-green-600 to-green-700 text-white text-xs font-bold px-3 py-2 rounded-lg shadow-xl border border-green-500 transform hover:scale-105 transition-all duration-200">
+                              <div className="flex items-center gap-1">
+                                <span className="text-green-100">-{Math.round(((product.originalPrice - (product.price || product.ourPrice || 0)) / product.originalPrice) * 100)}%</span>
+                                <span className="text-white font-extrabold">OFF</span>
+                              </div>
+                              
+                              {/* Shine effect */}
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 transform -translate-x-full animate-pulse"></div>
+                            </div>
                           </div>
                         </div>
                       )}
