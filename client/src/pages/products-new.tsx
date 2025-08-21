@@ -791,140 +791,126 @@ export default function ProductsPage() {
         {/* Enhanced Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
           {/* Total Products Card */}
-          <Card className="relative group overflow-hidden bg-gradient-to-br from-white via-red-50 to-red-100 border-red-200 hover:border-red-300 shadow-xl hover:shadow-2xl transition-all duration-500">
-            {/* Animated Background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 via-transparent to-red-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <Card className="relative border-0 shadow-lg bg-gradient-to-br from-[#CB0000] to-red-700 text-white overflow-hidden">
+            {/* Glass effect overlay */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16" />
             
-            {/* Floating Particles Effect */}
-            <div className="absolute top-2 right-2 w-20 h-20 bg-red-500/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-all duration-700 transform group-hover:scale-150" />
-            
-            <CardContent className="p-6 relative z-10">
+            <CardContent className="p-6 relative">
               <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <p className="text-sm font-semibold text-red-600 uppercase tracking-wide">Total Products</p>
-                  <div className="flex items-baseline gap-2">
-                    <p className="text-4xl font-black text-red-900">{products?.length || 0}</p>
-                    <span className="text-sm text-red-500 font-medium">items</span>
+                <div>
+                  <p className="text-gray-200 text-sm font-medium uppercase tracking-wider">Total Products</p>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <p className="text-4xl font-bold">{products?.length || 0}</p>
+                    <span className="text-sm text-gray-300">items</span>
                   </div>
+                  <div className="h-0.5 w-8 bg-white/50 mt-2" />
                 </div>
-                <div className="relative">
-                  <div className="absolute inset-0 bg-red-500 rounded-2xl blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300" />
-                  <div className="relative p-4 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
-                    <Package2 className="h-8 w-8 text-white" />
-                  </div>
+                <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+                  <Package2 className="text-white" size={24} />
                 </div>
               </div>
               
               {/* Progress Bar */}
-              <div className="mt-4 pt-4 border-t border-red-200">
-                <div className="flex items-center justify-between text-xs text-red-600 mb-2">
+              <div className="mt-4 pt-4 border-t border-white/20">
+                <div className="flex items-center justify-between text-xs text-gray-200 mb-2">
                   <span>Catalog Growth</span>
                   <span>+{products?.length || 0} this month</span>
                 </div>
-                <div className="w-full bg-red-100 rounded-full h-2">
-                  <div className="bg-gradient-to-r from-red-500 to-red-600 h-2 rounded-full transition-all duration-1000 ease-out" style={{ width: '75%' }}></div>
+                <div className="w-full bg-black/20 rounded-full h-2">
+                  <div className="bg-gradient-to-r from-white/60 to-white/80 h-2 rounded-full transition-all duration-1000 ease-out" style={{ width: '75%' }}></div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Competitor Links Card */}
-          <Card className="relative group overflow-hidden bg-gradient-to-br from-white via-blue-50 to-blue-100 border-blue-200 hover:border-blue-300 shadow-xl hover:shadow-2xl transition-all duration-500">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            <div className="absolute top-2 right-2 w-20 h-20 bg-blue-500/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-all duration-700 transform group-hover:scale-150" />
+          <Card className="relative border-0 shadow-lg bg-gradient-to-br from-gray-800 to-black text-white overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16" />
             
-            <CardContent className="p-6 relative z-10">
+            <CardContent className="p-6 relative">
               <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide">Competitor Links</p>
-                  <div className="flex items-baseline gap-2">
-                    <p className="text-4xl font-black text-blue-900">{totalCompetitorLinks}</p>
-                    <span className="text-sm text-blue-500 font-medium">tracked</span>
+                <div>
+                  <p className="text-gray-300 text-sm font-medium uppercase tracking-wider">Competitor Links</p>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <p className="text-4xl font-bold">{totalCompetitorLinks}</p>
+                    <span className="text-sm text-gray-400">tracked</span>
                   </div>
+                  <div className="h-0.5 w-8 bg-gray-400 mt-2" />
                 </div>
-                <div className="relative">
-                  <div className="absolute inset-0 bg-blue-500 rounded-2xl blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300" />
-                  <div className="relative p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
-                    <Link className="h-8 w-8 text-white" />
-                  </div>
+                <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+                  <Link className="text-white" size={24} />
                 </div>
               </div>
               
-              <div className="mt-4 pt-4 border-t border-blue-200">
-                <div className="flex items-center justify-between text-xs text-blue-600 mb-2">
+              <div className="mt-4 pt-4 border-t border-white/20">
+                <div className="flex items-center justify-between text-xs text-gray-300 mb-2">
                   <span>Coverage Rate</span>
                   <span>85% monitored</span>
                 </div>
-                <div className="w-full bg-blue-100 rounded-full h-2">
-                  <div className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-1000 ease-out" style={{ width: '85%' }}></div>
+                <div className="w-full bg-black/30 rounded-full h-2">
+                  <div className="bg-gradient-to-r from-gray-400 to-gray-300 h-2 rounded-full transition-all duration-1000 ease-out" style={{ width: '85%' }}></div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Price Advantage Card */}
-          <Card className="relative group overflow-hidden bg-gradient-to-br from-white via-green-50 to-emerald-100 border-green-200 hover:border-green-300 shadow-xl hover:shadow-2xl transition-all duration-500">
-            <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 via-transparent to-emerald-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            <div className="absolute top-2 right-2 w-20 h-20 bg-green-500/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-all duration-700 transform group-hover:scale-150" />
+          <Card className="relative border-0 shadow-lg bg-gradient-to-br from-gray-700 to-gray-900 text-white overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16" />
             
-            <CardContent className="p-6 relative z-10">
+            <CardContent className="p-6 relative">
               <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <p className="text-sm font-semibold text-green-600 uppercase tracking-wide">Price Advantage</p>
-                  <div className="flex items-baseline gap-2">
-                    <p className="text-4xl font-black text-green-900">{priceAdvantageCount}</p>
-                    <span className="text-sm text-green-500 font-medium">products</span>
+                <div>
+                  <p className="text-gray-300 text-sm font-medium uppercase tracking-wider">Price Advantage</p>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <p className="text-4xl font-bold">{priceAdvantageCount}</p>
+                    <span className="text-sm text-gray-400">products</span>
                   </div>
+                  <p className="text-xs text-gray-400 mt-1">Below competition</p>
                 </div>
-                <div className="relative">
-                  <div className="absolute inset-0 bg-green-500 rounded-2xl blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300" />
-                  <div className="relative p-4 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
-                    <DollarSign className="h-8 w-8 text-white" />
-                  </div>
+                <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+                  <DollarSign className="text-white" size={24} />
                 </div>
               </div>
               
-              <div className="mt-4 pt-4 border-t border-green-200">
-                <div className="flex items-center justify-between text-xs text-green-600 mb-2">
+              <div className="mt-4 pt-4 border-t border-white/20">
+                <div className="flex items-center justify-between text-xs text-gray-300 mb-2">
                   <span>Competitive Edge</span>
                   <span>92% optimal</span>
                 </div>
-                <div className="w-full bg-green-100 rounded-full h-2">
-                  <div className="bg-gradient-to-r from-green-500 to-emerald-600 h-2 rounded-full transition-all duration-1000 ease-out" style={{ width: '92%' }}></div>
+                <div className="w-full bg-black/30 rounded-full h-2">
+                  <div className="bg-gradient-to-r from-green-400 to-green-300 h-2 rounded-full transition-all duration-1000 ease-out" style={{ width: '92%' }}></div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Need Adjustment Card */}
-          <Card className="relative group overflow-hidden bg-gradient-to-br from-white via-orange-50 to-red-100 border-orange-200 hover:border-orange-300 shadow-xl hover:shadow-2xl transition-all duration-500">
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-transparent to-red-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-            <div className="absolute top-2 right-2 w-20 h-20 bg-orange-500/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-all duration-700 transform group-hover:scale-150" />
+          <Card className="relative border-0 shadow-lg bg-gradient-to-br from-white to-gray-100 text-black overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[#CB0000]/10 rounded-full -mr-16 -mt-16" />
             
-            <CardContent className="p-6 relative z-10">
+            <CardContent className="p-6 relative">
               <div className="flex items-center justify-between">
-                <div className="space-y-2">
-                  <p className="text-sm font-semibold text-orange-600 uppercase tracking-wide">Need Adjustment</p>
-                  <div className="flex items-baseline gap-2">
-                    <p className="text-4xl font-black text-orange-900">{needAdjustmentCount}</p>
-                    <span className="text-sm text-orange-500 font-medium">urgent</span>
+                <div>
+                  <p className="text-gray-700 text-sm font-medium uppercase tracking-wider">Need Adjustment</p>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <p className="text-4xl font-bold">{needAdjustmentCount}</p>
+                    <span className="text-sm text-gray-600">urgent</span>
                   </div>
+                  <div className="h-0.5 w-8 bg-[#CB0000] mt-2" />
                 </div>
-                <div className="relative">
-                  <div className="absolute inset-0 bg-orange-500 rounded-2xl blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300" />
-                  <div className="relative p-4 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
-                    <TrendingUp className="h-8 w-8 text-white" />
-                  </div>
+                <div className="p-3 bg-[#CB0000]/20 rounded-lg backdrop-blur-sm">
+                  <TrendingUp className="text-[#CB0000]" size={24} />
                 </div>
               </div>
               
-              <div className="mt-4 pt-4 border-t border-orange-200">
-                <div className="flex items-center justify-between text-xs text-orange-600 mb-2">
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
                   <span>Action Required</span>
                   <span>High priority</span>
                 </div>
-                <div className="w-full bg-orange-100 rounded-full h-2">
-                  <div className="bg-gradient-to-r from-orange-500 to-red-600 h-2 rounded-full transition-all duration-1000 ease-out" style={{ width: '25%' }}></div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="bg-gradient-to-r from-[#CB0000] to-red-600 h-2 rounded-full transition-all duration-1000 ease-out" style={{ width: '25%' }}></div>
                 </div>
               </div>
             </CardContent>
