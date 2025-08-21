@@ -125,77 +125,147 @@ export class SimpleBrowserScraper {
     try {
       console.log('Starting Chromium browser scraping for:', url);
       
-      // Run Chromium with the script
-      const chromiumProcess = spawn('chromium', [
-        '--headless',
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--remote-debugging-port=9222',
-        '--disable-features=VizDisplayCompositor',
-        '--run-all-compositor-stages-before-draw',
-        '--disable-background-timer-throttling',
-        '--disable-renderer-backgrounding',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-ipc-flooding-protection',
-        '--timeout=10000',
-        '--virtual-time-budget=5000',
-        '--enable-automation',
-        `--evaluate-script='${browserScript}'`,
-        url
-      ], {
+      // Create a simple Node.js script that uses chrome-launcher
+      const extractorScript = `
+        const { execSync } = require('child_process');
+        
+        try {
+          // Run chromium and capture output after waiting for JS to load
+          const result = execSync(\`chromium --headless --no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu --virtual-time-budget=5000 --run-all-compositor-stages-before-draw --dump-dom "${url}"\`, {
+            encoding: 'utf8',
+            timeout: 20000
+          });
+          
+          console.log('DOM_OUTPUT_START');
+          console.log(result);
+          console.log('DOM_OUTPUT_END');
+        } catch (error) {
+          console.error('Error:', error.message);
+        }
+      `;
+      
+      // Write and execute the script
+      const scriptPath = join(process.cwd(), 'temp-extractor.js');
+      writeFileSync(scriptPath, extractorScript);
+      
+      const extractorProcess = spawn('node', [scriptPath], {
         stdio: ['ignore', 'pipe', 'pipe']
       });
       
       let output = '';
       let errorOutput = '';
       
-      chromiumProcess.stdout.on('data', (data) => {
+      extractorProcess.stdout.on('data', (data) => {
         output += data.toString();
       });
       
-      chromiumProcess.stderr.on('data', (data) => {
+      extractorProcess.stderr.on('data', (data) => {
         errorOutput += data.toString();
       });
       
       return new Promise((resolve, reject) => {
         const timeout = setTimeout(() => {
-          chromiumProcess.kill();
+          extractorProcess.kill();
           reject(new Error('Browser scraping timeout'));
-        }, 15000);
+        }, 25000);
         
-        chromiumProcess.on('close', (code) => {
+        extractorProcess.on('close', (code) => {
           clearTimeout(timeout);
           
-          console.log('Chromium output:', output);
-          console.log('Chromium errors:', errorOutput);
+          console.log('Browser automation output length:', output.length);
+          console.log('Browser automation errors:', errorOutput);
           
-          // Look for our results in the output
-          const resultsMatch = output.match(/SCRAPER_RESULTS: ({.*})/);
-          if (resultsMatch) {
-            try {
-              const results = JSON.parse(resultsMatch[1]);
-              resolve({
-                products: results.products || [],
-                totalPages: Math.ceil((results.totalProducts || 0) / 20),
-                currentPage: 1,
-                totalProducts: results.totalProducts || 0,
-                categoryName: results.categoryName || 'PRODUCTS'
-              });
-            } catch (e) {
-              reject(new Error('Failed to parse scraper results'));
-            }
-          } else {
-            // No products found
-            resolve({
-              products: [],
-              totalPages: 0,
-              currentPage: 1,
-              totalProducts: 0,
-              categoryName: 'PRODUCTS'
+          // Extract the DOM content between markers
+          const domStartMatch = output.match(/DOM_OUTPUT_START\s*\n(.*)\nDOM_OUTPUT_END/s);
+          const domContent = domStartMatch ? domStartMatch[1] : output;
+          
+          const products = [];
+          
+          // Look for various product patterns in the rendered DOM
+          const patterns = [
+            // Sydney Tools specific patterns
+            /<div[^>]*class="[^"]*ant-card[^"]*ant-card-bordered[^"]*product-card[^"]*"[^>]*>.*?<\/div>\s*<\/div>\s*<\/div>/gs,
+            // General product patterns
+            /<div[^>]*class="[^"]*product[^"]*"[^>]*>.*?<\/div>/gs,
+            /<article[^>]*class="[^"]*product[^"]*"[^>]*>.*?<\/article>/gs
+          ];
+          
+          for (const pattern of patterns) {
+            const matches = domContent.match(pattern) || [];
+            console.log(`Found ${matches.length} matches with pattern`);
+            
+            matches.forEach((cardHtml, index) => {
+              try {
+                // Extract title from multiple possible sources
+                const titleMatches = [
+                  cardHtml.match(/title="([^"]+)"/),
+                  cardHtml.match(/<h[1-6][^>]*>([^<]+)<\/h[1-6]>/),
+                  cardHtml.match(/alt="([^"]+)"/),
+                  cardHtml.match(/data-title="([^"]+)"/),
+                  cardHtml.match(/>([^<]*(?:Charger|Battery|Jump Starter)[^<]*)</gi)
+                ];
+                
+                const title = titleMatches.find(match => match)?.[1]?.trim().replace(/&amp;/g, '&');
+                if (!title || title.length < 10) return;
+                
+                // Extract price with various patterns
+                const priceMatches = [
+                  cardHtml.match(/\$(\d+(?:,\d{3})*(?:\.\d{2})?)/),
+                  cardHtml.match(/(\d+)\.(\d{2})/),
+                  cardHtml.match(/price[^>]*>.*?\$?(\d+(?:,\d{3})*(?:\.\d{2})?)/i)
+                ];
+                
+                const priceMatch = priceMatches.find(match => match);
+                const price = priceMatch ? parseFloat(priceMatch[1].replace(/,/g, '')) : 0;
+                
+                if (price === 0) return;
+                
+                // Extract image
+                const imageMatch = cardHtml.match(/src="([^"]+\.(?:jpg|jpeg|png|webp|svg)[^"]*)"/i);
+                const image = imageMatch ? imageMatch[1] : '';
+                
+                // Extract product URL
+                const linkMatches = [
+                  cardHtml.match(/href="(\/product\/[^"]+)"/),
+                  cardHtml.match(/href="([^"]*product[^"]*)"/),
+                  cardHtml.match(/data-url="([^"]+)"/)
+                ];
+                
+                const linkMatch = linkMatches.find(match => match);
+                const productUrl = linkMatch ? 
+                  (linkMatch[1].startsWith('http') ? linkMatch[1] : `https://sydneytools.com.au${linkMatch[1]}`) : 
+                  '';
+                
+                const brand = title.split(' ')[0];
+                const cleanTitle = title.replace(/\s+/g, ' ').trim();
+                
+                products.push({
+                  sku: `${brand.toUpperCase().replace(/[^A-Z0-9]/g, '')}-${String(products.length + 1).padStart(3, '0')}`,
+                  title: cleanTitle,
+                  price,
+                  image: image.startsWith('http') ? image : (image ? `https://sydneytools.com.au${image}` : ''),
+                  url: productUrl,
+                  brand,
+                  model: cleanTitle.replace(brand, '').trim(),
+                  category: 'Car Battery Chargers'
+                });
+              } catch (e) {
+                console.error('Error parsing product:', e);
+              }
             });
+            
+            if (products.length > 0) break; // Stop if we found products with this pattern
           }
+          
+          console.log(`Successfully extracted ${products.length} authentic products from DOM`);
+          
+          resolve({
+            products,
+            totalPages: Math.ceil(products.length / 20),
+            currentPage: 1,
+            totalProducts: products.length,
+            categoryName: 'CAR BATTERY CHARGERS'
+          });
         });
         
         chromiumProcess.on('error', (error) => {
