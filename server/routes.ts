@@ -454,22 +454,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      // For now, just return the products without saving to allow user review
-      // TODO: Implement product matching and saving after user confirms import
+      // Save the products to the database
+      let savedCount = 0;
+      const errors: string[] = [];
+      
+      try {
+        // Find or create competitor
+        const siteDomain = new URL(url).hostname;
+        const existingCompetitors = await storage.getCompetitors();
+        let competitor = existingCompetitors.find(c => c.name.toLowerCase() === result.competitorName.toLowerCase());
+        
+        if (!competitor) {
+          competitor = await storage.createCompetitor({
+            name: result.competitorName,
+            siteDomain,
+            status: 'active',
+            isUs: false
+          });
+        }
+        
+        // Find or create category and product type
+        const existingCategories = await storage.getCategories();
+        let category = existingCategories.find(c => c.slug === 'battery-chargers');
+        
+        if (!category) {
+          category = await storage.createCategory({
+            name: 'Battery Chargers',
+            slug: 'battery-chargers'
+          });
+        }
+        
+        const existingProductTypes = await storage.getProductTypes();
+        let productType = existingProductTypes.find(pt => pt.slug === 'battery-chargers');
+        
+        if (!productType) {
+          productType = await storage.createProductType({
+            categoryId: category.id,
+            name: 'Battery Chargers',
+            slug: 'battery-chargers'
+          });
+        }
+        
+        // Find or create brand for each product
+        const brandMap = new Map<string, any>();
+        
+        // Create the products in the unified catalog system
+        for (const product of result.products) {
+          try {
+            // Find or create brand
+            let brand = brandMap.get(product.brand);
+            if (!brand) {
+              const existingBrands = await storage.getBrands();
+              brand = existingBrands.find(b => b.name.toLowerCase() === product.brand.toLowerCase());
+              
+              if (!brand) {
+                brand = await storage.createBrand({
+                  name: product.brand,
+                  slug: product.brand.toLowerCase().replace(/[^a-z0-9]/g, '-')
+                });
+              }
+              brandMap.set(product.brand, brand);
+            }
+            
+            // Create catalog product
+            const catalogProduct = await storage.createCatalogProduct({
+              name: product.title,
+              brandId: brand.id,
+              categoryId: category.id,
+              productTypeId: productType.id,
+              modelNumber: product.modelNumber,
+              imageUrl: product.image,
+              price: product.price.toString()
+            });
+            
+            // Create competitor listing
+            const competitorListing = await storage.createCompetitorListing({
+              productId: catalogProduct.id,
+              competitorId: competitor.id,
+              url: product.productUrl || url,
+              mainImageUrl: product.image
+            });
+            
+            // Create listing snapshot with pricing
+            if (product.price > 0) {
+              await storage.createListingSnapshot({
+                listingId: competitorListing.id,
+                price: product.price.toString(),
+                currency: 'AUD',
+                inStock: true
+              });
+            }
+            
+            savedCount++;
+          } catch (error: any) {
+            console.error(`Error saving product ${product.title}:`, error);
+            errors.push(`${product.title}: ${error.message}`);
+          }
+        }
+      } catch (error: any) {
+        console.error('Error setting up competitor/category/product type:', error);
+        errors.push(`Setup error: ${error.message}`);
+      }
       
       const response = {
         success: true,
-        message: `Successfully imported ${result.products.length} products from ${result.competitorName}`,
-        products: result.products,
-
+        message: `Successfully imported ${savedCount}/${result.products.length} products from ${result.competitorName}`,
+        savedProducts: savedCount,
         totalProducts: result.totalProducts,
         categoryName: result.categoryName,
         competitorName: result.competitorName,
         sourceUrl: result.sourceUrl,
-        extractedAt: result.extractedAt
+        extractedAt: result.extractedAt,
+        errors: errors.length > 0 ? errors : undefined
       };
       
-      console.log(`Sending response with ${response.products.length} products`);
+      console.log(`Saved ${savedCount} products to database`);
       res.json(response);
 
     } catch (error: any) {

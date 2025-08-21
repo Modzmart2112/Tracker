@@ -99,57 +99,17 @@ export class CompetitorScraper {
   }
 
   private extractSalePrice($product: any): { regularPrice: number; salePrice: number } {
-    let salePrice = 0;
-    let regularPrice = 0;
-
-    // First check for pricing in aria-label attributes (common for Toolkit Depot)
-    const ariaLabelElement = $product.find('a[aria-label]').first();
-    if (ariaLabelElement.length) {
-      const ariaLabel = ariaLabelElement.attr('aria-label') || '';
-      
-      // Look for "Was:$X.XX, Now:$Y.YY" pattern
-      const wasPriceMatch = ariaLabel.match(/Was:\$?([\d,]+\.?\d*)/i);
-      const nowPriceMatch = ariaLabel.match(/Now:\$?([\d,]+\.?\d*)/i);
-      
-      if (wasPriceMatch && nowPriceMatch) {
-        regularPrice = this.parsePrice(wasPriceMatch[1]);
-        salePrice = this.parsePrice(nowPriceMatch[1]);
-        return { regularPrice, salePrice };
+    // Simple price extraction
+    const priceElement = $product.find('.price').first();
+    if (priceElement.length) {
+      const priceText = priceElement.text().trim();
+      const price = this.parsePrice(priceText);
+      if (price > 0) {
+        return { regularPrice: price, salePrice: price };
       }
     }
 
-    // Simple price extraction using text content
-    const priceSelectors = ['.price', '.woocommerce-Price-amount', '.amount', '[class*="price"]'];
-    const prices: number[] = [];
-    
-    for (const selector of priceSelectors) {
-      const priceElement = $product.find(selector).first();
-      if (priceElement.length) {
-        const priceText = priceElement.text().trim();
-        const price = this.parsePrice(priceText);
-        if (price > 0) {
-          prices.push(price);
-        }
-      }
-    }
-
-    // Remove duplicates and sort
-    const uniquePrices = [...new Set(prices)].sort((a, b) => a - b);
-
-    if (uniquePrices.length >= 2) {
-      // Multiple prices found - lowest is likely sale price, highest is regular
-      salePrice = uniquePrices[0];
-      regularPrice = uniquePrices[uniquePrices.length - 1];
-    } else if (uniquePrices.length === 1) {
-      // Single price found
-      salePrice = uniquePrices[0];
-      regularPrice = uniquePrices[0];
-    }
-
-    return { 
-      regularPrice: regularPrice || salePrice, 
-      salePrice: salePrice || regularPrice 
-    };
+    return { regularPrice: 0, salePrice: 0 };
   }
 
   private normalizeImageUrl(imageUrl: string, baseUrl: string): string {
@@ -173,10 +133,13 @@ export class CompetitorScraper {
       
       let allProducts: CompetitorProduct[] = [];
       let currentPage = 1;
-      const maxPages = 10; // Safety limit to prevent infinite loops
+      const maxPages = 3; // Limit to 3 pages since we expect ~22 products total
+      
+      const competitorName = this.extractCompetitorName(url);
+      const categoryName = this.extractCategoryFromUrl(url);
       
       while (currentPage <= maxPages) {
-        const pageUrl = currentPage === 1 ? url : `${url}?page=${currentPage}`;
+        const pageUrl = currentPage === 1 ? url : `${url.split('?')[0]}?page=${currentPage}`;
         console.log(`Scraping page ${currentPage}: ${pageUrl}`);
         
         const response = await axios.get(pageUrl, {
@@ -184,8 +147,6 @@ export class CompetitorScraper {
         });
 
         const $ = cheerio.load(response.data);
-        const competitorName = this.extractCompetitorName(url);
-        const categoryName = this.extractCategoryFromUrl(url);
         
         const pageProducts = await this.extractProductsFromPage($, url, competitorName, categoryName, allProducts.length);
         
@@ -216,7 +177,7 @@ export class CompetitorScraper {
         products: allProducts,
         totalProducts: allProducts.length,
         categoryName,
-        competitorName,
+        competitorName: competitorName,
         sourceUrl: url,
         extractedAt: new Date().toISOString()
       };
