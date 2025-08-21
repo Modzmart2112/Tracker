@@ -490,6 +490,30 @@ export class DrizzleStorage implements IStorage {
       .leftJoin(competitorListings, eq(competitorListings.productId, catalogProducts.id))
       .leftJoin(competitors, eq(competitorListings.competitorId, competitors.id));
     
+    // Also fetch the latest price snapshots for each listing
+    const listingPrices = await this.db
+      .select({
+        listingId: listingSnapshots.listingId,
+        price: listingSnapshots.price,
+        currency: listingSnapshots.currency,
+        inStock: listingSnapshots.inStock,
+        scrapedAt: listingSnapshots.scrapedAt
+      })
+      .from(listingSnapshots)
+      .distinctOn([listingSnapshots.listingId])
+      .orderBy(listingSnapshots.listingId, desc(listingSnapshots.scrapedAt));
+    
+    // Create a map of listing prices
+    const priceMap = new Map();
+    for (const snapshot of listingPrices) {
+      priceMap.set(snapshot.listingId, {
+        price: snapshot.price,
+        currency: snapshot.currency,
+        inStock: snapshot.inStock,
+        scrapedAt: snapshot.scrapedAt
+      });
+    }
+    
     // Group by product ID to combine competitor links
     const productsMap = new Map();
     
@@ -522,15 +546,35 @@ export class DrizzleStorage implements IStorage {
       
       // Add competitor link if it exists
       if (row.listingId) {
+        const priceData = priceMap.get(row.listingId);
         productsMap.get(row.productId).competitorLinks.push({
           id: row.listingId,
           url: row.listingUrl,
           competitorName: row.competitorName || row.competitorId,
           extractedTitle: row.listingTitleOverride || undefined,
-          extractedPrice: undefined, // Price is stored in listing snapshots
+          extractedPrice: priceData?.price || undefined,
           status: row.listingActive ? "success" : "pending",
           lastScraped: row.listingLastSeenAt?.toISOString()
         });
+        
+        // Also add as competitorListings for price comparison display
+        if (!productsMap.get(row.productId).competitorListings) {
+          productsMap.get(row.productId).competitorListings = [];
+        }
+        
+        if (priceData?.price) {
+          productsMap.get(row.productId).competitorListings.push({
+            id: row.listingId,
+            url: row.listingUrl,
+            competitorName: row.competitorName || row.competitorId,
+            latestSnapshot: {
+              price: priceData.price,
+              currency: priceData.currency || 'AUD',
+              inStock: priceData.inStock,
+              scrapedAt: priceData.scrapedAt
+            }
+          });
+        }
       }
     }
     

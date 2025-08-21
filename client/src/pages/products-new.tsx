@@ -1418,13 +1418,69 @@ export default function ProductsPage() {
                               )}
                               
                               {/* Competitor Prices */}
-                              {product.competitorLinks.length > 0 && (
+                              {(product.competitorListings?.length > 0 || product.competitorLinks?.length > 0) && (
                                 <div className="mt-4 pt-4 border-t">
                                   <p className="text-sm font-semibold text-gray-700 mb-3">
-                                    Competitor Prices ({product.competitorLinks.length})
+                                    Competitor Prices ({product.competitorListings?.length || product.competitorLinks?.length || 0})
                                   </p>
                                   <div className="space-y-2">
-                                    {product.competitorLinks.map((link) => (
+                                    {/* Show competitorListings if available (for matched products) */}
+                                    {product.competitorListings?.map((listing: any) => {
+                                      const competitorPrice = listing.latestSnapshot?.price ? parseFloat(listing.latestSnapshot.price) : null;
+                                      const ourPrice = parseFloat(product.price) || parseFloat(product.ourPrice) || 0;
+                                      const priceDiff = competitorPrice && ourPrice ? competitorPrice - ourPrice : 0;
+                                      const percentDiff = ourPrice > 0 && competitorPrice ? ((priceDiff / ourPrice) * 100) : 0;
+                                      
+                                      return (
+                                        <div
+                                          key={listing.id}
+                                          className="flex items-center justify-between p-3 bg-white rounded-lg border hover:shadow-md transition-shadow"
+                                        >
+                                          <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 mb-1">
+                                              <Badge variant="outline" className="text-xs">
+                                                {listing.competitorName || "Unknown"}
+                                              </Badge>
+                                              {competitorPrice && (
+                                                <>
+                                                  <span className="font-bold text-lg">
+                                                    ${competitorPrice.toFixed(2)}
+                                                  </span>
+                                                  {priceDiff !== 0 && (
+                                                    <Badge 
+                                                      className={priceDiff > 0 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}
+                                                    >
+                                                      {priceDiff > 0 ? (
+                                                        <>We're ${Math.abs(priceDiff).toFixed(2)} cheaper ({Math.abs(percentDiff).toFixed(1)}%)</>
+                                                      ) : priceDiff < 0 ? (
+                                                        <>They're ${Math.abs(priceDiff).toFixed(2)} cheaper ({Math.abs(percentDiff).toFixed(1)}%)</>
+                                                      ) : (
+                                                        "Same price"
+                                                      )}
+                                                    </Badge>
+                                                  )}
+                                                </>
+                                              )}
+                                            </div>
+                                            <p className="text-xs text-gray-500 truncate">
+                                              {listing.url}
+                                            </p>
+                                          </div>
+                                          <a
+                                            href={listing.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="ml-2 p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                                          >
+                                            <ExternalLink className="h-4 w-4 text-gray-400" />
+                                          </a>
+                                        </div>
+                                      );
+                                    })}
+                                    
+                                    {/* Fallback to competitorLinks if no competitorListings */}
+                                    {(!product.competitorListings || product.competitorListings.length === 0) && 
+                                     product.competitorLinks?.map((link: any) => (
                                       <div
                                         key={link.id}
                                         className="flex items-center justify-between p-2 bg-white rounded border"
