@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { Header } from "@/components/layout/header";
+import { Navbar } from "@/components/layout/navbar";
 import { Card, CardContent } from "@/components/ui/card";
 import { ProductCatalogSection } from "@/components/dashboard/product-catalog-section";
 import { ProductDetailModal } from "@/components/ui/product-detail-modal";
@@ -26,12 +27,13 @@ export default function Products() {
   };
 
   return (
-    <div className="flex-1 overflow-auto">
+    <div className="flex-1 overflow-auto bg-gradient-to-br from-gray-50 via-white to-gray-100">
       <Header 
         title="Product Catalog"
         subtitle="Complete inventory across all competitors and categories"
         onExportCSV={() => api.exportCSV()}
       />
+      <Navbar />
       
       <div className="p-8">
         {products.length > 0 ? (

@@ -15,20 +15,17 @@ import NotFound from "@/pages/not-found";
 
 function Router() {
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
-      <Navbar />
-      <div className="flex-1">
-        <Switch>
-          <Route path="/" component={Dashboard} />
-          <Route path="/categories" component={Categories} />
-          <Route path="/products" component={Products} />
-          <Route path="/competitors" component={Competitors} />
-          <Route path="/pages" component={Pages} />
-          <Route path="/changes" component={Changes} />
-          <Route path="/admin" component={Admin} />
-          <Route component={NotFound} />
-        </Switch>
-      </div>
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <Switch>
+        <Route path="/" component={Dashboard} />
+        <Route path="/categories" component={Categories} />
+        <Route path="/products" component={Products} />
+        <Route path="/competitors" component={Competitors} />
+        <Route path="/pages" component={Pages} />
+        <Route path="/changes" component={Changes} />
+        <Route path="/admin" component={Admin} />
+        <Route component={NotFound} />
+      </Switch>
     </div>
   );
 }

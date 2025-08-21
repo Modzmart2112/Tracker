@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { Header } from "@/components/layout/header";
+import { Navbar } from "@/components/layout/navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -99,12 +100,13 @@ export default function Admin() {
   const competitors = meta?.competitors || [];
 
   return (
-    <div className="flex-1 overflow-auto">
+    <div className="flex-1 overflow-auto bg-gradient-to-br from-gray-50 via-white to-gray-100">
       <Header 
         title="Administration"
         subtitle="Manage system configuration and data"
         showActions={false}
       />
+      <Navbar />
       
       <div className="p-8">
         <Tabs defaultValue="brand-aliases" className="w-full">

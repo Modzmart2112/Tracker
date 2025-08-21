@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { Header } from "@/components/layout/header";
+import { Navbar } from "@/components/layout/navbar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -66,8 +67,9 @@ export default function Dashboard() {
         subtitle="Real-time monitoring of all competitors and market dynamics"
         showActions={false}
       />
+      <Navbar />
       
-      <div className="p-8 space-y-8 max-w-7xl mx-auto">
+      <div className="p-8 space-y-8">
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="relative border-0 shadow-lg bg-gradient-to-br from-[#CB0000] to-red-800 text-white overflow-hidden">
