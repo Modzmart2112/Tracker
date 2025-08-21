@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Download, RefreshCw, Zap, Shield, Globe2 } from "lucide-react";
+import { Download, RefreshCw, Zap, Shield, Globe2, ChartLine } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -64,7 +64,7 @@ export function Header({
         <div className="absolute inset-0 opacity-10">
           <div className="absolute inset-0 bg-gradient-to-r from-[#CB0000]/10 via-transparent to-[#CB0000]/10" />
         </div>
-        
+
         <div className="relative px-8 py-6">
           {/* Main header row */}
           <div className="flex items-center justify-between">
@@ -92,7 +92,7 @@ export function Header({
                 </div>
               </div>
             </div>
-            
+
             {/* Right section with status and actions */}
             <div className="flex items-center space-x-4">
               {/* Status indicators */}
@@ -110,7 +110,7 @@ export function Header({
                   <span className="text-xs text-gray-300 font-medium">GLOBAL</span>
                 </div>
               </div>
-              
+
               {showActions && (
                 <div className="flex items-center space-x-2">
                   <Button 
