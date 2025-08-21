@@ -517,18 +517,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
               brandMap.set(brandName, brand);
             }
             
-            // Create catalog product
-            const catalogProduct = await storage.createCatalogProduct({
-              name: product.title,
-              brandId: brand.id,
-              categoryId: category.id,
-              productTypeId: productType.id,
-              modelNumber: product.model || product.title.split(' ')[0],
-              imageUrl: product.image,
-              price: product.price.toString()
-            });
+            // Extract model number using AI if available
+            let modelNumber = product.model || '';
+            if (!modelNumber || modelNumber === 'Unknown') {
+              // Try basic extraction from title
+              const modelPatterns = [
+                /\b([A-Z]{2,}\d{4,})\b/i,  // SP61084 format
+                /\b([A-Z]+\d+[A-Z]*\d*)\b/i,  // General alphanumeric
+                /\b(GENIUS\d+[A-Z]*)\b/i,  // NOCO format
+                /\b([A-Z]+[\d]+[A-Z]*)\b/i  // Matson format
+              ];
+              
+              for (const pattern of modelPatterns) {
+                const match = product.title.match(pattern);
+                if (match) {
+                  modelNumber = match[1].toUpperCase();
+                  break;
+                }
+              }
+            }
             
-            // Create competitor listing
+            // Check if a product with this model number already exists
+            let catalogProduct;
+            if (modelNumber && modelNumber !== 'Unknown' && modelNumber !== 'N/A') {
+              const existingProducts = await storage.listCatalogProducts();
+              catalogProduct = existingProducts.find(p => 
+                p.model_number === modelNumber && 
+                p.brand_id === brand.id
+              );
+              
+              if (catalogProduct) {
+                console.log(`Found matching product by model ${modelNumber}: ${catalogProduct.name}`);
+              }
+            }
+            
+            // If no match found, create new catalog product
+            if (!catalogProduct) {
+              catalogProduct = await storage.createCatalogProduct({
+                name: product.title,
+                brandId: brand.id,
+                categoryId: category.id,
+                productTypeId: productType.id,
+                modelNumber: modelNumber || product.title.split(' ')[0],
+                imageUrl: product.image,
+                price: product.price.toString()
+              });
+              console.log(`Created new catalog product: ${product.title}`);
+            }
+            
+            // Create competitor listing linked to the catalog product
             const competitorListing = await storage.createCompetitorListing({
               productId: catalogProduct.id,
               competitorId: competitor.id,
@@ -578,6 +615,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         error: "Failed to import competitor products",
         details: error.message
       });
+    }
+  });
+
+  // Match and merge duplicate products
+  app.post("/api/products/match-merge", async (req, res) => {
+    try {
+      const { productMatcher } = await import('./product-matcher');
+      
+      // First enhance model numbers with AI
+      console.log('Enhancing model numbers with AI...');
+      const enhanceResults = await productMatcher.enhanceModelNumbers();
+      
+      // Then match and merge duplicates
+      console.log('Matching and merging duplicate products...');
+      const mergeResults = await productMatcher.matchAndMergeProducts();
+      
+      res.json({
+        success: true,
+        enhanced: enhanceResults.updated,
+        merged: mergeResults.merged,
+        matched: mergeResults.matched,
+        errors: [...enhanceResults.errors, ...mergeResults.errors]
+      });
+    } catch (error: any) {
+      console.error('Error in match-merge:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+  
+  // Get price comparison for matched products
+  app.get("/api/products/price-comparison", async (req, res) => {
+    try {
+      const { productMatcher } = await import('./product-matcher');
+      const comparisons = await productMatcher.getProductPriceComparison();
+      
+      res.json({
+        success: true,
+        count: comparisons.length,
+        comparisons: comparisons
+      });
+    } catch (error: any) {
+      console.error('Error getting price comparison:', error);
+      res.status(500).json({ error: error.message });
     }
   });
 

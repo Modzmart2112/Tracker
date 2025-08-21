@@ -1,9 +1,12 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import { extractModelNumberWithAI } from './ai-model-extractor';
 
 export interface CompetitorProduct {
   title: string;
   price: number;
+  regularPrice?: number;
+  salePrice?: number;
   image?: string;
   url: string;
   brand?: string;
@@ -99,17 +102,55 @@ export class CompetitorScraper {
   }
 
   private extractSalePrice($product: any): { regularPrice: number; salePrice: number } {
-    // Simple price extraction
-    const priceElement = $product.find('.price').first();
-    if (priceElement.length) {
-      const priceText = priceElement.text().trim();
-      const price = this.parsePrice(priceText);
-      if (price > 0) {
-        return { regularPrice: price, salePrice: price };
+    // Look for sale price patterns
+    const salePriceSelectors = [
+      '.price-was, .was-price, .old-price, .original-price',
+      '.price-now, .sale-price, .current-price, .special-price',
+      '.price-item--sale, .price--sale, .sale',
+      '.price .price-reduced, .reduced-price'
+    ];
+    
+    let regularPrice = 0;
+    let salePrice = 0;
+    
+    // Try to find both regular and sale prices
+    const wasPrice = $product.find('.price-was, .was-price, .old-price, .original-price').first();
+    const nowPrice = $product.find('.price-now, .sale-price, .current-price, .special-price, .price').first();
+    
+    if (wasPrice.length && nowPrice.length) {
+      // Both prices found - product is on sale
+      regularPrice = this.parsePrice(wasPrice.text().trim());
+      salePrice = this.parsePrice(nowPrice.text().trim());
+    } else {
+      // Try general price extraction
+      const priceElement = $product.find('.price').first();
+      if (priceElement.length) {
+        const priceText = priceElement.text().trim();
+        const price = this.parsePrice(priceText);
+        
+        // Check if this looks like a sale (contains "was" or crossed out text)
+        if (priceText.toLowerCase().includes('was') || $product.find('.price del, .price strike, .price .strike').length > 0) {
+          // Extract both prices from text
+          const priceMatches = priceText.match(/\$[\d,]+\.?\d*/g);
+          if (priceMatches && priceMatches.length >= 2) {
+            regularPrice = this.parsePrice(priceMatches[1]);
+            salePrice = this.parsePrice(priceMatches[0]);
+          } else {
+            salePrice = price;
+          }
+        } else {
+          // Regular price only
+          regularPrice = price;
+          salePrice = price;
+        }
       }
     }
-
-    return { regularPrice: 0, salePrice: 0 };
+    
+    // Validate prices
+    if (salePrice <= 0) salePrice = regularPrice;
+    if (regularPrice <= 0) regularPrice = salePrice;
+    
+    return { regularPrice, salePrice };
   }
 
   private normalizeImageUrl(imageUrl: string, baseUrl: string): string {
@@ -279,15 +320,34 @@ export class CompetitorScraper {
             (title.toLowerCase().includes('kincrome') && title.toLowerCase().includes('starter'))
           )) {
             const brand = this.extractBrand(title);
-            const model = this.extractModel(title, brand);
+            const basicModel = this.extractModel(title, brand);
+            
+            // Use OpenAI for better model extraction if available
+            let enhancedModel = basicModel;
+            try {
+              if (process.env.OPENAI_API_KEY) {
+                enhancedModel = await extractModelNumberWithAI(title);
+                if (enhancedModel === 'N/A' || !enhancedModel) {
+                  enhancedModel = basicModel; // Fallback to basic extraction
+                }
+              }
+            } catch (error) {
+              console.warn('AI model extraction failed, using basic extraction:', error);
+              enhancedModel = basicModel;
+            }
+
+            const priceData = this.extractSalePrice($product);
+            const finalPrice = priceData.salePrice || price || 0;
 
             products.push({
               title: title,
-              price: price,
+              price: finalPrice,
+              regularPrice: priceData.regularPrice,
+              salePrice: priceData.salePrice,
               image: image,
               url: productUrl,
               brand: brand,
-              model: model,
+              model: enhancedModel,
               category: categoryName,
               sku: `${competitorName.toUpperCase()}-${String(startIndex + products.length + 1).padStart(3, '0')}`,
               competitorName: competitorName
