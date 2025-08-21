@@ -9,13 +9,15 @@ import {
   Settings,
   Activity,
   Package,
-  FolderCog
+  FolderCog,
+  TrendingDown
 } from "lucide-react";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: ChartLine },
   { name: "Products", href: "/products", icon: Box },
   { name: "Competitors", href: "/competitors", icon: Users },
+  { name: "Price Comparison", href: "/price-comparison", icon: TrendingDown },
   { name: "Changes", href: "/changes", icon: History },
   { name: "Admin", href: "/admin", icon: Settings },
 ];

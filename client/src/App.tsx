@@ -12,6 +12,7 @@ import Admin from "@/pages/admin";
 import NotFound from "@/pages/not-found";
 import ProductsPage from "./pages/products-new";
 import BrandDetailPage from "./pages/brand-detail";
+import PriceComparison from "./pages/price-comparison";
 import CategoriesPage from "./pages/categories";
 import CompetitorsPage from "./pages/competitors";
 import PagesPage from "./pages/pages";
@@ -35,6 +36,8 @@ function Router() {
         return { title: 'Recent Changes', subtitle: 'Track price and stock updates across all competitors' };
       case '/admin':
         return { title: 'Administration', subtitle: 'Manage system configuration and data' };
+      case '/price-comparison':
+        return { title: 'Price Comparison', subtitle: 'Compare prices across competitors' };
       default:
         return { title: 'Page Not Found', subtitle: 'The requested page could not be found' };
     }
@@ -57,6 +60,7 @@ function Router() {
           <Route path="/brands/:brandName" component={BrandDetailPage} />
           <Route path="/competitors" component={Competitors} />
           <Route path="/changes" component={Changes} />
+          <Route path="/price-comparison" component={PriceComparison} />
           <Route path="/admin" component={Admin} />
           <Route component={NotFound} />
         </Switch>
