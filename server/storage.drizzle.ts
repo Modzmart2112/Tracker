@@ -443,35 +443,49 @@ export class DrizzleStorage implements IStorage {
 
   // Unified Products implementation (using catalog products)
   async getUnifiedProducts(): Promise<any[]> {
-    const products = await this.db.select().from(catalogProducts);
+    // Get products with brands and categories joined
+    const productsWithRelations = await this.db
+      .select({
+        product: catalogProducts,
+        brand: brands,
+        category: categories
+      })
+      .from(catalogProducts)
+      .leftJoin(brands, eq(catalogProducts.brandId, brands.id))
+      .leftJoin(categories, eq(catalogProducts.categoryId, categories.id));
+    
     const productsWithLinks = await Promise.all(
-      products.map(async (product) => {
+      productsWithRelations.map(async (row) => {
         const listings = await this.db
-          .select()
+          .select({
+            listing: competitorListings,
+            competitor: competitors
+          })
           .from(competitorListings)
-          .where(eq(competitorListings.productId, product.id));
+          .leftJoin(competitors, eq(competitorListings.competitorId, competitors.id))
+          .where(eq(competitorListings.productId, row.product.id));
         
-        const competitorLinks = listings.map(listing => ({
-          id: listing.id,
-          url: listing.url,
-          competitorName: listing.competitorId,
-          extractedTitle: listing.title || undefined,
-          extractedPrice: listing.priceNumeric || undefined,
-          status: listing.isActive ? "success" : "pending",
-          lastScraped: listing.lastSeenAt?.toISOString()
+        const competitorLinks = listings.map(item => ({
+          id: item.listing.id,
+          url: item.listing.url,
+          competitorName: item.competitor?.name || item.listing.competitorId,
+          extractedTitle: item.listing.title || undefined,
+          extractedPrice: item.listing.priceNumeric || undefined,
+          status: item.listing.isActive ? "success" : "pending",
+          lastScraped: item.listing.lastSeenAt?.toISOString()
         }));
         
         return {
-          id: product.id,
-          sku: product.ourSku || product.id.slice(0, 8).toUpperCase(),
-          name: product.name || 'Unnamed Product',
-          ourPrice: product.targetPrice || product.price || 0,
-          price: product.price || 0,
-          image: product.imageUrl || null,
-          brand: product.brandId || 'Unknown',
-          category: product.categoryId || 'Uncategorized',
+          id: row.product.id,
+          sku: row.product.ourSku || row.product.id.slice(0, 8).toUpperCase(),
+          name: row.product.name || 'Unnamed Product',
+          ourPrice: parseFloat(row.product.targetPrice || row.product.price || '0'),
+          price: parseFloat(row.product.price || '0'),
+          image: row.product.imageUrl || null,
+          brand: row.brand?.name || 'Unknown',
+          category: row.category?.name || 'Uncategorized',
           competitorLinks,
-          createdAt: product.createdAt?.toISOString() || new Date().toISOString(),
+          createdAt: row.product.createdAt?.toISOString() || new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
       })
@@ -519,11 +533,11 @@ export class DrizzleStorage implements IStorage {
     const productName = product.name || product.title || 'Unnamed Product';
     console.log('Product name resolved to:', productName);
     
-    // Save the product with price and image
+    // Save the product with price, image, brand and category
     const result = await this.db.insert(catalogProducts).values({
       name: productName,
-      brandId: null,
-      categoryId: null,
+      brandId: product.brandId || null,
+      categoryId: product.categoryId || null,
       productTypeId: null,
       ourSku: product.sku || null,
       quality: null,

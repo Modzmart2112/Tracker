@@ -751,10 +751,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       for (const product of products) {
         try {
-          // Extract brand from product title
+          // Extract brand from product title  
           let brand = 'Unknown';
+          let brandId = null;
           const brandPatterns = [
-            /^(SP Tools|Schumacher|NOCO|DeWalt|Makita|Milwaukee|Bosch|Ryobi)/i,
+            /^(SP Tools|Schumacher|Matson|NOCO|DeWalt|Makita|Milwaukee|Bosch|Ryobi)/i,
             /^([A-Z][A-Z0-9]+(?:\s+[A-Z][a-z]+)?)/,  // Matches "SP Tools", "NOCO", etc
             /^([A-Z][a-z]+)/  // Simple brand pattern
           ];
@@ -763,6 +764,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const match = product.title?.match(pattern);
             if (match) {
               brand = match[1];
+              // Map to brand IDs we have in database
+              if (brand.toLowerCase().includes('schumacher')) brandId = 'schumacher';
+              else if (brand.toLowerCase().includes('matson')) brandId = 'matson';
+              else if (brand.toLowerCase().includes('sp tools')) brandId = 'sp-tools';
+              else if (brand.toLowerCase().includes('noco')) brandId = 'noco';
               break;
             }
           }
@@ -796,7 +802,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             matchedCount++;
           } else {
-            // New product - create it
+            // New product - create it with brand and category IDs
             const newProduct = await storage.createUnifiedProduct({
               sku: product.sku,
               name: product.title,
@@ -804,7 +810,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
               price: product.price,
               image: product.image,
               brand: brand,
-              category: category
+              brandId: brandId,
+              category: category,
+              categoryId: 'battery-chargers' // Since we're importing battery chargers
             });
             
             // Add the source URL as a competitor link
