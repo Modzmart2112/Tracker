@@ -454,11 +454,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      res.json({
+      const response = {
         success: true,
         message: `Successfully imported ${result.products.length} products from ${result.competitorName}`,
-        ...result
-      });
+        products: result.products,
+        totalProducts: result.totalProducts,
+        categoryName: result.categoryName,
+        competitorName: result.competitorName,
+        sourceUrl: result.sourceUrl,
+        extractedAt: result.extractedAt
+      };
+      
+      console.log(`Sending response with ${response.products.length} products`);
+      res.json(response);
 
     } catch (error: any) {
       console.error("Error importing competitor products:", error);
