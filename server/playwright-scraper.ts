@@ -126,8 +126,28 @@ export class PlaywrightScraper {
       
       console.log('Page loaded, extracting product data...');
       
-      // Extract products using improved approach from ChatGPT
-      await page.waitForSelector("a[href^='/product/']", { timeout: 30000 }).catch(() => {
+      // Take a screenshot for debugging
+      await page.screenshot({ path: 'debug-sydney-tools.png', fullPage: false });
+      console.log('Screenshot saved for debugging');
+      
+      // Log the page structure to understand how images are organized
+      const pageInfo = await page.evaluate(() => {
+        const images = Array.from(document.querySelectorAll('img'));
+        const productLinks = Array.from(document.querySelectorAll("a[href^='/product/']"));
+        
+        return {
+          totalImages: images.length,
+          totalProductLinks: productLinks.length,
+          imageClassNames: images.slice(0, 5).map(img => img.className),
+          imageSources: images.slice(0, 5).map(img => img.src),
+          sampleHTML: document.querySelector("a[href^='/product/']")?.parentElement?.innerHTML?.substring(0, 500)
+        };
+      });
+      
+      console.log('Page info:', pageInfo);
+      
+      // Extract products using improved approach
+      await page.waitForSelector("a[href^='/product/'], img.img-fluid", { timeout: 30000 }).catch(() => {
         console.log('No product links found, will try alternative extraction');
       });
 
@@ -135,42 +155,57 @@ export class PlaywrightScraper {
         const items: any[] = [];
         const seen = new Set<string>();
 
-        for (const a of anchors as HTMLAnchorElement[]) {
+        for (let i = 0; i < anchors.length; i++) {
+          const a = anchors[i] as HTMLAnchorElement;
           try {
             const href = new URL(a.getAttribute('href')!, location.origin).toString();
             if (seen.has(href)) continue;
 
-            // Find nearest card container to scope title/price/img
-            const card = (a.closest('article, li, div') ?? a) as HTMLElement;
-
-            // Title: try text of anchor, fallback to nearest heading
-            let title = (a.textContent || '').trim();
-            if (!title) {
-              const h = card.querySelector('h3,h2,h4,[data-testid*="title"]');
-              title = (h?.textContent || '').trim();
+            // Get the product image - it's directly inside the anchor tag
+            const imgElement = a.querySelector('img');
+            let image = '';
+            let debugInfo = '';
+            
+            if (imgElement) {
+              image = imgElement.src || '';
+              debugInfo = `Found img: ${imgElement.className}, src: ${image.substring(0, 50)}`;
+            } else {
+              debugInfo = 'No img found in anchor';
             }
+
+            // Get title from the img title attribute or text content
+            let title = '';
+            if (imgElement && imgElement.title) {
+              title = imgElement.title.trim();
+            } else if (imgElement && imgElement.alt) {
+              title = imgElement.alt.trim();
+            } else {
+              title = (a.textContent || '').trim();
+            }
+            
             if (!title) continue;
 
-            // Price: search common selectors or text pattern with $
-            let priceEl = card.querySelector('[data-testid*="price"], .price, [class*="price"]') as HTMLElement | null;
-            let price = (priceEl?.textContent || '').replace(/\s+/g, ' ').trim();
-            if (!price || !/\d/.test(price)) {
-              // Fallback: scan text for a $amount pattern
-              const text = (card.textContent || '').replace(/\s+/g, ' ');
-              const m = text.match(/\$\s?\d[\d,]*\.?\d{0,2}/);
-              price = m ? m[0] : null;
+            // Look for price in the parent container
+            const container = a.parentElement;
+            let price = null;
+            if (container) {
+              const text = container.textContent || '';
+              const priceMatch = text.match(/\$\s?\d[\d,]*\.?\d{0,2}/);
+              price = priceMatch ? priceMatch[0] : null;
             }
 
-            // Image: prefer product image inside the card
-            let imgEl = card.querySelector('img');
-            let image = (imgEl?.getAttribute('src') ||
-                        imgEl?.getAttribute('data-src') ||
-                        imgEl?.getAttribute('data-lazy') ||
-                        null);
 
-            items.push({ title, price, url: href, image });
+
+            items.push({ 
+              title, 
+              price, 
+              url: href, 
+              image: image || '' 
+            });
             seen.add(href);
-          } catch {}
+          } catch (e) {
+            // Continue with next item
+          }
         }
         return items;
       }).catch(() => []);
