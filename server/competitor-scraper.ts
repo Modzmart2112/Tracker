@@ -99,66 +99,51 @@ export class CompetitorScraper {
   }
 
   private extractSalePrice($product: any): { regularPrice: number; salePrice: number } {
-    // Look for sale price indicators
-    const salePriceSelectors = [
-      '.sale-price',
-      '.special-price', 
-      '.discount-price',
-      '.current-price',
-      '.price-sale',
-      '.price .sale',
-      '.woocommerce-Price-amount.amount:last-child', // WooCommerce sale price
-      '.price del + ins .amount', // Strike-through + sale price
-      '.price-current',
-      '.price-reduced'
-    ];
-
-    const regularPriceSelectors = [
-      '.regular-price',
-      '.original-price',
-      '.was-price',
-      '.price del .amount', // Strike-through price
-      '.price-was',
-      '.price-original'
-    ];
-
     let salePrice = 0;
     let regularPrice = 0;
 
-    // Try to find sale price
-    for (const selector of salePriceSelectors) {
-      const salePriceEl = $product.find(selector).first();
-      if (salePriceEl.length) {
-        const priceText = salePriceEl.text().trim();
-        salePrice = this.parsePrice(priceText);
-        if (salePrice > 0) break;
+    // First check for pricing in aria-label attributes (common for Toolkit Depot)
+    const ariaLabelElement = $product.find('a[aria-label]').first();
+    if (ariaLabelElement.length) {
+      const ariaLabel = ariaLabelElement.attr('aria-label') || '';
+      
+      // Look for "Was:$X.XX, Now:$Y.YY" pattern
+      const wasPriceMatch = ariaLabel.match(/Was:\$?([\d,]+\.?\d*)/i);
+      const nowPriceMatch = ariaLabel.match(/Now:\$?([\d,]+\.?\d*)/i);
+      
+      if (wasPriceMatch && nowPriceMatch) {
+        regularPrice = this.parsePrice(wasPriceMatch[1]);
+        salePrice = this.parsePrice(nowPriceMatch[1]);
+        return { regularPrice, salePrice };
       }
     }
 
-    // Try to find regular price
-    for (const selector of regularPriceSelectors) {
-      const regularPriceEl = $product.find(selector).first();
-      if (regularPriceEl.length) {
-        const priceText = regularPriceEl.text().trim();
-        regularPrice = this.parsePrice(priceText);
-        if (regularPrice > 0) break;
-      }
-    }
-
-    // If no specific sale/regular price found, try general price selector
-    if (salePrice === 0 && regularPrice === 0) {
-      const priceSelectors = ['.price', '.woocommerce-Price-amount', '.amount', '[class*="price"]'];
-      for (const selector of priceSelectors) {
-        const priceEl = $product.find(selector).first();
-        if (priceEl.length) {
-          const priceText = priceEl.text().trim();
-          const price = this.parsePrice(priceText);
-          if (price > 0) {
-            salePrice = price;
-            break;
-          }
+    // Simple price extraction using text content
+    const priceSelectors = ['.price', '.woocommerce-Price-amount', '.amount', '[class*="price"]'];
+    const prices: number[] = [];
+    
+    for (const selector of priceSelectors) {
+      const priceElement = $product.find(selector).first();
+      if (priceElement.length) {
+        const priceText = priceElement.text().trim();
+        const price = this.parsePrice(priceText);
+        if (price > 0) {
+          prices.push(price);
         }
       }
+    }
+
+    // Remove duplicates and sort
+    const uniquePrices = [...new Set(prices)].sort((a, b) => a - b);
+
+    if (uniquePrices.length >= 2) {
+      // Multiple prices found - lowest is likely sale price, highest is regular
+      salePrice = uniquePrices[0];
+      regularPrice = uniquePrices[uniquePrices.length - 1];
+    } else if (uniquePrices.length === 1) {
+      // Single price found
+      salePrice = uniquePrices[0];
+      regularPrice = uniquePrices[0];
     }
 
     return { 
@@ -186,116 +171,50 @@ export class CompetitorScraper {
     try {
       console.log(`Scraping Toolkit Depot: ${url}`);
       
-      const response = await axios.get(url, {
-        headers: { 'User-Agent': this.userAgent }
-      });
-
-      const $ = cheerio.load(response.data);
-      const products: CompetitorProduct[] = [];
-      const competitorName = this.extractCompetitorName(url);
-      const categoryName = this.extractCategoryFromUrl(url);
-
-      // Toolkit Depot specific selectors
-      const productSelectors = [
-        '.product-item',
-        '.product-card',
-        '.woocommerce-loop-product',
-        '.product',
-        '.product-wrapper',
-        '[class*="product"]'
-      ];
-
-      let foundProducts = false;
-
-      for (const selector of productSelectors) {
-        const productElements = $(selector);
+      let allProducts: CompetitorProduct[] = [];
+      let currentPage = 1;
+      const maxPages = 10; // Safety limit to prevent infinite loops
+      
+      while (currentPage <= maxPages) {
+        const pageUrl = currentPage === 1 ? url : `${url}?page=${currentPage}`;
+        console.log(`Scraping page ${currentPage}: ${pageUrl}`);
         
-        if (productElements.length > 0) {
-          console.log(`Found ${productElements.length} products with selector: ${selector}`);
-          
-          productElements.each((index: number, element: any) => {
-            const $product = $(element);
-            
-            // Extract title
-            const titleSelectors = ['h2 a', 'h3 a', '.product-title a', '.woocommerce-loop-product__title', 'a[title]'];
-            let title = '';
-            
-            for (const titleSel of titleSelectors) {
-              const titleEl = $product.find(titleSel).first();
-              if (titleEl.length) {
-                title = titleEl.attr('title') || titleEl.text().trim();
-                if (title) break;
-              }
-            }
+        const response = await axios.get(pageUrl, {
+          headers: { 'User-Agent': this.userAgent }
+        });
 
-            // Extract price (including sale prices)
-            const priceData = this.extractSalePrice($product);
-            const price = priceData.salePrice;
-
-            // Extract image
-            const imgSelectors = ['img', '.product-image img', '.wp-post-image'];
-            let image = '';
-            
-            for (const imgSel of imgSelectors) {
-              const imgEl = $product.find(imgSel).first();
-              if (imgEl.length) {
-                image = imgEl.attr('src') || imgEl.attr('data-src') || '';
-                if (image) {
-                  image = this.normalizeImageUrl(image, url);
-                  break;
-                }
-              }
-            }
-
-            // Extract product URL
-            const linkSelectors = ['a', '.product-title a', 'h2 a', 'h3 a'];
-            let productUrl = url;
-            
-            for (const linkSel of linkSelectors) {
-              const linkEl = $product.find(linkSel).first();
-              if (linkEl.length) {
-                const href = linkEl.attr('href');
-                if (href) {
-                  productUrl = href.startsWith('/') ? 
-                    new URL(href, url).toString() : href;
-                  break;
-                }
-              }
-            }
-
-            // Filter for battery chargers
-            if (title && (
-              title.toLowerCase().includes('charger') ||
-              title.toLowerCase().includes('battery') ||
-              url.toLowerCase().includes('charger')
-            )) {
-              const brand = this.extractBrand(title);
-              const model = this.extractModel(title, brand);
-
-              products.push({
-                title: title,
-                price: price || 0,
-                image: image,
-                url: productUrl,
-                brand: brand,
-                model: model,
-                category: categoryName,
-                sku: `${competitorName.toUpperCase()}-${String(products.length + 1).padStart(3, '0')}`,
-                competitorName: competitorName
-              });
-              foundProducts = true;
-            }
-          });
-          
-          if (foundProducts) break;
+        const $ = cheerio.load(response.data);
+        const competitorName = this.extractCompetitorName(url);
+        const categoryName = this.extractCategoryFromUrl(url);
+        
+        const pageProducts = await this.extractProductsFromPage($, url, competitorName, categoryName, allProducts.length);
+        
+        if (pageProducts.length === 0) {
+          console.log(`No products found on page ${currentPage}, stopping pagination`);
+          break;
         }
+        
+        allProducts.push(...pageProducts);
+        console.log(`Found ${pageProducts.length} products on page ${currentPage}, total: ${allProducts.length}`);
+        
+        // Check if there's a next page - look for rel="next" link or pagination elements
+        const hasNextPage = $('link[rel="next"], .pagination .next, .pagination a[rel="next"], .next-page, a[aria-label="Next"]').length > 0;
+        if (!hasNextPage) {
+          console.log('No next page found, stopping pagination');
+          break;
+        }
+        
+        currentPage++;
+        
+        // Add a small delay between requests to be respectful
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
 
-      console.log(`Extracted ${products.length} products from ${competitorName}`);
+      console.log(`Extracted ${allProducts.length} total products from ${competitorName}`);
 
       return {
-        products,
-        totalProducts: products.length,
+        products: allProducts,
+        totalProducts: allProducts.length,
         categoryName,
         competitorName,
         sourceUrl: url,
@@ -313,6 +232,114 @@ export class CompetitorScraper {
         extractedAt: new Date().toISOString()
       };
     }
+  }
+
+  private async extractProductsFromPage($: any, baseUrl: string, competitorName: string, categoryName: string, startIndex: number): Promise<CompetitorProduct[]> {
+    const products: CompetitorProduct[] = [];
+
+    // Toolkit Depot specific selectors
+    const productSelectors = [
+      '.product-item',
+      '.product-card', 
+      '.woocommerce-loop-product',
+      '.product',
+      '.product-wrapper',
+      '[class*="product"]'
+    ];
+
+    let foundProducts = false;
+
+    for (const selector of productSelectors) {
+      const productElements = $(selector);
+      
+      if (productElements.length > 0) {
+        console.log(`Found ${productElements.length} products with selector: ${selector}`);
+        
+        productElements.each((index: number, element: any) => {
+          const $product = $(element);
+          
+          // Extract title
+          const titleSelectors = ['h2 a', 'h3 a', '.product-title a', '.woocommerce-loop-product__title', 'a[title]', '.product-name a'];
+          let title = '';
+          
+          for (const titleSel of titleSelectors) {
+            const titleEl = $product.find(titleSel).first();
+            if (titleEl.length) {
+              title = titleEl.attr('title') || titleEl.text().trim();
+              if (title) break;
+            }
+          }
+
+          // Extract price using enhanced method
+          const priceData = this.extractSalePrice($product);
+          const price = priceData.salePrice;
+
+          // Extract image
+          const imgSelectors = ['img', '.product-image img', '.wp-post-image'];
+          let image = '';
+          
+          for (const imgSel of imgSelectors) {
+            const imgEl = $product.find(imgSel).first();
+            if (imgEl.length) {
+              const src = imgEl.attr('src') || imgEl.attr('data-src') || imgEl.attr('data-lazy');
+              if (src) {
+                image = this.normalizeImageUrl(src, baseUrl);
+                break;
+              }
+            }
+          }
+
+          // Extract product URL
+          const linkSelectors = ['a', '.product-title a', 'h2 a', 'h3 a'];
+          let productUrl = baseUrl;
+          
+          for (const linkSel of linkSelectors) {
+            const linkEl = $product.find(linkSel).first();
+            if (linkEl.length) {
+              const href = linkEl.attr('href');
+              if (href) {
+                productUrl = href.startsWith('/') ? 
+                  new URL(href, baseUrl).toString() : href;
+                break;
+              }
+            }
+          }
+
+          // Filter for battery chargers and relevant products - made more inclusive
+          if (title && (
+            title.toLowerCase().includes('charger') ||
+            title.toLowerCase().includes('battery') ||
+            baseUrl.toLowerCase().includes('charger') ||
+            title.toLowerCase().includes('jump starter') ||
+            title.toLowerCase().includes('jump-starter') ||
+            title.toLowerCase().includes('booster') ||
+            title.toLowerCase().includes('power') ||
+            // Include Kincrome and other battery-related brands
+            (title.toLowerCase().includes('kincrome') && title.toLowerCase().includes('starter'))
+          )) {
+            const brand = this.extractBrand(title);
+            const model = this.extractModel(title, brand);
+
+            products.push({
+              title: title,
+              price: price,
+              image: image,
+              url: productUrl,
+              brand: brand,
+              model: model,
+              category: categoryName,
+              sku: `${competitorName.toUpperCase()}-${String(startIndex + products.length + 1).padStart(3, '0')}`,
+              competitorName: competitorName
+            });
+            foundProducts = true;
+          }
+        });
+        
+        if (foundProducts) break;
+      }
+    }
+
+    return products;
   }
 
   async scrapeGenericCompetitor(url: string): Promise<ScrapingResult> {
