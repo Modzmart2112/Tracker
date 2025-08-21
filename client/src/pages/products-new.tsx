@@ -378,7 +378,17 @@ export default function ProductsPage() {
                             <p className="text-sm text-muted-foreground">SKU: {product.sku || `AUTO-${index + 1}`}</p>
                           </div>
                           <div className="text-right">
-                            <p className="font-bold text-lg">${product.price}</p>
+                            {product.isOnSale ? (
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2 justify-end">
+                                  <span className="bg-red-600 text-white text-xs px-2 py-1 rounded font-bold">SALE</span>
+                                  <p className="font-bold text-lg text-green-600">${product.price}</p>
+                                </div>
+                                <p className="text-sm text-muted-foreground line-through">was ${product.originalPrice}</p>
+                              </div>
+                            ) : (
+                              <p className="font-bold text-lg">${product.price}</p>
+                            )}
                           </div>
                         </div>
                       ))}
