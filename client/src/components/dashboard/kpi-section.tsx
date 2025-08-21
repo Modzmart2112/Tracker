@@ -1,6 +1,5 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { TrendingDown, Clock, Package, Award } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 
 interface KPIMetrics {
   brandCoverage: string;
@@ -20,7 +19,6 @@ export function KPISection({ metrics }: KPISectionProps) {
       value: metrics.brandCoverage,
       subtitle: "vs Sydney Tools",
       icon: Award,
-      badge: { text: "66.7% match", variant: "default" as const },
       iconColor: "text-blue-600",
       iconBg: "bg-blue-100"
     },
@@ -29,7 +27,6 @@ export function KPISection({ metrics }: KPISectionProps) {
       value: metrics.priceUndercuts,
       subtitle: "products cheaper elsewhere",
       icon: TrendingDown,
-      badge: { text: "15.3% of catalog", variant: "destructive" as const },
       iconColor: "text-red-600",
       iconBg: "bg-red-100"
     },
@@ -38,7 +35,6 @@ export function KPISection({ metrics }: KPISectionProps) {
       value: metrics.priceChanges,
       subtitle: "across all competitors",
       icon: Clock,
-      badge: { text: "8 drops, 8 increases", variant: "secondary" as const },
       iconColor: "text-yellow-600",
       iconBg: "bg-yellow-100"
     },
@@ -47,7 +43,6 @@ export function KPISection({ metrics }: KPISectionProps) {
       value: metrics.stockChanges,
       subtitle: "out of stock changes",
       icon: Package,
-      badge: { text: "3 back in stock", variant: "default" as const },
       iconColor: "text-purple-600",
       iconBg: "bg-purple-100"
     }
@@ -69,11 +64,6 @@ export function KPISection({ metrics }: KPISectionProps) {
                 <div className={`w-12 h-12 ${kpi.iconBg} rounded-lg flex items-center justify-center`}>
                   <Icon className={kpi.iconColor} size={20} />
                 </div>
-              </div>
-              <div className="mt-4">
-                <Badge variant={kpi.badge.variant} className="text-xs">
-                  {kpi.badge.text}
-                </Badge>
               </div>
             </CardContent>
           </Card>

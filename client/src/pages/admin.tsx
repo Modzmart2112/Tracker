@@ -89,7 +89,7 @@ export default function Admin() {
   };
 
   const handleImportCSV = () => {
-    // Mock CSV import
+    // CSV import functionality would be implemented here
     toast({
       title: "Success",
       description: "CSV import functionality would be implemented here.",
