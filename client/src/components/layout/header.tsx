@@ -73,7 +73,7 @@ export function Header({
               <img 
                 src={logoImage} 
                 alt="Sydney Tools" 
-                className="h-12 w-auto filter drop-shadow-lg"
+                className="h-8 w-auto filter drop-shadow-lg"
               />
             </div>
             
