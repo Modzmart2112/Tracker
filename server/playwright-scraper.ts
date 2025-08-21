@@ -203,47 +203,54 @@ export class PlaywrightScraper {
             while (searchContainer && !price && level <= 4) {
               const containerText = searchContainer.textContent || '';
               
-              // Look for sale price patterns: "Normally $380.95" followed by green price
+              // Sydney Tools specific sale detection: "Normally $380.95" in grey + green price
               const normallyMatch = containerText.match(/Normally\s*\$\s?(\d+\.?\d*)/i);
               if (normallyMatch) {
-                originalPrice = normallyMatch[1];
-                isOnSale = true;
+                const potentialOriginal = normallyMatch[1];
                 
-                // Look for ANY price element that could be the sale price
-                const allPriceElements = Array.from(searchContainer.querySelectorAll('.price, [class*="price"], [style*="color"], span, div'));
-                for (const priceEl of allPriceElements) {
-                  const style = (priceEl as HTMLElement).style;
+                // Look for green price element (.price with color: green style)
+                const priceElements = Array.from(searchContainer.querySelectorAll('.price, [class*="price"]'));
+                
+                for (const priceEl of priceElements) {
+                  const element = priceEl as HTMLElement;
+                  const computedStyle = getComputedStyle ? getComputedStyle(element) : element.style;
+                  const style = element.style;
+                  
+                  // Check if this element has green color styling
                   const hasGreenColor = style.color === 'green' || 
                                        style.color === 'rgb(0, 128, 0)' ||
-                                       style.color.includes('green');
+                                       style.fontWeight === 'bold' ||
+                                       element.getAttribute('style')?.includes('green');
                   
-                  if (hasGreenColor || (priceEl as HTMLElement).className.includes('price')) {
-                    const priceText = priceEl.textContent || '';
-                    const priceMatch = priceText.match(/(\d+)\.?(\d*)/);
-                    if (priceMatch && priceMatch[1] !== originalPrice) {
-                      const dollars = priceMatch[1];
-                      const cents = priceMatch[2] || '00';
-                      price = `${dollars}.${cents}`;
-                      break;
-                    }
-                  }
-                }
-                
-                // If still no price found, look for any numeric value different from original
-                if (!price) {
-                  const allNumbers = containerText.match(/\$?(\d+)\.?\d*/g);
-                  if (allNumbers) {
-                    for (const num of allNumbers) {
-                      const cleanNum = num.replace(/[^0-9.]/g, '');
-                      if (cleanNum !== originalPrice && parseFloat(cleanNum) > 10 && parseFloat(cleanNum) < parseFloat(originalPrice)) {
-                        price = cleanNum;
+                  if (hasGreenColor || element.className.includes('price')) {
+                    // Sydney Tools specific: extract price from spans like <span>340</span><span>.</span><span>00</span>
+                    const fullPriceText = element.textContent || '';
+                    
+                    // Look for the main price number (largest 2-3 digit number in the green price element)
+                    const allNumbers = fullPriceText.match(/\d+/g) || [];
+                    const mainPriceNumbers = allNumbers.filter(num => parseInt(num) >= 10 && parseInt(num) <= 9999);
+                    
+                    if (mainPriceNumbers.length > 0) {
+                      // Take the largest number as the main price (340 from your example)
+                      const mainPrice = Math.max(...mainPriceNumbers.map(n => parseInt(n)));
+                      
+                      // Check if there are cents (00 in your example)
+                      const hasDecimal = fullPriceText.includes('.') || element.innerHTML.includes('price-cents');
+                      const salePrice = hasDecimal ? `${mainPrice}.00` : mainPrice.toString();
+                      
+                      // Ensure sale price is different and lower than original
+                      if (parseFloat(salePrice) > 10 && parseFloat(salePrice) < parseFloat(potentialOriginal)) {
+                        originalPrice = potentialOriginal;
+                        price = salePrice;
+                        isOnSale = true;
+                        console.log(`  -> SALE DETECTED: ${title.substring(0, 30)} - $${price} was $${originalPrice}`);
                         break;
                       }
                     }
                   }
                 }
                 
-                if (price) break;
+                if (isOnSale && price) break;
               }
               
               // Check for other sale patterns if Normally pattern didn't work
@@ -315,18 +322,26 @@ export class PlaywrightScraper {
               level++;
             }
             
-            // Debug first few items and sale items  
-            if (i < 5 || isOnSale || !price) {
-              console.log(`Product ${i+1}: "${title.substring(0, 40)}" - price: $${price} - originalPrice: $${originalPrice} - sale: ${isOnSale}`);
+            // Debug sale detection specifically
+            if (i < 3 || isOnSale) {
+              console.log(`Product ${i+1}: "${title.substring(0, 40)}"`);
+              console.log(`  -> Price: $${price}, Original: $${originalPrice}, Sale: ${isOnSale}`);
               
-              // Extra debugging for items that should have sales
-              let searchLevel = a.parentElement;
-              while (searchLevel && searchLevel.textContent) {
-                if (searchLevel.textContent.includes('Normally')) {
-                  console.log(`  -> Contains "Normally" at level: ${searchLevel.textContent.substring(0, 100)}`);
+              // Check for Normally text in surrounding elements
+              let checkContainer = a.parentElement;
+              let levelCount = 0;
+              while (checkContainer && levelCount < 5) {
+                const text = checkContainer.textContent || '';
+                if (text.includes('Normally')) {
+                  console.log(`  -> FOUND "Normally" text at level ${levelCount}: "${text.substring(0, 80)}"`);
+                  
+                  // Look for green elements
+                  const greenElements = Array.from(checkContainer.querySelectorAll('[style*="green"], .price'));
+                  console.log(`  -> Found ${greenElements.length} potential green price elements`);
                   break;
                 }
-                searchLevel = searchLevel.parentElement;
+                checkContainer = checkContainer.parentElement;
+                levelCount++;
               }
             }
 
