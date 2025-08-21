@@ -103,7 +103,13 @@ export interface IStorage {
   // Unified Products
   getUnifiedProducts(): Promise<any[]>;
   getUnifiedProduct(id: string): Promise<any>;
-  createUnifiedProduct(product: any): Promise<any>;
+  createUnifiedProduct(product: {
+    sku: string;
+    name: string;
+    ourPrice?: number;
+    brand?: string;
+    category?: string;
+  }): Promise<any>;
   deleteUnifiedProduct(id: string): Promise<void>;
   addCompetitorLink(productId: string, url: string): Promise<any>;
 }
@@ -638,12 +644,20 @@ export class MemStorage implements IStorage {
     return { ...product, competitorLinks: links };
   }
 
-  async createUnifiedProduct(product: any): Promise<any> {
+  async createUnifiedProduct(product: {
+    sku: string;
+    name: string;
+    ourPrice?: number;
+    brand?: string;
+    category?: string;
+  }): Promise<any> {
     const id = randomUUID();
     const now = new Date().toISOString();
     const newProduct = {
       ...product,
       id,
+      brand: product.brand || 'Unknown',
+      category: product.category || 'Uncategorized',
       createdAt: now,
       updatedAt: now
     };

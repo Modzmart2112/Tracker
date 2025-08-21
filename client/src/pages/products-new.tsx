@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Plus, 
@@ -27,7 +28,10 @@ import {
   Image as ImageIcon,
   ShoppingCart,
   Edit,
-  Save
+  Save,
+  Tag,
+  Building2,
+  Store
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -49,6 +53,8 @@ interface Product {
   sku: string;
   name: string;
   ourPrice?: number;
+  brand?: string;
+  category?: string;
   competitorLinks: CompetitorLink[];
   createdAt: string;
   updatedAt: string;
@@ -173,17 +179,23 @@ export default function ProductsPage() {
     }
   });
 
-  // Bulk import products
+  // Bulk import products with source URL
   const bulkImportProducts = useMutation({
-    mutationFn: (products: any[]) => apiRequest("POST", "/api/products-unified/bulk", { products }),
+    mutationFn: (data: { products: any[], sourceUrl: string }) => 
+      apiRequest("POST", "/api/products-unified/bulk", data),
     onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ["/api/products-unified"] });
       setShowBulkImportDialog(false);
       setExtractedProducts([]);
       setCategoryUrl("");
+      
+      const description = data.matched > 0 
+        ? `Added ${data.count} new products and matched ${data.matched} existing products from ${data.competitor}`
+        : `Added ${data.count} products from ${data.competitor} in ${data.category}`;
+      
       toast({ 
-        title: "Products imported successfully",
-        description: `Added ${data.count} products to your catalog`
+        title: "Import successful",
+        description: description
       });
     },
     onError: () => {
@@ -276,6 +288,13 @@ export default function ProductsPage() {
     );
   }
 
+  // Extract unique brands and categories from products
+  const uniqueBrands = Array.from(new Set(products.map(p => p.brand || 'Unknown'))).sort();
+  const uniqueCategories = Array.from(new Set(products.map(p => p.category || 'Uncategorized'))).sort();
+  const competitors = Array.from(new Set(products.flatMap(p => 
+    p.competitorLinks.map(l => l.competitorName || 'Unknown')
+  ))).sort();
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 dark:from-slate-950 dark:via-gray-950 dark:to-slate-900">
       <div className="p-6 max-w-7xl mx-auto space-y-8">
@@ -346,7 +365,10 @@ export default function ProductsPage() {
                       </p>
                       <Button
                         size="sm"
-                        onClick={() => bulkImportProducts.mutate(extractedProducts)}
+                        onClick={() => bulkImportProducts.mutate({ 
+                          products: extractedProducts, 
+                          sourceUrl: categoryUrl 
+                        })}
                         disabled={bulkImportProducts.isPending}
                       >
                         {bulkImportProducts.isPending ? (
@@ -705,29 +727,51 @@ export default function ProductsPage() {
           </Card>
         </div>
 
-        {/* Modern Search Bar */}
-        <Card className="bg-gradient-to-r from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 border-slate-200 dark:border-slate-700 shadow-xl">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div className="p-2 bg-red-100 dark:bg-red-900/20 rounded-lg">
-                <Search className="h-5 w-5 text-red-600" />
-              </div>
-              <Input
-                placeholder="Search products by name or SKU..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 border-0 bg-transparent text-lg placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-red-500"
-              />
-              <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
-                <Filter className="h-5 w-5 text-slate-600 dark:text-slate-400" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Tabs for different views */}
+        <Tabs defaultValue="all" className="w-full">
+          <TabsList className="grid w-full grid-cols-4 bg-white dark:bg-slate-900 p-1 rounded-xl shadow-lg">
+            <TabsTrigger value="all" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
+              <Package2 className="h-4 w-4 mr-2" />
+              All Products
+            </TabsTrigger>
+            <TabsTrigger value="brands" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
+              <Tag className="h-4 w-4 mr-2" />
+              Brands ({uniqueBrands.length})
+            </TabsTrigger>
+            <TabsTrigger value="categories" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
+              <Grid className="h-4 w-4 mr-2" />
+              Categories ({uniqueCategories.length})
+            </TabsTrigger>
+            <TabsTrigger value="competitors" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
+              <Store className="h-4 w-4 mr-2" />
+              Competitors ({competitors.length})
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Products Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-          <AnimatePresence>
+          <TabsContent value="all" className="mt-6">
+            {/* Modern Search Bar */}
+            <Card className="bg-gradient-to-r from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 border-slate-200 dark:border-slate-700 shadow-xl mb-6">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-2 bg-red-100 dark:bg-red-900/20 rounded-lg">
+                    <Search className="h-5 w-5 text-red-600" />
+                  </div>
+                  <Input
+                    placeholder="Search products by name or SKU..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="flex-1 border-0 bg-transparent text-lg placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-red-500"
+                  />
+                  <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                    <Filter className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Products Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              <AnimatePresence>
             {filteredProducts.map((product) => {
               const lowestPrice = getLowestCompetitorPrice(product.competitorLinks);
               const priceStatus = getPriceStatus(product.ourPrice, lowestPrice);
@@ -888,7 +932,7 @@ export default function ProductsPage() {
               </motion.div>
             );
           })}
-          </AnimatePresence>
+              </AnimatePresence>
           
           {filteredProducts.length === 0 && (
             <div className="col-span-full text-center py-16">
@@ -911,6 +955,132 @@ export default function ProductsPage() {
             </div>
           )}
         </div>
+          </TabsContent>
+
+          <TabsContent value="brands" className="mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {uniqueBrands.map(brand => {
+                const brandProducts = products.filter(p => (p.brand || 'Unknown') === brand);
+                const lowestPrice = Math.min(...brandProducts.map(p => p.ourPrice || Infinity).filter(p => p !== Infinity));
+                const highestPrice = Math.max(...brandProducts.map(p => p.ourPrice || 0));
+                
+                return (
+                  <Card key={brand} className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-xl hover:shadow-2xl transition-all duration-300">
+                    <CardHeader>
+                      <CardTitle className="text-xl font-bold flex items-center justify-between">
+                        <span>{brand}</span>
+                        <Badge variant="secondary">{brandProducts.length}</Badge>
+                      </CardTitle>
+                      <CardDescription>
+                        {lowestPrice !== Infinity && (
+                          <span className="text-sm">
+                            Price range: ${lowestPrice.toFixed(2)} - ${highestPrice.toFixed(2)}
+                          </span>
+                        )}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {brandProducts.slice(0, 3).map(product => (
+                          <div key={product.id} className="text-sm text-slate-600 dark:text-slate-400 truncate">
+                            • {product.name}
+                          </div>
+                        ))}
+                        {brandProducts.length > 3 && (
+                          <p className="text-xs text-slate-500">
+                            +{brandProducts.length - 3} more products
+                          </p>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="categories" className="mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {uniqueCategories.map(category => {
+                const categoryProducts = products.filter(p => (p.category || 'Uncategorized') === category);
+                const categoryBrands = Array.from(new Set(categoryProducts.map(p => p.brand || 'Unknown')));
+                
+                return (
+                  <Card key={category} className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-xl hover:shadow-2xl transition-all duration-300">
+                    <CardHeader>
+                      <CardTitle className="text-xl font-bold flex items-center justify-between">
+                        <span>{category}</span>
+                        <Badge variant="secondary">{categoryProducts.length}</Badge>
+                      </CardTitle>
+                      <CardDescription>
+                        {categoryBrands.length} brands in this category
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex flex-wrap gap-2">
+                        {categoryBrands.slice(0, 5).map(brand => (
+                          <Badge key={brand} variant="outline" className="text-xs">
+                            {brand}
+                          </Badge>
+                        ))}
+                        {categoryBrands.length > 5 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{categoryBrands.length - 5} more
+                          </Badge>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="competitors" className="mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {competitors.map(competitor => {
+                const competitorProducts = products.filter(p => 
+                  p.competitorLinks.some(l => (l.competitorName || 'Unknown') === competitor)
+                );
+                const competitorLinks = products.flatMap(p => 
+                  p.competitorLinks.filter(l => (l.competitorName || 'Unknown') === competitor)
+                );
+                const avgPrice = competitorLinks
+                  .filter(l => l.extractedPrice)
+                  .reduce((sum, l) => sum + (l.extractedPrice || 0), 0) / 
+                  (competitorLinks.filter(l => l.extractedPrice).length || 1);
+                
+                return (
+                  <Card key={competitor} className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-xl hover:shadow-2xl transition-all duration-300">
+                    <CardHeader>
+                      <CardTitle className="text-xl font-bold flex items-center justify-between">
+                        <span>{competitor}</span>
+                        <Badge variant="secondary">{competitorProducts.length}</Badge>
+                      </CardTitle>
+                      <CardDescription>
+                        {competitorLinks.length} product links tracked
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-800 rounded">
+                          <span className="text-sm text-slate-600 dark:text-slate-400">Avg Price</span>
+                          <span className="font-semibold">${avgPrice.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-800 rounded">
+                          <span className="text-sm text-slate-600 dark:text-slate-400">Last Scraped</span>
+                          <span className="text-xs text-slate-500">
+                            {competitorLinks[0]?.lastScraped ? new Date(competitorLinks[0].lastScraped).toLocaleDateString() : 'Never'}
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

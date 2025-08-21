@@ -729,32 +729,101 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Bulk import products
+  // Bulk import products with brand and category extraction
   app.post("/api/products-unified/bulk", async (req, res) => {
     try {
-      const { products } = req.body;
+      const { products, sourceUrl } = req.body;
       let addedCount = 0;
+      let matchedCount = 0;
+      
+      // Extract competitor name from source URL
+      const competitorName = sourceUrl ? 
+        new URL(sourceUrl).hostname.replace('www.', '').split('.')[0].toUpperCase() : 
+        'Unknown';
+      
+      // Extract category from URL if possible
+      const categoryMatch = sourceUrl?.match(/\/category\/[^\/]+\/([^\/\?]+)/);
+      const category = categoryMatch ? 
+        categoryMatch[1].replace(/-/g, ' ').split(' ').map(w => 
+          w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()
+        ).join(' ') : 
+        'General';
       
       for (const product of products) {
         try {
-          const newProduct = await storage.createUnifiedProduct({
-            sku: product.sku,
-            name: product.title,
-            ourPrice: product.price
-          });
+          // Extract brand from product title
+          let brand = 'Unknown';
+          const brandPatterns = [
+            /^(SP Tools|Schumacher|NOCO|DeWalt|Makita|Milwaukee|Bosch|Ryobi)/i,
+            /^([A-Z][A-Z0-9]+(?:\s+[A-Z][a-z]+)?)/,  // Matches "SP Tools", "NOCO", etc
+            /^([A-Z][a-z]+)/  // Simple brand pattern
+          ];
           
-          // Add the source URL as a competitor link
-          if (product.url) {
-            await storage.addCompetitorLink(newProduct.id, product.url);
+          for (const pattern of brandPatterns) {
+            const match = product.title?.match(pattern);
+            if (match) {
+              brand = match[1];
+              break;
+            }
           }
           
-          addedCount++;
+          // Check if we already have a similar product (matching logic)
+          const existingProducts = await storage.getUnifiedProducts();
+          const matchedProduct = existingProducts.find(existing => {
+            // Match by SKU first
+            if (existing.sku === product.sku) return true;
+            
+            // Match by similar name and brand
+            const existingWords = existing.name.toLowerCase().split(/\s+/);
+            const newWords = product.title.toLowerCase().split(/\s+/);
+            const commonWords = existingWords.filter(word => 
+              newWords.includes(word) && word.length > 3
+            );
+            
+            // If more than 60% of words match, consider it the same product
+            const matchRatio = commonWords.length / Math.min(existingWords.length, newWords.length);
+            return matchRatio > 0.6 && existing.brand === brand;
+          });
+          
+          if (matchedProduct) {
+            // Product exists - add as competitor link
+            await storage.addCompetitorLink(matchedProduct.id, product.url || sourceUrl);
+            
+            // Update price tracking if needed
+            if (product.extractedPrice) {
+              // Store competitor price information (we'll implement this next)
+            }
+            
+            matchedCount++;
+          } else {
+            // New product - create it
+            const newProduct = await storage.createUnifiedProduct({
+              sku: product.sku,
+              name: product.title,
+              ourPrice: product.isOnSale ? product.originalPrice : product.price,
+              brand: brand,
+              category: category
+            });
+            
+            // Add the source URL as a competitor link
+            if (product.url || sourceUrl) {
+              await storage.addCompetitorLink(newProduct.id, product.url || sourceUrl);
+            }
+            
+            addedCount++;
+          }
         } catch (err) {
-          console.error("Failed to add product:", err);
+          console.error("Failed to add/match product:", err);
         }
       }
       
-      res.json({ count: addedCount });
+      res.json({ 
+        count: addedCount,
+        matched: matchedCount,
+        total: products.length,
+        competitor: competitorName,
+        category: category
+      });
     } catch (error) {
       console.error("Error bulk importing products:", error);
       res.status(500).json({ error: "Failed to bulk import products" });
