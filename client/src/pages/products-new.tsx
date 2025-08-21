@@ -919,32 +919,20 @@ export default function ProductsPage() {
 
         {/* Tabs for different views */}
         <Tabs defaultValue="all" className="w-full">
-          <TabsList className="w-full justify-start bg-white dark:bg-slate-900 p-1 h-auto">
-            <TabsTrigger 
-              value="all" 
-              className="data-[state=active]:bg-red-600 data-[state=active]:text-white px-4 py-2"
-            >
+          <TabsList className="grid w-full grid-cols-4 bg-white dark:bg-slate-900 p-1 rounded-xl shadow-lg">
+            <TabsTrigger value="all" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
               <Package2 className="h-4 w-4 mr-2" />
               All Products
             </TabsTrigger>
-            <TabsTrigger 
-              value="brands" 
-              className="data-[state=active]:bg-red-600 data-[state=active]:text-white px-4 py-2"
-            >
+            <TabsTrigger value="brands" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
               <Tag className="h-4 w-4 mr-2" />
               Brands ({uniqueBrands.length})
             </TabsTrigger>
-            <TabsTrigger 
-              value="categories" 
-              className="data-[state=active]:bg-red-600 data-[state=active]:text-white px-4 py-2"
-            >
+            <TabsTrigger value="categories" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
               <Grid className="h-4 w-4 mr-2" />
               Categories ({uniqueCategories.length})
             </TabsTrigger>
-            <TabsTrigger 
-              value="competitors" 
-              className="data-[state=active]:bg-red-600 data-[state=active]:text-white px-4 py-2"
-            >
+            <TabsTrigger value="competitors" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
               <Store className="h-4 w-4 mr-2" />
               Competitors ({competitors.length})
             </TabsTrigger>

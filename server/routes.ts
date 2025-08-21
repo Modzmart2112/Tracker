@@ -681,6 +681,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const categoryMatch = url.match(/\/category\/([^\/]+)\/([^\/\?]+)/);
       const categoryName = categoryMatch ? categoryMatch[2].replace(/-/g, ' ').toUpperCase() : 'PRODUCTS';
       
+      // Return the extracted products
+      res.json({
+        products: products,
+        totalPages: 1,
+        currentPage: 1,
+        totalProducts: products.length,
+        categoryName: categoryName,
+        extractedAt: new Date().toISOString(),
+        aiEnhanced: !!aiService,
+        sourceUrl: url
+      });
+      
       // Use AI to analyze products if available
       let enrichedProducts = products;
       if (aiService) {
@@ -701,16 +713,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Return the enriched products
+      // Simulate pagination info
       res.json({
         products: enrichedProducts,
         totalPages: Math.ceil(products.length / 20),
         currentPage: 1,
         totalProducts: products.length,
-        categoryName: categoryName,
+        categoryName: "PRODUCTS",
         extractedAt: new Date().toISOString(),
-        aiEnhanced: !!aiService,
-        sourceUrl: url
+        aiEnhanced: !!aiService
       });
     } catch (error: any) {
       console.error("Error extracting category:", error);
