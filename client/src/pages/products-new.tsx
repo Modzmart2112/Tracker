@@ -242,6 +242,17 @@ export default function ProductsPage() {
     return prices.length > 0 ? Math.min(...prices) : null;
   };
 
+  // Calculate stats for the overview cards
+  const totalCompetitorLinks = products?.reduce((acc, product) => acc + product.competitorLinks.length, 0) || 0;
+  const priceAdvantageCount = products?.filter(product => {
+    const lowestPrice = getLowestCompetitorPrice(product.competitorLinks);
+    return product.ourPrice && lowestPrice && product.ourPrice < lowestPrice;
+  }).length || 0;
+  const needAdjustmentCount = products?.filter(product => {
+    const lowestPrice = getLowestCompetitorPrice(product.competitorLinks);
+    return product.ourPrice && lowestPrice && product.ourPrice > lowestPrice * 1.05;
+  }).length || 0;
+
   const getPriceStatus = (ourPrice?: number, lowestCompetitorPrice?: number | null) => {
     if (!ourPrice || !lowestCompetitorPrice) return null;
     const diff = ((ourPrice - lowestCompetitorPrice) / lowestCompetitorPrice) * 100;
