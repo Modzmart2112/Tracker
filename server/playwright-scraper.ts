@@ -121,10 +121,25 @@ export class PlaywrightScraper {
       });
       
       await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
-      await this.clickLoadMoreIfPresent(page);
-      // Scroll down manually
-      await page.mouse.wheel(0, 2000);
-      await page.waitForTimeout(2000);
+      
+      // Multiple attempts to load all products
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        console.log(`Loading attempt ${attempt}: Scrolling and checking for more products...`);
+        
+        // Scroll down to trigger lazy loading
+        await this.autoScroll(page);
+        await page.waitForTimeout(2000);
+        
+        // Click any "Load More" or "Show More" buttons
+        await this.clickLoadMoreIfPresent(page);
+        await page.waitForTimeout(1000);
+        
+        // Check current product count
+        const currentCount = await page.$$eval("a[href^='/product/']", anchors => anchors.length);
+        console.log(`Attempt ${attempt}: Found ${currentCount} product links`);
+        
+        if (currentCount >= 50) break; // Stop if we have enough products
+      }
       
       console.log('Page loaded, extracting product data...');
       
@@ -171,7 +186,10 @@ export class PlaywrightScraper {
               title = (a.textContent || '').trim();
             }
             
-            if (!title) continue;
+            if (!title) {
+              console.log(`Skipping product ${i+1}: No title found, href: ${href.substring(0, 50)}`);
+              continue;
+            }
 
             // Look for sale and regular pricing information
             let price = null;
@@ -185,24 +203,47 @@ export class PlaywrightScraper {
             while (searchContainer && !price && level <= 4) {
               const containerText = searchContainer.textContent || '';
               
-              // Look for sale price structure: "Normally $399" followed by green "$349"
-              const normallyMatch = containerText.match(/Normally\s*\$\s?(\d+\.?\d*)/i);
-              if (normallyMatch) {
-                originalPrice = normallyMatch[1];
-                isOnSale = true;
-                
-                // Now look for the sale price in green
-                const greenPriceEl = searchContainer.querySelector('.price[style*="green"]') || 
-                                     searchContainer.querySelector('[style*="color: green"]') ||
-                                     searchContainer.querySelector('[style*="color:green"]');
-                
-                if (greenPriceEl) {
-                  const greenText = greenPriceEl.textContent || '';
-                  const greenMatch = greenText.replace(/\s+/g, '').match(/(\d+\.?\d*)/);
-                  if (greenMatch) {
-                    price = greenMatch[1];
-                    break;
+              // Look for sale price patterns: "Normally $399", "Was $399", "RRP $399"
+              const salePatterns = [
+                /Normally\s*\$\s?(\d+\.?\d*)/i,
+                /Was\s*\$\s?(\d+\.?\d*)/i,
+                /RRP\s*\$\s?(\d+\.?\d*)/i,
+                /Originally\s*\$\s?(\d+\.?\d*)/i
+              ];
+              
+              for (const pattern of salePatterns) {
+                const saleMatch = containerText.match(pattern);
+                if (saleMatch) {
+                  originalPrice = saleMatch[1];
+                  isOnSale = true;
+                  
+                  // Look for the current sale price in green or any price element
+                  const greenPriceEl = searchContainer.querySelector('.price[style*="green"], [style*="color: green"], [style*="color:green"]');
+                  
+                  if (greenPriceEl) {
+                    const greenText = greenPriceEl.textContent || '';
+                    const greenMatch = greenText.replace(/\s+/g, '').match(/(\d+\.?\d*)/);
+                    if (greenMatch) {
+                      price = greenMatch[1];
+                      break;
+                    }
                   }
+                  
+                  // If no green price found but we detected sale text, look for any price
+                  if (!price) {
+                    const allPrices = containerText.match(/\$\s?\d+\.?\d*/g);
+                    if (allPrices && allPrices.length >= 2) {
+                      // Take the first non-original price (usually the sale price)
+                      for (const foundPrice of allPrices) {
+                        const foundPriceNum = foundPrice.replace(/[^0-9.]/g, '');
+                        if (foundPriceNum !== originalPrice) {
+                          price = foundPriceNum;
+                          break;
+                        }
+                      }
+                    }
+                  }
+                  break;
                 }
               }
               
@@ -219,13 +260,26 @@ export class PlaywrightScraper {
                 }
               }
               
-              // Fallback: any dollar amount in text
+              // Enhanced fallback: any dollar amount in text
               if (!price) {
-                const dollarMatches = containerText.match(/\$\s?\d[\d,]*\.?\d{0,2}/g);
+                // Look for any price patterns including commas
+                const dollarMatches = containerText.match(/\$\s?[\d,]+\.?\d{0,2}/g);
                 if (dollarMatches && dollarMatches.length > 0) {
                   const lastPrice = dollarMatches[dollarMatches.length - 1];
                   price = lastPrice.replace(/[^0-9.]/g, '');
                   break;
+                }
+                
+                // Even broader fallback: look for numbers near dollar signs
+                const broadMatches = containerText.match(/[\d,]+\.?\d{0,2}/g);
+                if (broadMatches && broadMatches.length > 0) {
+                  // Take the largest number as likely price
+                  const numbers = broadMatches.map(m => parseFloat(m.replace(/,/g, '')));
+                  const maxPrice = Math.max(...numbers);
+                  if (maxPrice > 5 && maxPrice < 10000) { // Reasonable price range
+                    price = maxPrice.toString();
+                    break;
+                  }
                 }
               }
               
@@ -233,12 +287,15 @@ export class PlaywrightScraper {
               level++;
             }
             
-            // Debug first few items
-            if (i < 2) {
-              console.log(`Product ${i}: ${title.substring(0, 30)} - ${priceDebug}`);
+            // Debug first few items and failed extractions
+            if (i < 5 || !price) {
+              console.log(`Product ${i+1}: "${title.substring(0, 40)}" - price: ${price} - href: ${href.substring(50)}`);
             }
 
-
+            if (!price) {
+              console.log(`Skipping product ${i+1}: No price found for "${title.substring(0, 30)}"`);
+              continue;
+            }
 
             items.push({ 
               title, 
