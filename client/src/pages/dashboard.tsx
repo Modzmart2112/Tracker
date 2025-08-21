@@ -70,7 +70,7 @@ export default function Dashboard() {
       <div className="p-8">
         {kpiMetrics && <KPISection metrics={kpiMetrics} />}
         
-        {brandMatrix && <BrandCoverageMatrix data={brandMatrix} />}
+        <BrandCoverageMatrix data={brandMatrix || { brands: [], competitors: [], matrix: [] }} />
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           <PriceBandsSection bands={priceBands} />

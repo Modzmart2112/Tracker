@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Grid } from "lucide-react";
 
 interface BrandCoverageData {
   brands: string[];
@@ -25,20 +26,31 @@ export function BrandCoverageMatrix({ data }: BrandCoverageMatrixProps) {
         </p>
       </CardHeader>
       <CardContent className="p-6">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-slate-200">
-                <th className="text-left py-3 px-4 font-medium text-slate-700">Brand</th>
-                {competitors.map((competitor) => (
-                  <th key={competitor.id} className="text-center py-3 px-4 font-medium text-slate-700">
-                    {competitor.name}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {matrix.map((row) => {
+        {brands.length === 0 || competitors.length === 0 || matrix.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-slate-400 mb-4">
+              <Grid size={48} className="mx-auto" />
+            </div>
+            <h3 className="text-lg font-medium text-slate-900 mb-2">No brand coverage data</h3>
+            <p className="text-slate-500 mb-4">
+              Add competitors and scrape products to see brand coverage analysis
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-slate-200">
+                  <th className="text-left py-3 px-4 font-medium text-slate-700">Brand</th>
+                  {competitors.map((competitor) => (
+                    <th key={competitor.id} className="text-center py-3 px-4 font-medium text-slate-700">
+                      {competitor.name}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {matrix.map((row) => {
                 const isGapOpportunity = competitors.some(comp => 
                   !comp.isUs && row[comp.name] > 0
                 ) && competitors.find(comp => comp.isUs && row[comp.name] === 0);
@@ -74,10 +86,11 @@ export function BrandCoverageMatrix({ data }: BrandCoverageMatrixProps) {
                     })}
                   </tr>
                 );
-              })}
-            </tbody>
-          </table>
-        </div>
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

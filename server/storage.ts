@@ -88,63 +88,7 @@ export class MemStorage implements IStorage {
   private tasks: Map<string, Task> = new Map();
 
   constructor() {
-    this.seedData();
-  }
-
-  private seedData() {
-    // Seed competitors
-    const sydneyTools = this.createCompetitorSync({ name: "Sydney Tools", siteDomain: "sydneytools.com.au", status: "active", isUs: true });
-    const bunnings = this.createCompetitorSync({ name: "Bunnings", siteDomain: "bunnings.com.au", status: "active", isUs: false });
-    const totalTools = this.createCompetitorSync({ name: "Total Tools", siteDomain: "totaltools.com.au", status: "active", isUs: false });
-    const toolKitDepot = this.createCompetitorSync({ name: "Tool Kit Depot", siteDomain: "toolkitdepot.com.au", status: "active", isUs: false });
-    const tradeTools = this.createCompetitorSync({ name: "TradeTools", siteDomain: "tradetools.com.au", status: "active", isUs: false });
-
-    // Seed categories
-    const automotive = this.createCategorySync({ name: "Automotive", slug: "automotive" });
-
-    // Seed product types
-    const jumpStarters = this.createProductTypeSync({ categoryId: automotive.id, name: "Jump Starters", slug: "jump-starters" });
-
-    // Seed some sample products
-    this.createProductSync({
-      competitorId: totalTools.id,
-      brand: "NOCO",
-      model: "GB40",
-      title: "NOCO GB40 1000A Jump Starter",
-      productTypeId: jumpStarters.id,
-      imageUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100",
-      productUrl: "https://totaltools.com.au/noco-gb40"
-    });
-
-    this.createProductSync({
-      competitorId: sydneyTools.id,
-      brand: "DEWALT",
-      model: "DXAEJ14",
-      title: "DEWALT DXAEJ14 Jump Starter",
-      productTypeId: jumpStarters.id,
-      imageUrl: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100",
-      productUrl: "https://sydneytools.com.au/dewalt-dxaej14"
-    });
-
-    this.createProductSync({
-      competitorId: toolKitDepot.id,
-      brand: "Projecta",
-      model: "IS2500",
-      title: "Projecta IS2500 Intelli-Start",
-      productTypeId: jumpStarters.id,
-      imageUrl: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100",
-      productUrl: "https://toolkitdepot.com.au/projecta-is2500"
-    });
-
-    this.createProductSync({
-      competitorId: tradeTools.id,
-      brand: "Milwaukee",
-      model: "M18 FUEL",
-      title: "Milwaukee M18 FUEL Jump Starter",
-      productTypeId: jumpStarters.id,
-      imageUrl: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100",
-      productUrl: "https://tradetools.com.au/milwaukee-m18-fuel"
-    });
+    // No seed data - clean start
   }
 
   private createCompetitorSync(competitor: InsertCompetitor): Competitor {
@@ -404,27 +348,8 @@ export class MemStorage implements IStorage {
   }
 
   async getRecentPriceChanges(hours: number): Promise<any[]> {
-    // Mock recent changes for demonstration
-    return [
-      {
-        id: "1",
-        productTitle: "NOCO GB40 1000A Jump Starter",
-        competitorName: "Total Tools",
-        changeType: "price_drop",
-        oldValue: "149",
-        newValue: "139",
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000) // 2 hours ago
-      },
-      {
-        id: "2", 
-        productTitle: "DEWALT DXAEJ14 Jump Starter",
-        competitorName: "Bunnings",
-        changeType: "stock_change",
-        oldValue: "out_of_stock",
-        newValue: "in_stock",
-        timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000) // 4 hours ago
-      }
-    ];
+    // Return empty array - no real price change data available yet
+    return [];
   }
 
   // Price Band methods
@@ -515,10 +440,10 @@ export class MemStorage implements IStorage {
     const sydneyBrands = new Set(sydneyToolsProducts.map(p => p.brand)).size;
     
     return {
-      brandCoverage: `${sydneyBrands}/${totalBrands}`,
-      priceUndercuts: 23,
-      priceChanges: 16,
-      stockChanges: 7
+      brandCoverage: totalBrands > 0 ? `${sydneyBrands}/${totalBrands}` : "0/0",
+      priceUndercuts: 0,
+      priceChanges: 0,
+      stockChanges: 0
     };
   }
 }

@@ -65,8 +65,8 @@ export function Sidebar() {
             <User className="text-slate-600 text-sm" size={16} />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-slate-900">John Smith</p>
-            <p className="text-xs text-slate-500">Administrator</p>
+            <p className="text-sm font-medium text-slate-900">User</p>
+            <p className="text-xs text-slate-500">Please log in</p>
           </div>
         </div>
       </div>

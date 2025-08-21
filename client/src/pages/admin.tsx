@@ -70,18 +70,7 @@ export default function Admin() {
     createAliasMutation.mutate(data);
   };
 
-  // Mock extractor data for demonstration
-  const mockExtractorData = {
-    plp_item: ".product-card",
-    plp_title: ".product-card__title",
-    plp_price: ".price,.money",
-    plp_image: "img",
-    pdp_title: "h1",
-    pdp_price: ".price .amount,.money",
-    pdp_specs_table: "table.specs, .product-specs"
-  };
-
-  const [extractorJSON, setExtractorJSON] = useState(JSON.stringify(mockExtractorData, null, 2));
+  const [extractorJSON, setExtractorJSON] = useState("");
 
   const handleUpdateExtractor = () => {
     try {
@@ -191,41 +180,13 @@ export default function Admin() {
                 </div>
               </CardHeader>
               <CardContent className="p-6">
-                <div className="space-y-4">
-                  {/* Example brand aliases */}
-                  <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <Tag className="text-primary" size={16} />
-                      <div>
-                        <p className="font-medium text-slate-900">NOCO</p>
-                        <p className="text-sm text-slate-500">Canonical brand name</p>
-                      </div>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Badge variant="secondary">Noco</Badge>
-                      <Badge variant="secondary">noco</Badge>
-                      <Badge variant="secondary">NOCO Genius</Badge>
-                    </div>
+                <div className="text-center py-12 text-slate-500">
+                  <div className="text-slate-400 mb-4">
+                    <Tag size={48} className="mx-auto" />
                   </div>
-                  
-                  <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <Tag className="text-primary" size={16} />
-                      <div>
-                        <p className="font-medium text-slate-900">DEWALT</p>
-                        <p className="text-sm text-slate-500">Canonical brand name</p>
-                      </div>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Badge variant="secondary">DeWalt</Badge>
-                      <Badge variant="secondary">dewalt</Badge>
-                      <Badge variant="secondary">De Walt</Badge>
-                    </div>
-                  </div>
-
-                  <div className="text-center py-8 text-slate-500">
-                    <p className="text-sm">Add brand aliases to normalize brand names across competitors</p>
-                  </div>
+                  <h3 className="text-lg font-medium text-slate-900 mb-2">No brand aliases configured</h3>
+                  <p className="text-sm">Add brand aliases to normalize brand names across competitors</p>
+                  <p className="text-xs text-slate-400 mt-1">This helps standardize brands like "NOCO" vs "Noco" vs "noco"</p>
                 </div>
               </CardContent>
             </Card>
