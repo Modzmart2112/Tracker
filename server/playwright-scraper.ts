@@ -203,47 +203,81 @@ export class PlaywrightScraper {
             while (searchContainer && !price && level <= 4) {
               const containerText = searchContainer.textContent || '';
               
-              // AGGRESSIVE Sydney Tools sale detection: Find "Normally" text anywhere
-              if (containerText.includes('Normally')) {
-                const normallyMatch = containerText.match(/Normally\s*\$?\s*(\d+(?:\.\d{1,2})?)/i);
-                if (normallyMatch) {
-                  const potentialOriginal = normallyMatch[1];
-                  console.log(`    Found "Normally $${potentialOriginal}" for ${title.substring(0, 30)}`);
-                  
-                  // Extract ALL price-like numbers from the container
-                  const allPriceMatches = containerText.match(/\$?\s*(\d{2,4}(?:\.\d{1,2})?)/g) || [];
-                  const uniquePrices = new Set<string>();
-                  
-                  for (const priceStr of allPriceMatches) {
-                    const cleanPrice = priceStr.replace(/[^\d.]/g, '');
-                    if (parseFloat(cleanPrice) >= 10) {
-                      uniquePrices.add(cleanPrice);
-                    }
-                  }
-                  
-                  console.log(`    Found prices: ${Array.from(uniquePrices).join(', ')}`);
-                  
-                  // Find a price that's lower than original (sale price)
-                  for (const candidatePrice of uniquePrices) {
-                    const priceNum = parseFloat(candidatePrice);
-                    const origNum = parseFloat(potentialOriginal);
-                    
-                    // Check if this is a valid sale price
-                    if (candidatePrice !== potentialOriginal && 
-                        priceNum < origNum && 
-                        priceNum > origNum * 0.5 && // Sale price should be at least 50% of original
-                        Math.abs(priceNum - origNum) > 5) { // Difference should be meaningful
-                      
-                      price = candidatePrice.includes('.') ? candidatePrice : candidatePrice + '.00';
-                      originalPrice = potentialOriginal;
-                      isOnSale = true;
-                      console.log(`✅ SALE DETECTED: "${title.substring(0, 40)}" - now $${price} was $${originalPrice}`);
-                      break;
-                    }
-                  }
-                  
-                  if (isOnSale) break;
+              // ULTRA-AGGRESSIVE sale detection for Sydney Tools (targeting 10 sale items)
+              // Look for ANY possible sale indicator
+              const saleIndicators = [
+                /Normally\s*\$?\s*(\d+(?:\.\d{1,2})?)/i,
+                /Was\s*\$?\s*(\d+(?:\.\d{1,2})?)/i,
+                /RRP\s*\$?\s*(\d+(?:\.\d{1,2})?)/i,
+                /Save\s*\$?\s*(\d+(?:\.\d{1,2})?)/i,
+                /Regular\s*Price\s*\$?\s*(\d+(?:\.\d{1,2})?)/i,
+                /List\s*Price\s*\$?\s*(\d+(?:\.\d{1,2})?)/i
+              ];
+              
+              let foundOriginal = null;
+              
+              // Check each pattern
+              for (const pattern of saleIndicators) {
+                const match = containerText.match(pattern);
+                if (match) {
+                  foundOriginal = match[1];
+                  console.log(`    🎯 Sale indicator found for "${title.substring(0, 30)}" - Original: $${foundOriginal}`);
+                  break;
                 }
+              }
+              
+              // Also check for percentage off or SALE text
+              const hasPercentOff = containerText.match(/(\d+)%\s*off/i);
+              const hasSaleText = containerText.toLowerCase().includes('sale') || 
+                                 containerText.toLowerCase().includes('special') ||
+                                 containerText.toLowerCase().includes('clearance');
+              
+              // If we have ANY indicator of a sale
+              if (foundOriginal || hasPercentOff || hasSaleText) {
+                // Extract ALL prices from the container
+                const allPriceMatches = [...containerText.matchAll(/\$?\s*(\d{2,4}(?:\.\d{1,2})?)/g)];
+                const prices = allPriceMatches.map(m => parseFloat(m[1])).filter(p => p >= 10);
+                
+                if (prices.length >= 2) {
+                  // Sort prices to find highest (original) and lowest (sale)
+                  prices.sort((a, b) => a - b);
+                  const lowestPrice = prices[0];
+                  const highestPrice = prices[prices.length - 1];
+                  
+                  // If we found an original price marker, use it
+                  if (foundOriginal) {
+                    const origNum = parseFloat(foundOriginal);
+                    // Find the price that's lower than original
+                    for (const p of prices) {
+                      if (p < origNum && (origNum - p) > 5) {
+                        price = p.toString().includes('.') ? p.toString() : p.toString() + '.00';
+                        originalPrice = foundOriginal;
+                        isOnSale = true;
+                        console.log(`✅ SALE ITEM ${i+1}: "${title.substring(0, 40)}" - now $${price} was $${originalPrice}`);
+                        break;
+                      }
+                    }
+                  } else if (hasPercentOff) {
+                    // If we have % off, assume highest is original, lowest is sale
+                    const percentOff = parseInt(hasPercentOff[1]);
+                    if (highestPrice > lowestPrice && (highestPrice - lowestPrice) > 5) {
+                      price = lowestPrice.toString().includes('.') ? lowestPrice.toString() : lowestPrice.toString() + '.00';
+                      originalPrice = highestPrice.toString().includes('.') ? highestPrice.toString() : highestPrice.toString() + '.00';
+                      isOnSale = true;
+                      console.log(`✅ SALE ITEM ${i+1}: "${title.substring(0, 40)}" - ${percentOff}% off - now $${price} was $${originalPrice}`);
+                    }
+                  } else if (hasSaleText && prices.length >= 2) {
+                    // If just "SALE" text, check if there are two different prices
+                    if (highestPrice > lowestPrice && (highestPrice - lowestPrice) > 10) {
+                      price = lowestPrice.toString().includes('.') ? lowestPrice.toString() : lowestPrice.toString() + '.00';
+                      originalPrice = highestPrice.toString().includes('.') ? highestPrice.toString() : highestPrice.toString() + '.00';
+                      isOnSale = true;
+                      console.log(`✅ SALE ITEM ${i+1}: "${title.substring(0, 40)}" - now $${price} was $${originalPrice}`);
+                    }
+                  }
+                }
+                
+                if (isOnSale) break;
               }
               
               // Check for other sale patterns if Normally pattern didn't work
