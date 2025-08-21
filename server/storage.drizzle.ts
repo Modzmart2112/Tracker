@@ -452,64 +452,79 @@ export class DrizzleStorage implements IStorage {
 
   // Unified Products implementation (using catalog products)
   async getUnifiedProducts(): Promise<any[]> {
-    // Get products with brands and categories joined
-    const productsWithRelations = await this.db
+    // Single optimized query with all necessary joins
+    const allData = await this.db
       .select({
-        product: catalogProducts,
-        brand: brands,
-        category: categories
+        productId: catalogProducts.id,
+        productSku: catalogProducts.ourSku,
+        productModelNumber: catalogProducts.modelNumber,
+        productName: catalogProducts.name,
+        productPrice: catalogProducts.price,
+        productTargetPrice: catalogProducts.targetPrice,
+        productImageUrl: catalogProducts.imageUrl,
+        productPageUrl: catalogProducts.productPageUrl,
+        productCreatedAt: catalogProducts.createdAt,
+        brandName: brands.name,
+        categoryName: categories.name,
+        listingId: competitorListings.id,
+        listingUrl: competitorListings.url,
+        listingTitleOverride: competitorListings.titleOverride,
+        listingActive: competitorListings.active,
+        listingLastSeenAt: competitorListings.lastSeenAt,
+        competitorName: competitors.name,
+        competitorId: competitorListings.competitorId
       })
       .from(catalogProducts)
       .leftJoin(brands, eq(catalogProducts.brandId, brands.id))
-      .leftJoin(categories, eq(catalogProducts.categoryId, categories.id));
+      .leftJoin(categories, eq(catalogProducts.categoryId, categories.id))
+      .leftJoin(competitorListings, eq(competitorListings.productId, catalogProducts.id))
+      .leftJoin(competitors, eq(competitorListings.competitorId, competitors.id));
     
-    const productsWithLinks = await Promise.all(
-      productsWithRelations.map(async (row) => {
-        const listings = await this.db
-          .select({
-            listing: competitorListings,
-            competitor: competitors
-          })
-          .from(competitorListings)
-          .leftJoin(competitors, eq(competitorListings.competitorId, competitors.id))
-          .where(eq(competitorListings.productId, row.product.id));
-        
-        const competitorLinks = listings.map(item => ({
-          id: item.listing.id,
-          url: item.listing.url,
-          competitorName: item.competitor?.name || item.listing.competitorId,
-          extractedTitle: item.listing.titleOverride || undefined,
-          extractedPrice: undefined, // Price is stored in listing snapshots
-          status: item.listing.active ? "success" : "pending",
-          lastScraped: item.listing.lastSeenAt?.toISOString()
-        }));
-        
+    // Group by product ID to combine competitor links
+    const productsMap = new Map();
+    
+    for (const row of allData) {
+      if (!productsMap.has(row.productId)) {
         // Convert decimal strings to numbers properly
-        const currentPrice = row.product.price ? parseFloat(row.product.price) : null;
-        const originalPrice = row.product.targetPrice ? parseFloat(row.product.targetPrice) : null;
+        const currentPrice = row.productPrice ? parseFloat(row.productPrice) : null;
+        const originalPrice = row.productTargetPrice ? parseFloat(row.productTargetPrice) : null;
         
         // Show original price only if it's higher than current price (indicating a sale)
         const isOnSale = originalPrice && currentPrice && originalPrice > currentPrice;
         
-        return {
-          id: row.product.id,
-          sku: row.product.ourSku || row.product.id.slice(0, 8).toUpperCase(),
-          modelNumber: row.product.modelNumber || 'N/A',
-          name: row.product.name || 'Unnamed Product',
+        productsMap.set(row.productId, {
+          id: row.productId,
+          sku: row.productSku || row.productId.slice(0, 8).toUpperCase(),
+          modelNumber: row.productModelNumber || 'N/A',
+          name: row.productName || 'Unnamed Product',
           ourPrice: currentPrice,
           price: currentPrice,
           originalPrice: isOnSale ? originalPrice : null,
-          image: row.product.imageUrl || null,
-          brand: row.brand?.name || 'Unknown',
-          category: row.category?.name || 'Uncategorized',
-          productPageUrl: row.product.productPageUrl || null,
-          competitorLinks,
-          createdAt: row.product.createdAt?.toISOString() || new Date().toISOString(),
+          image: row.productImageUrl || null,
+          brand: row.brandName || 'Unknown',
+          category: row.categoryName || 'Uncategorized',
+          productPageUrl: row.productPageUrl || null,
+          competitorLinks: [],
+          createdAt: row.productCreatedAt?.toISOString() || new Date().toISOString(),
           updatedAt: new Date().toISOString()
-        };
-      })
-    );
-    return productsWithLinks;
+        });
+      }
+      
+      // Add competitor link if it exists
+      if (row.listingId) {
+        productsMap.get(row.productId).competitorLinks.push({
+          id: row.listingId,
+          url: row.listingUrl,
+          competitorName: row.competitorName || row.competitorId,
+          extractedTitle: row.listingTitleOverride || undefined,
+          extractedPrice: undefined, // Price is stored in listing snapshots
+          status: row.listingActive ? "success" : "pending",
+          lastScraped: row.listingLastSeenAt?.toISOString()
+        });
+      }
+    }
+    
+    return Array.from(productsMap.values());
   }
 
   async getUnifiedProduct(id: string): Promise<any> {
