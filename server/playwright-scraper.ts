@@ -203,54 +203,47 @@ export class PlaywrightScraper {
             while (searchContainer && !price && level <= 4) {
               const containerText = searchContainer.textContent || '';
               
-              // Sydney Tools specific sale detection: "Normally $380.95" in grey + green price
-              const normallyMatch = containerText.match(/Normally\s*\$\s?(\d+\.?\d*)/i);
-              if (normallyMatch) {
-                const potentialOriginal = normallyMatch[1];
-                
-                // Look for green price element (.price with color: green style)
-                const priceElements = Array.from(searchContainer.querySelectorAll('.price, [class*="price"]'));
-                
-                for (const priceEl of priceElements) {
-                  const element = priceEl as HTMLElement;
-                  const computedStyle = getComputedStyle ? getComputedStyle(element) : element.style;
-                  const style = element.style;
+              // AGGRESSIVE Sydney Tools sale detection: Find "Normally" text anywhere
+              if (containerText.includes('Normally')) {
+                const normallyMatch = containerText.match(/Normally\s*\$?\s*(\d+(?:\.\d{1,2})?)/i);
+                if (normallyMatch) {
+                  const potentialOriginal = normallyMatch[1];
+                  console.log(`    Found "Normally $${potentialOriginal}" for ${title.substring(0, 30)}`);
                   
-                  // Check if this element has green color styling
-                  const hasGreenColor = style.color === 'green' || 
-                                       style.color === 'rgb(0, 128, 0)' ||
-                                       style.fontWeight === 'bold' ||
-                                       element.getAttribute('style')?.includes('green');
+                  // Extract ALL price-like numbers from the container
+                  const allPriceMatches = containerText.match(/\$?\s*(\d{2,4}(?:\.\d{1,2})?)/g) || [];
+                  const uniquePrices = new Set<string>();
                   
-                  if (hasGreenColor || element.className.includes('price')) {
-                    // Sydney Tools specific: extract price from spans like <span>340</span><span>.</span><span>00</span>
-                    const fullPriceText = element.textContent || '';
-                    
-                    // Look for the main price number (largest 2-3 digit number in the green price element)
-                    const allNumbers = fullPriceText.match(/\d+/g) || [];
-                    const mainPriceNumbers = allNumbers.filter(num => parseInt(num) >= 10 && parseInt(num) <= 9999);
-                    
-                    if (mainPriceNumbers.length > 0) {
-                      // Take the largest number as the main price (340 from your example)
-                      const mainPrice = Math.max(...mainPriceNumbers.map(n => parseInt(n)));
-                      
-                      // Check if there are cents (00 in your example)
-                      const hasDecimal = fullPriceText.includes('.') || element.innerHTML.includes('price-cents');
-                      const salePrice = hasDecimal ? `${mainPrice}.00` : mainPrice.toString();
-                      
-                      // Ensure sale price is different and lower than original
-                      if (parseFloat(salePrice) > 10 && parseFloat(salePrice) < parseFloat(potentialOriginal)) {
-                        originalPrice = potentialOriginal;
-                        price = salePrice;
-                        isOnSale = true;
-                        console.log(`  -> SALE DETECTED: ${title.substring(0, 30)} - $${price} was $${originalPrice}`);
-                        break;
-                      }
+                  for (const priceStr of allPriceMatches) {
+                    const cleanPrice = priceStr.replace(/[^\d.]/g, '');
+                    if (parseFloat(cleanPrice) >= 10) {
+                      uniquePrices.add(cleanPrice);
                     }
                   }
+                  
+                  console.log(`    Found prices: ${Array.from(uniquePrices).join(', ')}`);
+                  
+                  // Find a price that's lower than original (sale price)
+                  for (const candidatePrice of uniquePrices) {
+                    const priceNum = parseFloat(candidatePrice);
+                    const origNum = parseFloat(potentialOriginal);
+                    
+                    // Check if this is a valid sale price
+                    if (candidatePrice !== potentialOriginal && 
+                        priceNum < origNum && 
+                        priceNum > origNum * 0.5 && // Sale price should be at least 50% of original
+                        Math.abs(priceNum - origNum) > 5) { // Difference should be meaningful
+                      
+                      price = candidatePrice.includes('.') ? candidatePrice : candidatePrice + '.00';
+                      originalPrice = potentialOriginal;
+                      isOnSale = true;
+                      console.log(`✅ SALE DETECTED: "${title.substring(0, 40)}" - now $${price} was $${originalPrice}`);
+                      break;
+                    }
+                  }
+                  
+                  if (isOnSale) break;
                 }
-                
-                if (isOnSale && price) break;
               }
               
               // Check for other sale patterns if Normally pattern didn't work
