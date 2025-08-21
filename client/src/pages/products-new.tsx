@@ -843,15 +843,7 @@ export default function ProductsPage() {
                   transition={{ duration: 0.3 }}
                 >
                   <Card className="bg-white border border-gray-200 shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden">
-                    {/* Badges */}
-                    <div className="absolute top-2 left-2 z-10 flex gap-2">
-                      {product.price && product.price > 99 && (
-                        <Badge className="bg-red-600 text-white text-xs font-bold">FREE SHIPPING</Badge>
-                      )}
-                      {product.competitorLinks.length === 0 && (
-                        <Badge className="bg-red-600 text-white text-xs font-bold">EXCLUSIVE</Badge>
-                      )}
-                    </div>
+                    
                     
                     {/* Product Image */}
                     <div className="h-48 w-full bg-white p-4 flex items-center justify-center">
