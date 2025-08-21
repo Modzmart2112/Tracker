@@ -259,18 +259,19 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
-      {/* Header with Actions */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-            Product Management
-          </h1>
-          <p className="text-muted-foreground mt-1">
-            Track your products and monitor competitor prices in real-time
-          </p>
-        </div>
-        <div className="flex gap-2">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 dark:from-slate-950 dark:via-gray-950 dark:to-slate-900">
+      <div className="p-6 max-w-7xl mx-auto space-y-8">
+        {/* Modern Header with Actions */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-red-600 via-red-700 to-red-800 bg-clip-text text-transparent">
+              Product Management
+            </h1>
+            <p className="text-slate-600 dark:text-slate-400 mt-2 text-lg">
+              Track your products and monitor competitor prices with AI-powered insights
+            </p>
+          </div>
+          <div className="flex gap-3">
           <Dialog open={showBulkImportDialog} onOpenChange={setShowBulkImportDialog}>
             <DialogTrigger asChild>
               <Button variant="outline" className="border-red-600 text-red-600 hover:bg-red-50">
@@ -377,14 +378,16 @@ export default function ProductsPage() {
                 Add Product
               </Button>
             </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Add New Product</DialogTitle>
-              <DialogDescription>
-                Add a product and tag it with competitor URLs. We'll automatically extract prices and monitor them daily.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-2xl">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-red-600 to-red-700 bg-clip-text text-transparent">
+                  Add New Product
+                </DialogTitle>
+                <DialogDescription className="text-slate-600 dark:text-slate-400">
+                  Create a new product and add competitor links for price monitoring
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="sku">SKU</Label>
@@ -479,10 +482,12 @@ export default function ProductsPage() {
         
         {/* Edit Product Dialog */}
         <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-2xl">
             <DialogHeader>
-              <DialogTitle>Edit Product</DialogTitle>
-              <DialogDescription>
+              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-red-600 to-red-700 bg-clip-text text-transparent">
+                Edit Product
+              </DialogTitle>
+              <DialogDescription className="text-slate-600 dark:text-slate-400">
                 Update product details, brand, category, and pricing information
               </DialogDescription>
             </DialogHeader>
@@ -554,20 +559,20 @@ export default function ProductsPage() {
                 </div>
 
                 <div className="space-y-3">
-                  <Label>Competitor Links</Label>
-                  <div className="max-h-48 overflow-y-auto space-y-2 p-3 bg-gray-50 rounded-lg">
+                  <Label className="text-slate-700 dark:text-slate-300">Competitor Links</Label>
+                  <div className="max-h-48 overflow-y-auto space-y-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
                     {editingProduct.competitorLinks.map((link) => (
-                      <div key={link.id} className="flex items-center justify-between p-2 bg-white rounded border">
+                      <div key={link.id} className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700 hover:shadow-md transition-shadow">
                         <div className="flex-1">
                           <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-xs">
+                            <Badge variant="outline" className="text-xs border-red-200 text-red-700 dark:border-red-800 dark:text-red-300">
                               {link.competitorName}
                             </Badge>
                             {link.extractedPrice && (
-                              <span className="font-semibold text-sm">${link.extractedPrice}</span>
+                              <span className="font-semibold text-sm text-emerald-600 dark:text-emerald-400">${link.extractedPrice}</span>
                             )}
                           </div>
-                          <p className="text-xs text-muted-foreground truncate mt-1">
+                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-1">
                             {link.url}
                           </p>
                         </div>
@@ -575,7 +580,7 @@ export default function ProductsPage() {
                           href={link.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="ml-2 text-gray-400 hover:text-gray-600"
+                          className="ml-2 text-slate-400 hover:text-red-600 transition-colors"
                         >
                           <ExternalLink className="h-4 w-4" />
                         </a>
@@ -610,221 +615,258 @@ export default function ProductsPage() {
             )}
           </DialogContent>
         </Dialog>
+          </div>
         </div>
-      </div>
 
-      {/* Search Bar */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search products by name or SKU..."
-          className="pl-10 bg-white"
-        />
-      </div>
+        {/* Modern Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <Card className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-slate-700 shadow-2xl">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-300">Total Products</p>
+                  <p className="text-3xl font-bold text-white mt-2">{products?.length || 0}</p>
+                </div>
+                <div className="p-3 bg-gradient-to-br from-red-600 to-red-700 rounded-xl shadow-lg">
+                  <Package2 className="h-6 w-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-slate-700 shadow-2xl">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-300">Competitor Links</p>
+                  <p className="text-3xl font-bold text-white mt-2">{totalCompetitorLinks}</p>
+                </div>
+                <div className="p-3 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow-lg">
+                  <Link className="h-6 w-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-slate-700 shadow-2xl">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-300">Price Advantage</p>
+                  <p className="text-3xl font-bold text-emerald-400 mt-2">{priceAdvantageCount}</p>
+                </div>
+                <div className="p-3 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-xl shadow-lg">
+                  <DollarSign className="h-6 w-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-slate-700 shadow-2xl">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-slate-300">Need Adjustment</p>
+                  <p className="text-3xl font-bold text-red-400 mt-2">{needAdjustmentCount}</p>
+                </div>
+                <div className="p-3 bg-gradient-to-br from-red-600 to-red-700 rounded-xl shadow-lg">
+                  <TrendingUp className="h-6 w-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-blue-50 to-white border-blue-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Total Products</p>
-                <p className="text-2xl font-bold">{products.length}</p>
+        {/* Modern Search Bar */}
+        <Card className="bg-gradient-to-r from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 border-slate-200 dark:border-slate-700 shadow-xl">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-4">
+              <div className="p-2 bg-red-100 dark:bg-red-900/20 rounded-lg">
+                <Search className="h-5 w-5 text-red-600" />
               </div>
-              <Package2 className="h-8 w-8 text-blue-600 opacity-50" />
+              <Input
+                placeholder="Search products by name or SKU..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="flex-1 border-0 bg-transparent text-lg placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-red-500"
+              />
+              <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
+                <Filter className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+              </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gradient-to-br from-green-50 to-white border-green-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Links Tracked</p>
-                <p className="text-2xl font-bold">
-                  {products.reduce((acc, p) => acc + p.competitorLinks.length, 0)}
-                </p>
-              </div>
-              <Link className="h-8 w-8 text-green-600 opacity-50" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-purple-50 to-white border-purple-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Price Alerts</p>
-                <p className="text-2xl font-bold">
-                  {products.filter(p => {
-                    const lowest = getLowestCompetitorPrice(p.competitorLinks);
-                    return p.ourPrice && lowest && p.ourPrice > lowest;
-                  }).length}
-                </p>
-              </div>
-              <AlertCircle className="h-8 w-8 text-purple-600 opacity-50" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-orange-50 to-white border-orange-200">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Last Scan</p>
-                <p className="text-lg font-semibold">2 hours ago</p>
-              </div>
-              <Clock className="h-8 w-8 text-orange-600 opacity-50" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
 
-      {/* Products Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        <AnimatePresence>
-          {filteredProducts.map((product) => {
-            const lowestPrice = getLowestCompetitorPrice(product.competitorLinks);
-            const priceStatus = getPriceStatus(product.ourPrice, lowestPrice);
-            
-            return (
-              <motion.div
-                key={product.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.3 }}
-              >
-                <Card className="hover:shadow-xl transition-all duration-300 border-gray-200 overflow-hidden group">
-                  <div className="absolute inset-0 bg-gradient-to-br from-red-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <CardHeader className="relative">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <CardTitle className="text-lg">{product.name}</CardTitle>
-                        <CardDescription className="mt-1">
-                          <Badge variant="outline" className="text-xs">
-                            SKU: {product.sku}
-                          </Badge>
-                        </CardDescription>
+        {/* Products Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          <AnimatePresence>
+            {filteredProducts.map((product) => {
+              const lowestPrice = getLowestCompetitorPrice(product.competitorLinks);
+              const priceStatus = getPriceStatus(product.ourPrice, lowestPrice);
+              
+              return (
+                <motion.div
+                  key={product.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden group">
+                    <div className="absolute inset-0 bg-gradient-to-br from-red-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <CardHeader className="relative">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <CardTitle className="text-xl font-bold text-slate-900 dark:text-white">{product.name}</CardTitle>
+                          <CardDescription className="mt-2">
+                            <Badge variant="outline" className="text-xs border-slate-300 dark:border-slate-600">
+                              SKU: {product.sku}
+                            </Badge>
+                          </CardDescription>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+                            onClick={() => {
+                              setEditingProduct(product);
+                              setShowEditDialog(true);
+                            }}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            onClick={() => deleteProduct.mutate(product.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                          onClick={() => {
-                            setEditingProduct(product);
-                            setShowEditDialog(true);
-                          }}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          onClick={() => deleteProduct.mutate(product.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
 
-                    {/* Price Comparison */}
-                    {product.ourPrice && (
-                      <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="text-xs text-muted-foreground">Our Price</p>
-                            <p className="text-xl font-bold">${product.ourPrice}</p>
+                      {/* Modern Price Comparison */}
+                      {product.ourPrice && (
+                        <div className="mt-4 p-4 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 rounded-xl border border-slate-200 dark:border-slate-600">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Our Price</p>
+                              <p className="text-2xl font-bold text-slate-900 dark:text-white">${product.ourPrice}</p>
+                            </div>
+                            {lowestPrice && (
+                              <div className="text-right">
+                                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Lowest Competitor</p>
+                                <p className="text-2xl font-bold text-red-600 dark:text-red-400">${lowestPrice}</p>
+                              </div>
+                            )}
                           </div>
-                          {lowestPrice && (
-                            <div className="text-right">
-                              <p className="text-xs text-muted-foreground">Lowest Competitor</p>
-                              <p className="text-xl font-bold text-red-600">${lowestPrice}</p>
+                          {priceStatus && (
+                            <div className={`flex items-center gap-2 mt-3 px-3 py-2 rounded-lg ${priceStatus.color} bg-white/50 dark:bg-slate-900/50`}>
+                              <priceStatus.icon className="h-4 w-4" />
+                              <span className="text-sm font-semibold">{priceStatus.label}</span>
                             </div>
                           )}
                         </div>
-                        {priceStatus && (
-                          <div className={`flex items-center gap-1 mt-2 ${priceStatus.color}`}>
-                            <priceStatus.icon className="h-4 w-4" />
-                            <span className="text-sm font-medium">{priceStatus.label}</span>
+                      )}
+                    </CardHeader>
+
+                    <CardContent className="relative">
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+                            Competitor Links
+                          </p>
+                          <Badge variant="secondary" className="text-xs">
+                            {product.competitorLinks.length}
+                          </Badge>
+                        </div>
+                        
+                        {product.competitorLinks.map((link) => (
+                          <div
+                            key={link.id}
+                            className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors border border-slate-200 dark:border-slate-700"
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Badge 
+                                  variant={link.status === "success" ? "default" : link.status === "error" ? "destructive" : "secondary"}
+                                  className="text-xs"
+                                >
+                                  {link.competitorName || "Extracting..."}
+                                </Badge>
+                                {link.isCategory && (
+                                  <Badge variant="outline" className="text-xs border-blue-200 text-blue-700 dark:border-blue-800 dark:text-blue-300">
+                                    <Grid className="h-3 w-3 mr-1" />
+                                    Category ({link.productCount || 0})
+                                  </Badge>
+                                )}
+                                {link.extractedPrice && (
+                                  <span className="font-bold text-emerald-600 dark:text-emerald-400">${link.extractedPrice}</span>
+                                )}
+                              </div>
+                              {link.extractedImage && (
+                                <img 
+                                  src={link.extractedImage} 
+                                  alt={link.extractedTitle || "Product"}
+                                  className="w-16 h-16 object-cover rounded-lg border border-slate-200 dark:border-slate-600 mb-2"
+                                />
+                              )}
+                              <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                                {link.url}
+                              </p>
+                            </div>
+                            <a
+                              href={link.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="ml-3 text-slate-400 hover:text-red-600 transition-colors"
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </a>
+                          </div>
+                        ))}
+                        
+                        {product.competitorLinks.length === 0 && (
+                          <div className="text-center py-8">
+                            <div className="w-12 h-12 bg-slate-200 dark:bg-slate-700 rounded-lg flex items-center justify-center mx-auto mb-3">
+                              <Link className="h-6 w-6 text-slate-400" />
+                            </div>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">
+                              No competitor links added yet
+                            </p>
                           </div>
                         )}
                       </div>
-                    )}
-                  </CardHeader>
-
-                  <CardContent className="relative">
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium text-muted-foreground mb-2">
-                        Competitor Links ({product.competitorLinks.length})
-                      </p>
-                      {product.competitorLinks.map((link) => (
-                        <div
-                          key={link.id}
-                          className="flex items-center justify-between p-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                        >
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <Badge 
-                                variant={link.status === "success" ? "default" : link.status === "error" ? "destructive" : "secondary"}
-                                className="text-xs"
-                              >
-                                {link.competitorName || "Extracting..."}
-                              </Badge>
-                              {link.isCategory && (
-                                <Badge variant="outline" className="text-xs">
-                                  <Grid className="h-3 w-3 mr-1" />
-                                  Category ({link.productCount || 0})
-                                </Badge>
-                              )}
-                              {link.extractedPrice && (
-                                <span className="font-semibold">${link.extractedPrice}</span>
-                              )}
-                            </div>
-                            {link.extractedImage && (
-                              <img 
-                                src={link.extractedImage} 
-                                alt={link.extractedTitle || "Product"}
-                                className="w-12 h-12 object-cover rounded mt-1"
-                              />
-                            )}
-                            <p className="text-xs text-muted-foreground truncate mt-1">
-                              {link.url}
-                            </p>
-                          </div>
-                          <a
-                            href={link.url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="ml-2 text-gray-400 hover:text-gray-600"
-                          >
-                            <ExternalLink className="h-4 w-4" />
-                          </a>
-                        </div>
-                      ))}
-                      {product.competitorLinks.length === 0 && (
-                        <p className="text-sm text-muted-foreground text-center py-2">
-                          No competitor links added yet
-                        </p>
-                      )}
-                    </div>
-                  </CardContent>
+                    </CardContent>
                 </Card>
               </motion.div>
             );
           })}
-        </AnimatePresence>
-
-        {filteredProducts.length === 0 && (
-          <div className="col-span-full text-center py-12">
-            <Package2 className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-lg font-medium text-gray-600">No products found</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              {searchTerm ? "Try a different search term" : "Add your first product to get started"}
-            </p>
-          </div>
-        )}
+          </AnimatePresence>
+          
+          {filteredProducts.length === 0 && (
+            <div className="col-span-full text-center py-16">
+              <div className="w-24 h-24 bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <Package2 className="h-12 w-12 text-slate-400" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">No products found</h3>
+              <p className="text-slate-500 dark:text-slate-400 mb-6">
+                {searchTerm ? "Try a different search term" : "Add your first product to get started"}
+              </p>
+              {!searchTerm && (
+                <Button
+                  onClick={() => setShowAddDialog(true)}
+                  className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Your First Product
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
