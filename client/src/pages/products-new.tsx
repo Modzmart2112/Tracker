@@ -40,7 +40,11 @@ import {
   Settings,
   Check,
   CheckSquare,
-  Square
+  Square,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -99,6 +103,8 @@ export default function ProductsPage() {
   const [cardCustomizations, setCardCustomizations] = useState<Map<string, CardCustomization>>(new Map());
   const [editingCard, setEditingCard] = useState<CardCustomization | null>(null);
   const [showCardCustomDialog, setShowCardCustomDialog] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(16); // 4 cards per row × 4 rows = 16 per page
   const [newProduct, setNewProduct] = useState({
     sku: "",
     name: "",
@@ -307,6 +313,12 @@ export default function ProductsPage() {
     (product.sku || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedProducts = filteredProducts.slice(startIndex, endIndex);
+
   // Bulk selection helper functions
   const toggleProductSelection = (productId: string) => {
     const newSelected = new Set(selectedProducts);
@@ -319,14 +331,14 @@ export default function ProductsPage() {
   };
 
   const selectAllProducts = () => {
-    setSelectedProducts(new Set(filteredProducts.map(p => p.id)));
+    setSelectedProducts(new Set(paginatedProducts.map(p => p.id)));
   };
 
   const clearSelection = () => {
     setSelectedProducts(new Set());
   };
 
-  const isAllSelected = filteredProducts.length > 0 && selectedProducts.size === filteredProducts.length;
+  const isAllSelected = paginatedProducts.length > 0 && paginatedProducts.every(p => selectedProducts.has(p.id));
 
   const getLowestCompetitorPrice = (links: CompetitorLink[]) => {
     const prices = links.filter(l => l.extractedPrice).map(l => l.extractedPrice!);
@@ -401,9 +413,11 @@ export default function ProductsPage() {
     p.competitorLinks.map(l => l.competitorName || 'Unknown')
   ))).sort();
 
+
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 dark:from-slate-950 dark:via-gray-950 dark:to-slate-900">
-      <div className="p-6 max-w-7xl mx-auto space-y-8">
+      <div className="p-6 w-full max-w-none space-y-8">
         {/* Modern Header with Actions */}
         <div className="flex justify-between items-center">
           <div>
@@ -1016,9 +1030,9 @@ export default function ProductsPage() {
             </Card>
 
             {/* Products Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               <AnimatePresence>
-            {filteredProducts.map((product) => {
+            {paginatedProducts.map((product) => {
               const lowestPrice = getLowestCompetitorPrice(product.competitorLinks);
               const priceStatus = getPriceStatus(product.ourPrice, lowestPrice);
               
@@ -1030,10 +1044,10 @@ export default function ProductsPage() {
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Card className={`bg-white border transition-all duration-300 overflow-hidden relative ${
+                  <Card className={`bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 border transition-all duration-300 overflow-hidden relative group hover:shadow-xl ${
                     selectedProducts.has(product.id) 
-                      ? 'border-red-500 shadow-lg shadow-red-200' 
-                      : 'border-gray-200 shadow-md hover:shadow-lg'
+                      ? 'border-red-500 shadow-lg shadow-red-200/30 ring-2 ring-red-200' 
+                      : 'border-slate-200 dark:border-slate-700 shadow-md hover:border-red-300 dark:hover:border-red-600'
                   }`}>
                     {/* Selection Checkbox */}
                     <div className="absolute top-3 left-3 z-10">
@@ -1095,8 +1109,8 @@ export default function ProductsPage() {
                     </div>
                     
                     {/* Product Info */}
-                    <div className="p-4 border-t">
-                      <h3 className="text-sm font-medium text-gray-900 line-clamp-2 min-h-[2.5rem]">
+                    <div className="p-4 border-t border-slate-200 dark:border-slate-700 bg-gradient-to-r from-transparent to-slate-50/50 dark:to-slate-800/50">
+                      <h3 className="text-sm font-medium text-slate-900 dark:text-white line-clamp-2 min-h-[2.5rem] group-hover:text-red-700 dark:group-hover:text-red-400 transition-colors">
                         {product.name}
                       </h3>
                       
@@ -1255,7 +1269,7 @@ export default function ProductsPage() {
           })}
               </AnimatePresence>
           
-          {filteredProducts.length === 0 && (
+          {paginatedProducts.length === 0 && filteredProducts.length === 0 && (
             <div className="col-span-full text-center py-16">
               <div className="w-24 h-24 bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-6">
                 <Package2 className="h-12 w-12 text-slate-400" />
@@ -1273,6 +1287,87 @@ export default function ProductsPage() {
                   Add Your First Product
                 </Button>
               )}
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {filteredProducts.length > itemsPerPage && (
+            <div className="flex items-center justify-between pt-6 border-t border-slate-200 dark:border-slate-700">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-slate-600 dark:text-slate-400">
+                  Showing {Math.min(startIndex + 1, filteredProducts.length)} to {Math.min(endIndex, filteredProducts.length)} of {filteredProducts.length} products
+                </span>
+              </div>
+              <div className="flex items-center space-x-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronsLeft className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <Button
+                        key={pageNum}
+                        variant={currentPage === pageNum ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`h-8 w-8 p-0 ${
+                          currentPage === pageNum 
+                            ? "bg-gradient-to-r from-red-600 to-red-700 text-white border-red-600" 
+                            : "hover:bg-red-50 hover:border-red-200"
+                        }`}
+                      >
+                        {pageNum}
+                      </Button>
+                    );
+                  })}
+                </div>
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  className="h-8 w-8 p-0"
+                >
+                  <ChevronsRight className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           )}
         </div>
