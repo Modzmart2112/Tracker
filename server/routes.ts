@@ -574,13 +574,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
             
             // Create listing snapshot with pricing
-            if (product.price > 0) {
+            // Use sale price if available, otherwise regular price
+            const finalPrice = product.salePrice || product.price;
+            if (finalPrice > 0) {
               await storage.createListingSnapshot({
                 listingId: competitorListing.id,
-                price: product.price.toString(),
+                price: finalPrice.toString(),
                 currency: 'AUD',
                 inStock: true
               });
+              
+              // Log sale detection for monitoring
+              if (product.salePrice && product.regularPrice) {
+                const discount = ((product.regularPrice - product.salePrice) / product.regularPrice * 100).toFixed(1);
+                console.log(`  💰 SALE: ${product.title.substring(0, 40)} - $${product.salePrice} (was $${product.regularPrice}) - ${discount}% off`);
+              }
             }
             
             savedCount++;

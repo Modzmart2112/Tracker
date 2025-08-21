@@ -444,6 +444,284 @@ export class PlaywrightScraper {
       }
     }
   }
+
+  async scrapeToolkitDepot(url: string): Promise<any> {
+    try {
+      const execPath = await this.getChromiumPath();
+      const browser = await chromium.launch({
+        headless: true,
+        executablePath: execPath,
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox', 
+          '--disable-dev-shm-usage',
+          '--disable-gpu'
+        ]
+      });
+      
+      const context = await browser.newContext({
+        viewport: { width: 1366, height: 900 },
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115 Safari/537.36'
+      });
+      
+      const page = await context.newPage();
+      
+      console.log('Navigating to Toolkit Depot page...');
+      await page.goto(url, { 
+        waitUntil: 'domcontentloaded',
+        timeout: 60000 
+      });
+      
+      await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
+      
+      // Scroll to load more products
+      await this.autoScroll(page);
+      await page.waitForTimeout(2000);
+      
+      console.log('Extracting TKD products with sale prices...');
+      
+      // First, let's see what the page contains
+      const pageInfo = await page.evaluate(() => {
+        const info: any = {};
+        
+        // Check for different selector patterns
+        const selectors = [
+          '.card',
+          '.productGrid-item',
+          '.product-item',
+          'article.card',
+          '[class*="product"]',
+          '[class*="Product"]',
+          '[data-test-info-type="productCard"]',
+          '.listItem',
+          'li[class*="product"]',
+          'div[class*="card"]'
+        ];
+        
+        for (const selector of selectors) {
+          const elements = document.querySelectorAll(selector);
+          if (elements.length > 0) {
+            info[selector] = elements.length;
+          }
+        }
+        
+        // Also check for links
+        const productLinks = document.querySelectorAll('a[href*="/products/"]');
+        info['product_links'] = productLinks.length;
+        
+        // Check for any h4/h3 titles
+        info['h4_titles'] = document.querySelectorAll('h4').length;
+        info['h3_titles'] = document.querySelectorAll('h3').length;
+        
+        return info;
+      });
+      
+      console.log('Page structure analysis:', pageInfo);
+      
+      // Extract products using TKD-specific selectors
+      const products = await page.evaluate(() => {
+        const items: any[] = [];
+        const seen = new Set<string>();
+        
+        // Debug: Log all h4 elements to see what's on the page
+        const h4Elements = document.querySelectorAll('h4');
+        console.log(`Found ${h4Elements.length} h4 elements`);
+        h4Elements.forEach((h4, i) => {
+          console.log(`H4 ${i}: ${h4.textContent?.substring(0, 50)}`);
+        });
+        
+        // Debug: Find any elements with dollar signs
+        const priceElements = Array.from(document.querySelectorAll('*')).filter(el => 
+          el.textContent && el.textContent.includes('$') && !el.textContent.includes('$0')
+        );
+        console.log(`Found ${priceElements.length} elements with prices`);
+        
+        // Try multiple approaches to find products
+        // Approach 1: Find by any product-looking links (TKD doesn't use /products/)
+        const productLinks = Array.from(document.querySelectorAll(
+          'h4 a, .card-title a, a[href*="-"], .card a[href]'
+        ));
+        console.log(`Found ${productLinks.length} potential product links`);
+        
+        if (productLinks.length > 0) {
+          for (const link of productLinks) {
+            const href = (link as HTMLAnchorElement).href;
+            // Skip navigation links, already seen, or same page links
+            if (!href || seen.has(href) || href === window.location.href || href.includes('#')) continue;
+            seen.add(href);
+            
+            // Find the containing card/item
+            let container = link.parentElement;
+            let depth = 0;
+            while (container && depth < 5) {
+              // Check if this looks like a product container
+              const hasPrice = container.textContent?.includes('$');
+              const hasTitle = container.querySelector('h4, h3, .card-title');
+              
+              if (hasPrice && hasTitle) {
+                const title = hasTitle.textContent?.trim() || '';
+                
+                // Extract price
+                const priceText = container.textContent || '';
+                const priceMatch = priceText.match(/\$\s*(\d+(?:\.\d{2})?)/);
+                const price = priceMatch ? priceMatch[1] : null;
+                
+                // Get image
+                const imgEl = container.querySelector('img');
+                const image = imgEl?.src || '';
+                
+                if (title && price) {
+                  items.push({
+                    title,
+                    price,
+                    originalPrice: null,
+                    isOnSale: false,
+                    url: href,
+                    image
+                  });
+                  console.log(`Added product: ${title.substring(0, 40)}`);
+                  break;
+                }
+              }
+              
+              container = container.parentElement;
+              depth++;
+            }
+          }
+        }
+        
+        // Approach 2: Fallback to card-based search
+        if (items.length === 0) {
+          const productCards = Array.from(document.querySelectorAll(
+            '.card, .productGrid-item, .product-item, article.card, [class*="product-card"]'
+          ));
+          
+          console.log(`Fallback: Found ${productCards.length} potential product cards on TKD`);
+          
+          for (const card of productCards) {
+          try {
+            // Find the product link - broader search for TKD
+            const linkEl = card.querySelector('h4 a, .card-title a, a.card-figure__link, a[href]');
+            if (!linkEl) continue;
+            
+            const href = (linkEl as HTMLAnchorElement).href;
+            if (!href || seen.has(href)) continue;
+            seen.add(href);
+            
+            // Get product title - broader search
+            const titleEl = card.querySelector('h4.card-title, .card-title, [data-test-info-type="productTitle"], h4, h3, .product-name');
+            const title = titleEl?.textContent?.trim() || '';
+            
+            if (!title) continue;
+            
+            // Get image
+            const imgEl = card.querySelector('img');
+            const image = imgEl?.src || '';
+            
+            // Extract prices - TKD specific structure
+            let price = null;
+            let originalPrice = null;
+            let isOnSale = false;
+            
+            // Look for sale pricing structure with "Was:" and "Now:"
+            const priceContainer = card.querySelector('.card-price, [data-test-info-type="price"]');
+            if (priceContainer) {
+              const containerText = priceContainer.textContent || '';
+              
+              // Check for Was/Now pattern (from user's HTML)
+              const wasMatch = containerText.match(/Was:\s*\$?\s*(\d+(?:\.\d{2})?)/i);
+              const nowMatch = containerText.match(/Now:\s*\$?\s*(\d+(?:\.\d{2})?)/i);
+              
+              if (wasMatch && nowMatch) {
+                originalPrice = wasMatch[1];
+                price = nowMatch[1];
+                isOnSale = true;
+                console.log(`✅ TKD SALE: "${title.substring(0, 40)}" - $${price} (was $${originalPrice})`);
+              } else {
+                // Look for price--non-sale and price--withTax classes
+                const nonSalePriceEl = priceContainer.querySelector('.price--non-sale span');
+                const salePriceEl = priceContainer.querySelector('.price--withTax span');
+                
+                if (nonSalePriceEl && salePriceEl) {
+                  const nonSaleText = nonSalePriceEl.textContent || '';
+                  const saleText = salePriceEl.textContent || '';
+                  
+                  const nonSaleMatch = nonSaleText.match(/(\d+(?:\.\d{2})?)/);
+                  const saleMatch = saleText.match(/(\d+(?:\.\d{2})?)/);
+                  
+                  if (nonSaleMatch && saleMatch) {
+                    originalPrice = nonSaleMatch[1];
+                    price = saleMatch[1];
+                    isOnSale = true;
+                    console.log(`✅ TKD SALE (class): "${title.substring(0, 40)}" - $${price} (was $${originalPrice})`);
+                  }
+                }
+              }
+            }
+            
+            // If still no price, try regular price extraction
+            if (!price) {
+              const priceEl = card.querySelector('.price, .price-section');
+              if (priceEl) {
+                const priceText = priceEl.textContent || '';
+                const priceMatch = priceText.match(/\$?\s*(\d+(?:\.\d{2})?)/);
+                if (priceMatch) {
+                  price = priceMatch[1];
+                }
+              }
+            }
+            
+            // Last resort: any dollar amount in the card
+            if (!price) {
+              const cardText = card.textContent || '';
+              const dollarMatch = cardText.match(/\$\s*(\d+(?:\.\d{2})?)/);
+              if (dollarMatch) {
+                price = dollarMatch[1];
+              }
+            }
+            
+            if (price) {
+              items.push({
+                title,
+                price: parseFloat(price),
+                originalPrice: originalPrice ? parseFloat(originalPrice) : null,
+                isOnSale,
+                url: href,
+                image,
+                brand: title.split(' ')[0],
+                model: '',
+                category: 'Tools'
+              });
+            }
+          } catch (err) {
+            console.error('Error extracting TKD product:', err);
+          }
+        }
+        }
+        
+        return items;
+      });
+      
+      await browser.close();
+      
+      console.log(`Extracted ${products.length} products from Toolkit Depot`);
+      
+      return {
+        products: products,
+        totalPages: 1,
+        currentPage: 1,
+        totalProducts: products.length,
+        categoryName: 'TOOLS',
+        competitorName: 'Toolkitdepot',
+        sourceUrl: url,
+        extractedAt: new Date().toISOString()
+      };
+      
+    } catch (error: any) {
+      console.error('TKD scraping error:', error);
+      throw error;
+    }
+  }
 }
 
 export const playwrightScraper = new PlaywrightScraper();
