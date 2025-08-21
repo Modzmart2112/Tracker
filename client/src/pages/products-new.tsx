@@ -25,7 +25,9 @@ import {
   Filter,
   Grid,
   Image as ImageIcon,
-  ShoppingCart
+  ShoppingCart,
+  Edit,
+  Save
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -56,6 +58,8 @@ export default function ProductsPage() {
   const { toast } = useToast();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showBulkImportDialog, setShowBulkImportDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<UnifiedProduct | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryUrl, setCategoryUrl] = useState("");
   const [isExtractingCategory, setIsExtractingCategory] = useState(false);
@@ -96,6 +100,23 @@ export default function ProductsPage() {
       queryClient.invalidateQueries({ queryKey: ["/api/products-unified"] });
       toast({ title: "Product deleted" });
     },
+  });
+
+  const updateProduct = useMutation({
+    mutationFn: ({ id, ...data }: any) => apiRequest("PUT", `/api/products-unified/${id}`, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products-unified"] });
+      setShowEditDialog(false);
+      setEditingProduct(null);
+      toast({ title: "Product updated successfully" });
+    },
+    onError: () => {
+      toast({ 
+        title: "Update failed",
+        description: "Failed to update product",
+        variant: "destructive"
+      });
+    }
   });
 
   // Extract data from URL mutation
@@ -455,6 +476,140 @@ export default function ProductsPage() {
             </form>
           </DialogContent>
         </Dialog>
+        
+        {/* Edit Product Dialog */}
+        <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Product</DialogTitle>
+              <DialogDescription>
+                Update product details, brand, category, and pricing information
+              </DialogDescription>
+            </DialogHeader>
+            {editingProduct && (
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                updateProduct.mutate({
+                  id: editingProduct.id,
+                  name: formData.get("name") as string,
+                  sku: formData.get("sku") as string,
+                  ourPrice: parseFloat(formData.get("ourPrice") as string) || 0,
+                  brand: formData.get("brand") as string,
+                  category: formData.get("category") as string
+                });
+              }} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-sku">SKU</Label>
+                    <Input
+                      id="edit-sku"
+                      name="sku"
+                      defaultValue={editingProduct.sku}
+                      required
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-ourPrice">Our Price</Label>
+                    <Input
+                      id="edit-ourPrice"
+                      name="ourPrice"
+                      type="number"
+                      step="0.01"
+                      defaultValue={editingProduct.ourPrice}
+                      placeholder="0.00"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="edit-name">Product Name</Label>
+                  <Input
+                    id="edit-name"
+                    name="name"
+                    defaultValue={editingProduct.name}
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-brand">Brand</Label>
+                    <Input
+                      id="edit-brand"
+                      name="brand"
+                      defaultValue={editingProduct.brand || ""}
+                      placeholder="e.g., NOCO, CTEK"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-category">Category</Label>
+                    <Input
+                      id="edit-category"
+                      name="category"
+                      defaultValue={editingProduct.category || ""}
+                      placeholder="e.g., Battery Chargers"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <Label>Competitor Links</Label>
+                  <div className="max-h-48 overflow-y-auto space-y-2 p-3 bg-gray-50 rounded-lg">
+                    {editingProduct.competitorLinks.map((link) => (
+                      <div key={link.id} className="flex items-center justify-between p-2 bg-white rounded border">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              {link.competitorName}
+                            </Badge>
+                            {link.extractedPrice && (
+                              <span className="font-semibold text-sm">${link.extractedPrice}</span>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground truncate mt-1">
+                            {link.url}
+                          </p>
+                        </div>
+                        <a
+                          href={link.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ml-2 text-gray-400 hover:text-gray-600"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={() => setShowEditDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={updateProduct.isPending}
+                    className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800"
+                  >
+                    {updateProduct.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Updating...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Save Changes
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            )}
+          </DialogContent>
+        </Dialog>
         </div>
       </div>
 
@@ -551,14 +706,27 @@ export default function ProductsPage() {
                           </Badge>
                         </CardDescription>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        onClick={() => deleteProduct.mutate(product.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                          onClick={() => {
+                            setEditingProduct(product);
+                            setShowEditDialog(true);
+                          }}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          onClick={() => deleteProduct.mutate(product.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
 
                     {/* Price Comparison */}

@@ -358,6 +358,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/products-unified/:id", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { name, sku, ourPrice, brand, category } = req.body;
+      
+      // Get existing product
+      const product = await storage.getUnifiedProduct(id);
+      if (!product) {
+        return res.status(404).json({ error: "Product not found" });
+      }
+      
+      // Update product by recreating it (for memory storage)
+      await storage.deleteUnifiedProduct(id);
+      const updatedProduct = await storage.createUnifiedProduct({
+        name: name || product.name,
+        sku: sku || product.sku,
+        ourPrice: ourPrice !== undefined ? ourPrice : product.ourPrice
+      });
+      
+      // Re-add competitor links
+      if (product.competitorLinks) {
+        for (const link of product.competitorLinks) {
+          await storage.addCompetitorLink(updatedProduct.id, link.url);
+        }
+      }
+      
+      const finalProduct = await storage.getUnifiedProduct(updatedProduct.id);
+      res.json(finalProduct);
+    } catch (error) {
+      console.error("Error updating product:", error);
+      res.status(500).json({ error: "Failed to update product" });
+    }
+  });
+
   app.delete("/api/products-unified/:id", async (req, res) => {
     try {
       await storage.deleteUnifiedProduct(req.params.id);
@@ -384,6 +418,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to extract URL data" });
     }
   });
+
+  // Import AI service if OpenAI key is available
+  const aiService = process.env.OPENAI_API_KEY 
+    ? await import("./ai-service")
+    : null;
 
   // Extract products from category page  
   app.post("/api/extract-category", async (req, res) => {
@@ -429,17 +468,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         title: `${template.brand} ${template.model} ${template.specs}`,
         price: template.price,
         image: `https://via.placeholder.com/300x300/CB0000/ffffff?text=${encodeURIComponent(template.brand)}`,
-        url: `${url.split('?')[0]}/product/${template.model.toLowerCase().replace(/\s+/g, '-')}`
+        url: `${url.split('?')[0]}/product/${template.model.toLowerCase().replace(/\s+/g, '-')}`,
+        brand: template.brand,
+        model: template.model,
+        category: category.replace(/-/g, ' ').toUpperCase()
       }));
+      
+      // Use AI to analyze products if available
+      let enrichedProducts = products;
+      if (aiService) {
+        try {
+          const categoryInfo = await aiService.analyzeCategoryUrl(url);
+          const analyzed = await aiService.bulkAnalyzeProducts(products);
+          
+          enrichedProducts = products.map((product, i) => ({
+            ...product,
+            brand: analyzed[i]?.brand || product.brand,
+            model: analyzed[i]?.model || product.model,
+            category: categoryInfo.category,
+            subcategory: categoryInfo.subcategory,
+            specifications: analyzed[i]?.specifications || []
+          }));
+        } catch (err) {
+          console.log("AI analysis failed, using basic extraction");
+        }
+      }
       
       // Simulate pagination info
       res.json({
-        products: products,
+        products: enrichedProducts,
         totalPages: totalPages,
         currentPage: 1,
         totalProducts: totalProducts,
         categoryName: category.replace(/-/g, ' ').toUpperCase(),
-        extractedAt: new Date().toISOString()
+        extractedAt: new Date().toISOString(),
+        aiEnhanced: !!aiService
       });
     } catch (error) {
       console.error("Error extracting category:", error);
