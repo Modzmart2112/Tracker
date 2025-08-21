@@ -1052,41 +1052,70 @@ export default function ProductsPage() {
                 return (
                   <Card 
                     key={brand} 
-                    className={`${customization.backgroundColor} border-slate-200 dark:border-slate-700 shadow-xl hover:shadow-2xl transition-all duration-300 relative group ${customization.customStyles}`}
+                    className="relative group bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-slate-700 hover:border-red-500/50 shadow-2xl hover:shadow-red-500/20 transition-all duration-500 overflow-hidden"
                   >
+                    {/* Futuristic glow effect */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 via-transparent to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    
+                    {/* Animated border gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-red-500 via-purple-500 to-blue-500 opacity-0 group-hover:opacity-20 blur-sm transition-all duration-500" />
+                    
                     {/* Edit Button */}
                     <Button
                       variant="outline"
                       size="sm"
-                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                      className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 bg-black/50 border-red-500/50 text-red-400 hover:bg-red-500/20 hover:text-red-300 backdrop-blur-sm"
                       onClick={() => openCardEditor(brand, 'brand')}
                     >
                       <Settings className="h-3 w-3" />
                     </Button>
 
-                    <CardHeader className="pb-4">
-                      {customization.logoUrl && (
-                        <div className="w-16 h-16 mb-3 mx-auto">
-                          <img 
-                            src={customization.logoUrl} 
-                            alt={`${brand} logo`}
-                            className="w-full h-full object-contain rounded-lg"
-                          />
+                    <CardHeader className="relative z-10 pb-4">
+                      {/* Logo container with futuristic styling */}
+                      <div className="w-20 h-20 mb-4 mx-auto relative">
+                        <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 to-blue-500/20 rounded-xl blur-sm" />
+                        <div className="relative w-full h-full bg-black/30 backdrop-blur-sm rounded-xl border border-slate-600 p-3 flex items-center justify-center">
+                          {customization.logoUrl ? (
+                            <img 
+                              src={customization.logoUrl} 
+                              alt={`${brand} logo`}
+                              className="w-full h-full object-contain filter brightness-110"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-red-500 to-blue-500 rounded-lg flex items-center justify-center">
+                              <span className="text-white font-bold text-lg">
+                                {brand.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
                       
-                      {customization.showTitle && (
-                        <CardTitle className={`text-xl font-bold flex items-center justify-between ${customization.textColor}`}>
-                          <span>{customization.title}</span>
-                          <Badge variant="secondary">{brandProducts.length}</Badge>
-                        </CardTitle>
-                      )}
-                      
-                      <CardDescription className={customization.textColor}>
-                        {lowestPrice !== Infinity && (
-                          <span className="text-sm">
-                            Price range: ${lowestPrice.toFixed(2)} - ${highestPrice.toFixed(2)}
+                      {/* Title with futuristic styling */}
+                      <CardTitle className="text-xl font-bold text-center mb-3">
+                        <div className="flex items-center justify-center gap-3">
+                          <span className="bg-gradient-to-r from-white via-gray-200 to-white bg-clip-text text-transparent">
+                            {brand}
                           </span>
+                          <div className="relative">
+                            <Badge className="bg-gradient-to-r from-red-600 to-red-700 text-white border-red-500 shadow-lg shadow-red-500/25">
+                              {brandProducts.length}
+                            </Badge>
+                            <div className="absolute inset-0 bg-red-500/30 rounded-full blur animate-pulse" />
+                          </div>
+                        </div>
+                      </CardTitle>
+                      
+                      {/* Price range with tech styling */}
+                      <CardDescription className="text-center">
+                        {lowestPrice !== Infinity && (
+                          <div className="flex items-center justify-center gap-2">
+                            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-red-500/50 to-transparent" />
+                            <span className="text-gray-300 text-sm font-mono bg-black/30 px-3 py-1 rounded-full border border-slate-600">
+                              ${lowestPrice.toFixed(2)} - ${highestPrice.toFixed(2)}
+                            </span>
+                            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-red-500/50 to-transparent" />
+                          </div>
                         )}
                       </CardDescription>
                     </CardHeader>
@@ -1121,38 +1150,67 @@ export default function ProductsPage() {
                 return (
                   <Card 
                     key={category} 
-                    className={`${customization.backgroundColor} border-slate-200 dark:border-slate-700 shadow-xl hover:shadow-2xl transition-all duration-300 relative group ${customization.customStyles}`}
+                    className="relative group bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-slate-700 hover:border-blue-500/50 shadow-2xl hover:shadow-blue-500/20 transition-all duration-500 overflow-hidden"
                   >
+                    {/* Futuristic glow effect */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    
+                    {/* Animated border gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-cyan-500 to-purple-500 opacity-0 group-hover:opacity-20 blur-sm transition-all duration-500" />
+                    
                     {/* Edit Button */}
                     <Button
                       variant="outline"
                       size="sm"
-                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                      className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 bg-black/50 border-blue-500/50 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 backdrop-blur-sm"
                       onClick={() => openCardEditor(category, 'category')}
                     >
                       <Settings className="h-3 w-3" />
                     </Button>
 
-                    <CardHeader className="pb-4">
-                      {customization.logoUrl && (
-                        <div className="w-16 h-16 mb-3 mx-auto">
-                          <img 
-                            src={customization.logoUrl} 
-                            alt={`${category} icon`}
-                            className="w-full h-full object-contain rounded-lg"
-                          />
+                    <CardHeader className="relative z-10 pb-4">
+                      {/* Icon container with futuristic styling */}
+                      <div className="w-20 h-20 mb-4 mx-auto relative">
+                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-xl blur-sm" />
+                        <div className="relative w-full h-full bg-black/30 backdrop-blur-sm rounded-xl border border-slate-600 p-3 flex items-center justify-center">
+                          {customization.logoUrl ? (
+                            <img 
+                              src={customization.logoUrl} 
+                              alt={`${category} icon`}
+                              className="w-full h-full object-contain filter brightness-110"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+                              <Grid className="h-8 w-8 text-white" />
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
                       
-                      {customization.showTitle && (
-                        <CardTitle className={`text-xl font-bold flex items-center justify-between ${customization.textColor}`}>
-                          <span>{customization.title}</span>
-                          <Badge variant="secondary">{categoryProducts.length}</Badge>
-                        </CardTitle>
-                      )}
+                      {/* Title with futuristic styling */}
+                      <CardTitle className="text-xl font-bold text-center mb-3">
+                        <div className="flex items-center justify-center gap-3">
+                          <span className="bg-gradient-to-r from-white via-gray-200 to-white bg-clip-text text-transparent">
+                            {category}
+                          </span>
+                          <div className="relative">
+                            <Badge className="bg-gradient-to-r from-blue-600 to-purple-700 text-white border-blue-500 shadow-lg shadow-blue-500/25">
+                              {categoryProducts.length}
+                            </Badge>
+                            <div className="absolute inset-0 bg-blue-500/30 rounded-full blur animate-pulse" />
+                          </div>
+                        </div>
+                      </CardTitle>
                       
-                      <CardDescription className={customization.textColor}>
-                        {categoryBrands.length} brands in this category
+                      {/* Brand count with tech styling */}
+                      <CardDescription className="text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
+                          <span className="text-gray-300 text-sm font-mono bg-black/30 px-3 py-1 rounded-full border border-slate-600">
+                            {categoryBrands.length} brands
+                          </span>
+                          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
+                        </div>
                       </CardDescription>
                     </CardHeader>
                     
@@ -1194,38 +1252,67 @@ export default function ProductsPage() {
                 return (
                   <Card 
                     key={competitor} 
-                    className={`${customization.backgroundColor} border-slate-200 dark:border-slate-700 shadow-xl hover:shadow-2xl transition-all duration-300 relative group ${customization.customStyles}`}
+                    className="relative group bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-slate-700 hover:border-green-500/50 shadow-2xl hover:shadow-green-500/20 transition-all duration-500 overflow-hidden"
                   >
+                    {/* Futuristic glow effect */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 via-transparent to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                    
+                    {/* Animated border gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-green-500 via-emerald-500 to-cyan-500 opacity-0 group-hover:opacity-20 blur-sm transition-all duration-500" />
+                    
                     {/* Edit Button */}
                     <Button
                       variant="outline"
                       size="sm"
-                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                      className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 bg-black/50 border-green-500/50 text-green-400 hover:bg-green-500/20 hover:text-green-300 backdrop-blur-sm"
                       onClick={() => openCardEditor(competitor, 'competitor')}
                     >
                       <Settings className="h-3 w-3" />
                     </Button>
 
-                    <CardHeader className="pb-4">
-                      {customization.logoUrl && (
-                        <div className="w-16 h-16 mb-3 mx-auto">
-                          <img 
-                            src={customization.logoUrl} 
-                            alt={`${competitor} logo`}
-                            className="w-full h-full object-contain rounded-lg"
-                          />
+                    <CardHeader className="relative z-10 pb-4">
+                      {/* Logo container with futuristic styling */}
+                      <div className="w-20 h-20 mb-4 mx-auto relative">
+                        <div className="absolute inset-0 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-xl blur-sm" />
+                        <div className="relative w-full h-full bg-black/30 backdrop-blur-sm rounded-xl border border-slate-600 p-3 flex items-center justify-center">
+                          {customization.logoUrl ? (
+                            <img 
+                              src={customization.logoUrl} 
+                              alt={`${competitor} logo`}
+                              className="w-full h-full object-contain filter brightness-110"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
+                              <Store className="h-8 w-8 text-white" />
+                            </div>
+                          )}
                         </div>
-                      )}
+                      </div>
                       
-                      {customization.showTitle && (
-                        <CardTitle className={`text-xl font-bold flex items-center justify-between ${customization.textColor}`}>
-                          <span>{customization.title}</span>
-                          <Badge variant="secondary">{competitorProducts.length}</Badge>
-                        </CardTitle>
-                      )}
+                      {/* Title with futuristic styling */}
+                      <CardTitle className="text-xl font-bold text-center mb-3">
+                        <div className="flex items-center justify-center gap-3">
+                          <span className="bg-gradient-to-r from-white via-gray-200 to-white bg-clip-text text-transparent">
+                            {competitor}
+                          </span>
+                          <div className="relative">
+                            <Badge className="bg-gradient-to-r from-green-600 to-emerald-700 text-white border-green-500 shadow-lg shadow-green-500/25">
+                              {competitorProducts.length}
+                            </Badge>
+                            <div className="absolute inset-0 bg-green-500/30 rounded-full blur animate-pulse" />
+                          </div>
+                        </div>
+                      </CardTitle>
                       
-                      <CardDescription className={customization.textColor}>
-                        {competitorLinks.length} product links tracked
+                      {/* Links count with tech styling */}
+                      <CardDescription className="text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-green-500/50 to-transparent" />
+                          <span className="text-gray-300 text-sm font-mono bg-black/30 px-3 py-1 rounded-full border border-slate-600">
+                            {competitorLinks.length} links tracked
+                          </span>
+                          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-green-500/50 to-transparent" />
+                        </div>
                       </CardDescription>
                     </CardHeader>
                     
