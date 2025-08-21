@@ -59,6 +59,9 @@ interface Product {
   sku: string;
   name: string;
   ourPrice?: number;
+  price?: number;
+  originalPrice?: number;
+  image?: string;
   brand?: string;
   category?: string;
   competitorLinks: CompetitorLink[];
