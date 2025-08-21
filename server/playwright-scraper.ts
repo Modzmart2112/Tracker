@@ -209,32 +209,41 @@ export class PlaywrightScraper {
                 originalPrice = normallyMatch[1];
                 isOnSale = true;
                 
-                // Look for green price element with various green color formats
-                const greenPriceSelectors = [
-                  '.price[style*="green"]',
-                  '.price[style*="color: green"]', 
-                  '.price[style*="color:green"]',
-                  '[style*="color: green"] .price',
-                  '[style*="color:green"] .price'
-                ];
-                
-                let greenPriceEl = null;
-                for (const selector of greenPriceSelectors) {
-                  greenPriceEl = searchContainer.querySelector(selector);
-                  if (greenPriceEl) break;
-                }
-                
-                if (greenPriceEl) {
-                  // Extract all numbers from the green price element to handle format like $340.00
-                  const greenText = greenPriceEl.textContent || '';
-                  const priceMatch = greenText.match(/(\d+)\.?(\d*)/);
-                  if (priceMatch) {
-                    const dollars = priceMatch[1];
-                    const cents = priceMatch[2] || '00';
-                    price = `${dollars}.${cents}`;
-                    break;
+                // Look for ANY price element that could be the sale price
+                const allPriceElements = Array.from(searchContainer.querySelectorAll('.price, [class*="price"], [style*="color"], span, div'));
+                for (const priceEl of allPriceElements) {
+                  const style = (priceEl as HTMLElement).style;
+                  const hasGreenColor = style.color === 'green' || 
+                                       style.color === 'rgb(0, 128, 0)' ||
+                                       style.color.includes('green');
+                  
+                  if (hasGreenColor || (priceEl as HTMLElement).className.includes('price')) {
+                    const priceText = priceEl.textContent || '';
+                    const priceMatch = priceText.match(/(\d+)\.?(\d*)/);
+                    if (priceMatch && priceMatch[1] !== originalPrice) {
+                      const dollars = priceMatch[1];
+                      const cents = priceMatch[2] || '00';
+                      price = `${dollars}.${cents}`;
+                      break;
+                    }
                   }
                 }
+                
+                // If still no price found, look for any numeric value different from original
+                if (!price) {
+                  const allNumbers = containerText.match(/\$?(\d+)\.?\d*/g);
+                  if (allNumbers) {
+                    for (const num of allNumbers) {
+                      const cleanNum = num.replace(/[^0-9.]/g, '');
+                      if (cleanNum !== originalPrice && parseFloat(cleanNum) > 10 && parseFloat(cleanNum) < parseFloat(originalPrice)) {
+                        price = cleanNum;
+                        break;
+                      }
+                    }
+                  }
+                }
+                
+                if (price) break;
               }
               
               // Check for other sale patterns if Normally pattern didn't work
@@ -306,9 +315,19 @@ export class PlaywrightScraper {
               level++;
             }
             
-            // Debug first few items and sale items
+            // Debug first few items and sale items  
             if (i < 5 || isOnSale || !price) {
               console.log(`Product ${i+1}: "${title.substring(0, 40)}" - price: $${price} - originalPrice: $${originalPrice} - sale: ${isOnSale}`);
+              
+              // Extra debugging for items that should have sales
+              let searchLevel = a.parentElement;
+              while (searchLevel && searchLevel.textContent) {
+                if (searchLevel.textContent.includes('Normally')) {
+                  console.log(`  -> Contains "Normally" at level: ${searchLevel.textContent.substring(0, 100)}`);
+                  break;
+                }
+                searchLevel = searchLevel.parentElement;
+              }
             }
 
             if (!price) {
