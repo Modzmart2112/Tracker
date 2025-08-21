@@ -1042,99 +1042,56 @@ export default function ProductsPage() {
           </TabsContent>
 
           <TabsContent value="brands" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
               {uniqueBrands.map(brand => {
                 const brandProducts = products.filter(p => (p.brand || 'Unknown') === brand);
-                const lowestPrice = Math.min(...brandProducts.map(p => p.ourPrice || Infinity).filter(p => p !== Infinity));
-                const highestPrice = Math.max(...brandProducts.map(p => p.ourPrice || 0));
                 const customization = getCardCustomization(brand, 'brand');
                 
                 return (
-                  <Card 
-                    key={brand} 
-                    className="relative group bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-slate-700 hover:border-red-500/50 shadow-2xl hover:shadow-red-500/20 transition-all duration-500 overflow-hidden"
+                  <motion.div
+                    key={brand}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="cursor-pointer"
+                    onClick={() => {
+                      // Navigate to brand page - you'll need to implement this route
+                      window.location.href = `/brands/${encodeURIComponent(brand)}`;
+                    }}
                   >
-                    {/* Futuristic glow effect */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 via-transparent to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                    
-                    {/* Animated border gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-red-500 via-purple-500 to-blue-500 opacity-0 group-hover:opacity-20 blur-sm transition-all duration-500" />
-                    
-                    {/* Edit Button */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 bg-black/50 border-red-500/50 text-red-400 hover:bg-red-500/20 hover:text-red-300 backdrop-blur-sm"
-                      onClick={() => openCardEditor(brand, 'brand')}
-                    >
-                      <Settings className="h-3 w-3" />
-                    </Button>
-
-                    <CardHeader className="relative z-10 pb-4">
-                      {/* Logo container with futuristic styling */}
-                      <div className="w-20 h-20 mb-4 mx-auto relative">
-                        <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 to-blue-500/20 rounded-xl blur-sm" />
-                        <div className="relative w-full h-full bg-black/30 backdrop-blur-sm rounded-xl border border-slate-600 p-3 flex items-center justify-center">
-                          {customization.logoUrl ? (
+                    <Card className="aspect-square bg-white hover:shadow-lg transition-all duration-300 border border-gray-200 hover:border-red-300 relative group">
+                      {/* Product count badge */}
+                      <div className="absolute -top-2 -right-2 z-10">
+                        <Badge className="bg-red-600 text-white text-xs font-bold shadow-lg">
+                          {brandProducts.length}
+                        </Badge>
+                      </div>
+                      
+                      <CardContent className="p-4 h-full flex flex-col items-center justify-center">
+                        {customization.logoUrl ? (
+                          <div className="w-full h-full flex items-center justify-center">
                             <img 
                               src={customization.logoUrl} 
                               alt={`${brand} logo`}
-                              className="w-full h-full object-contain filter brightness-110"
+                              className="max-w-full max-h-full object-contain"
                             />
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-red-500 to-blue-500 rounded-lg flex items-center justify-center">
-                              <span className="text-white font-bold text-lg">
+                          </div>
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center shadow-lg">
+                              <span className="text-white font-bold text-2xl">
                                 {brand.charAt(0).toUpperCase()}
                               </span>
                             </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Title with futuristic styling */}
-                      <CardTitle className="text-xl font-bold text-center mb-3">
-                        <div className="flex items-center justify-center gap-3">
-                          <span className="bg-gradient-to-r from-white via-gray-200 to-white bg-clip-text text-transparent">
-                            {brand}
-                          </span>
-                          <div className="relative">
-                            <Badge className="bg-gradient-to-r from-red-600 to-red-700 text-white border-red-500 shadow-lg shadow-red-500/25">
-                              {brandProducts.length}
-                            </Badge>
-                            <div className="absolute inset-0 bg-red-500/30 rounded-full blur animate-pulse" />
-                          </div>
-                        </div>
-                      </CardTitle>
-                      
-                      {/* Price range with tech styling */}
-                      <CardDescription className="text-center">
-                        {lowestPrice !== Infinity && (
-                          <div className="flex items-center justify-center gap-2">
-                            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-red-500/50 to-transparent" />
-                            <span className="text-gray-300 text-sm font-mono bg-black/30 px-3 py-1 rounded-full border border-slate-600">
-                              ${lowestPrice.toFixed(2)} - ${highestPrice.toFixed(2)}
-                            </span>
-                            <div className="h-px flex-1 bg-gradient-to-r from-transparent via-red-500/50 to-transparent" />
                           </div>
                         )}
-                      </CardDescription>
-                    </CardHeader>
-                    
-                    <CardContent>
-                      <div className="space-y-2">
-                        {brandProducts.slice(0, 3).map(product => (
-                          <div key={product.id} className={`text-sm ${customization.textColor} opacity-75 truncate`}>
-                            • {product.name}
-                          </div>
-                        ))}
-                        {brandProducts.length > 3 && (
-                          <p className={`text-xs ${customization.textColor} opacity-60`}>
-                            +{brandProducts.length - 3} more products
-                          </p>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
+                        
+                        {/* Brand name on hover */}
+                        <div className="absolute inset-x-0 bottom-0 bg-black/80 text-white text-xs font-medium py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-center">
+                          {brand}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
                 );
               })}
             </div>

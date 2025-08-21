@@ -10,11 +10,18 @@ import Competitors from "@/pages/competitors";
 import Changes from "@/pages/changes";
 import Admin from "@/pages/admin";
 import NotFound from "@/pages/not-found";
-import ProductsPage from "@/pages/products-new";
+import ProductsPage from "./pages/products-new";
+import BrandDetailPage from "./pages/brand-detail";
+import CategoriesPage from "./pages/categories";
+import CompetitorsPage from "./pages/competitors";
+import PagesPage from "./pages/pages";
+import ChangesPage from "./pages/changes";
+import AdminPage from "./pages/admin";
+import NotFoundPage from "./pages/not-found";
 
 function Router() {
   const [location] = useLocation();
-  
+
   // Determine page title and subtitle based on route
   const getPageInfo = () => {
     switch(location) {
@@ -32,9 +39,9 @@ function Router() {
         return { title: 'Page Not Found', subtitle: 'The requested page could not be found' };
     }
   };
-  
+
   const { title, subtitle } = getPageInfo();
-  
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
       <Header 
@@ -47,6 +54,7 @@ function Router() {
         <Switch>
           <Route path="/" component={Dashboard} />
           <Route path="/products" component={ProductsPage} />
+          <Route path="/brands/:brandName" component={BrandDetailPage} />
           <Route path="/competitors" component={Competitors} />
           <Route path="/changes" component={Changes} />
           <Route path="/admin" component={Admin} />
