@@ -7,6 +7,33 @@ import {
   insertListingSnapshotSchema
 } from "@shared/schema";
 
+// Simple scraping helper (mock for now - will be replaced with actual scraping in Stage D)
+async function scrapeProductListing(listingId: string) {
+  const storage = getStorage();
+  try {
+    // In production, this would fetch the URL and extract title/price
+    // For now, we'll simulate with random data
+    const mockTitle = `Product ${Math.floor(Math.random() * 1000)}`;
+    const mockPrice = Math.floor(Math.random() * 500) + 50;
+    
+    // Update the listing with scraped data
+    await storage.updateProductListing(listingId, {
+      title: mockTitle,
+      currentPrice: mockPrice,
+      lastScraped: new Date().toISOString(),
+      status: 'active'
+    });
+    
+    return { success: true, title: mockTitle, price: mockPrice };
+  } catch (error) {
+    await storage.updateProductListing(listingId, {
+      status: 'error',
+      lastScraped: new Date().toISOString()
+    });
+    throw error;
+  }
+}
+
 export async function registerRoutes(app: Express): Promise<Server> {
   const storage = getStorage();
   
@@ -325,6 +352,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
       listingId,
       productId 
     });
+  });
+
+  // Product Manager API endpoints
+  app.get("/api/products/manager", async (_req, res) => {
+    try {
+      const products = await storage.getProductsWithListings();
+      res.json(products);
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      res.status(500).json({ error: "Failed to fetch products" });
+    }
+  });
+
+  app.post("/api/products/manager", async (req, res) => {
+    try {
+      const { sku, name, targetPrice } = req.body;
+      const product = await storage.createSimpleProduct({ sku, name, targetPrice });
+      res.json(product);
+    } catch (error) {
+      console.error("Error creating product:", error);
+      res.status(500).json({ error: "Failed to create product" });
+    }
+  });
+
+  app.post("/api/products/listings", async (req, res) => {
+    try {
+      const { productId, competitorId, url } = req.body;
+      const listing = await storage.createProductListing({ productId, competitorId, url });
+      
+      // Trigger initial scraping (async, don't wait)
+      scrapeProductListing(listing.id).catch(console.error);
+      
+      res.json(listing);
+    } catch (error) {
+      console.error("Error creating listing:", error);
+      res.status(500).json({ error: "Failed to create listing" });
+    }
+  });
+
+  app.delete("/api/products/listings/:id", async (req, res) => {
+    try {
+      await storage.deleteProductListing(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting listing:", error);
+      res.status(500).json({ error: "Failed to delete listing" });
+    }
+  });
+
+  app.post("/api/products/listings/:id/scrape", async (req, res) => {
+    try {
+      const result = await scrapeProductListing(req.params.id);
+      res.json(result);
+    } catch (error) {
+      console.error("Error scraping listing:", error);
+      res.status(500).json({ error: "Failed to scrape listing" });
+    }
   });
 
   const httpServer = createServer(app);

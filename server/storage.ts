@@ -99,6 +99,13 @@ export interface IStorage {
   // Listing Images
   createListingImage(image: InsertListingImage): Promise<ListingImage>;
   getListingImages(listingId: string): Promise<ListingImage[]>;
+  
+  // Product Manager methods
+  getProductsWithListings(): Promise<any[]>;
+  createSimpleProduct(data: { sku: string; name: string; targetPrice?: number | null }): Promise<any>;
+  createProductListing(data: { productId: string; competitorId: string; url: string }): Promise<any>;
+  deleteProductListing(id: string): Promise<void>;
+  updateProductListing(id: string, updates: any): Promise<any>;
 }
 
 export class MemStorage implements IStorage {
@@ -609,6 +616,162 @@ export class MemStorage implements IStorage {
     return Array.from(this.listingImages.values())
       .filter(i => i.listingId === listingId)
       .sort((a, b) => a.position - b.position);
+  }
+
+  // Product Manager methods
+  async getProductsWithListings(): Promise<any[]> {
+    const products = Array.from(this.catalogProducts.values());
+    const result = [];
+    
+    for (const product of products) {
+      const listings = Array.from(this.competitorListings.values())
+        .filter(l => l.productId === product.id);
+      
+      // Enhance listings with competitor info and latest snapshot data
+      const enhancedListings = [];
+      for (const listing of listings) {
+        const competitor = await this.getCompetitor(listing.competitorId);
+        
+        // Get latest snapshot for pricing info
+        const snapshots = Array.from(this.listingSnapshots.values())
+          .filter(s => s.listingId === listing.id)
+          .sort((a, b) => b.scrapedAt.getTime() - a.scrapedAt.getTime());
+        
+        const latestSnapshot = snapshots[0];
+        
+        enhancedListings.push({
+          id: listing.id,
+          productId: product.id,
+          competitorId: listing.competitorId,
+          url: listing.url,
+          title: listing.titleOverride || null,
+          currentPrice: latestSnapshot?.price ? parseFloat(latestSnapshot.price) : null,
+          lastScraped: latestSnapshot?.scrapedAt?.toISOString() || null,
+          priceChange: null, // Calculate if needed
+          status: listing.active ? 'active' : 'pending',
+          competitor
+        });
+      }
+      
+      result.push({
+        id: product.id,
+        sku: product.ourSku,
+        name: product.name,
+        targetPrice: product.targetPrice ? parseFloat(product.targetPrice) : null,
+        listings: enhancedListings
+      });
+    }
+    
+    return result;
+  }
+
+  async createSimpleProduct(data: { sku: string; name: string; targetPrice?: number | null }): Promise<any> {
+    const id = randomUUID();
+    const product: CatalogProduct = {
+      id,
+      brandId: "",  // Required but we'll set empty for now
+      ourSku: data.sku,
+      name: data.name,
+      categoryId: "",  // Required but we'll set empty for now
+      productTypeId: "",  // Required but we'll set empty for now
+      quality: "mid" as const,
+      targetPrice: data.targetPrice ? data.targetPrice.toString() : null,
+      notes: null,
+      createdAt: new Date()
+    };
+    this.catalogProducts.set(id, product);
+    return {
+      id,
+      sku: data.sku,
+      name: data.name,
+      targetPrice: data.targetPrice,
+      listings: []
+    };
+  }
+
+  async createProductListing(data: { productId: string; competitorId: string; url: string }): Promise<any> {
+    const id = randomUUID();
+    const listing: CompetitorListing = {
+      id,
+      productId: data.productId,
+      competitorId: data.competitorId,
+      url: data.url,
+      firstSeenAt: new Date(),
+      lastSeenAt: new Date(),
+      listingSku: null,
+      titleOverride: null,
+      brandOverride: null,
+      mainImageUrl: null,
+      active: true
+    };
+    this.competitorListings.set(id, listing);
+    
+    const competitor = await this.getCompetitor(data.competitorId);
+    return {
+      id,
+      productId: data.productId,
+      competitorId: data.competitorId,
+      url: data.url,
+      title: null,
+      currentPrice: null,
+      lastScraped: new Date().toISOString(),
+      priceChange: null,
+      status: 'pending',
+      competitor
+    };
+  }
+
+  async deleteProductListing(id: string): Promise<void> {
+    this.competitorListings.delete(id);
+  }
+
+  async updateProductListing(id: string, updates: any): Promise<any> {
+    const listing = this.competitorListings.get(id);
+    if (!listing) throw new Error('Listing not found');
+    
+    // Update the listing
+    if (updates.status === 'active') {
+      listing.active = true;
+    } else if (updates.status === 'error') {
+      listing.active = false;
+    }
+    listing.lastSeenAt = new Date();
+    
+    // Create a listing snapshot with the scraped data
+    if (updates.title || updates.currentPrice) {
+      const snapshotId = randomUUID();
+      const snapshot: ListingSnapshot = {
+        id: snapshotId,
+        listingId: id,
+        price: updates.currentPrice ? updates.currentPrice.toString() : null,
+        currency: 'AUD',
+        inStock: true,
+        promoText: null,
+        hasGiveaway: false,
+        scrapedAt: new Date(),
+        httpStatus: 200
+      };
+      this.listingSnapshots.set(snapshotId, snapshot);
+      
+      // Update title on the listing itself if provided
+      if (updates.title) {
+        listing.titleOverride = updates.title;
+      }
+    }
+    
+    const competitor = await this.getCompetitor(listing.competitorId);
+    return {
+      id: listing.id,
+      productId: listing.productId,
+      competitorId: listing.competitorId,
+      url: listing.url,
+      title: updates.title || null,
+      currentPrice: updates.currentPrice || null,
+      lastScraped: new Date().toISOString(),
+      priceChange: null,
+      status: listing.active ? 'active' : 'error',
+      competitor
+    };
   }
 }
 
