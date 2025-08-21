@@ -1289,88 +1289,88 @@ export default function ProductsPage() {
               )}
             </div>
           )}
-
-          {/* Pagination Controls */}
-          {filteredProducts.length > itemsPerPage && (
-            <div className="w-full flex flex-col items-center justify-center pt-6 border-t border-slate-200 dark:border-slate-700 space-y-4">
-              <div className="text-center">
-                <span className="text-sm text-slate-600 dark:text-slate-400">
-                  Showing {Math.min(startIndex + 1, filteredProducts.length)} to {Math.min(endIndex, filteredProducts.length)} of {filteredProducts.length} products
-                </span>
-              </div>
-              <div className="flex items-center justify-center space-x-1 mx-auto">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(1)}
-                  disabled={currentPage === 1}
-                  className="h-8 w-8 p-0"
-                >
-                  <ChevronsLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                  disabled={currentPage === 1}
-                  className="h-8 w-8 p-0"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                
-                <div className="flex items-center space-x-1">
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-                    
-                    return (
-                      <Button
-                        key={pageNum}
-                        variant={currentPage === pageNum ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => setCurrentPage(pageNum)}
-                        className={`h-8 w-8 p-0 ${
-                          currentPage === pageNum 
-                            ? "bg-gradient-to-r from-red-600 to-red-700 text-white border-red-600" 
-                            : "hover:bg-red-50 hover:border-red-200"
-                        }`}
-                      >
-                        {pageNum}
-                      </Button>
-                    );
-                  })}
-                </div>
-
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                  disabled={currentPage === totalPages}
-                  className="h-8 w-8 p-0"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(totalPages)}
-                  disabled={currentPage === totalPages}
-                  className="h-8 w-8 p-0"
-                >
-                  <ChevronsRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
         </div>
+
+        {/* Pagination Controls */}
+        {filteredProducts.length > itemsPerPage && (
+          <div className="w-full flex flex-col items-center justify-center pt-6 mt-6 border-t border-slate-200 dark:border-slate-700 space-y-4">
+            <div className="text-center">
+              <span className="text-sm text-slate-600 dark:text-slate-400">
+                Showing {Math.min(startIndex + 1, filteredProducts.length)} to {Math.min(endIndex, filteredProducts.length)} of {filteredProducts.length} products
+              </span>
+            </div>
+            <div className="flex items-center justify-center space-x-1">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(1)}
+                disabled={currentPage === 1}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              
+              <div className="flex items-center space-x-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+                  
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={currentPage === pageNum ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`h-8 w-8 p-0 ${
+                        currentPage === pageNum 
+                          ? "bg-gradient-to-r from-red-600 to-red-700 text-white border-red-600" 
+                          : "hover:bg-red-50 hover:border-red-200"
+                      }`}
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage(totalPages)}
+                disabled={currentPage === totalPages}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
           </TabsContent>
 
           <TabsContent value="brands" className="mt-6">
