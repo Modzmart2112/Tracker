@@ -542,8 +542,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
             if (modelNumber && modelNumber !== 'Unknown' && modelNumber !== 'N/A') {
               const existingProducts = await storage.listCatalogProducts();
               catalogProduct = existingProducts.find(p => 
-                p.model_number === modelNumber && 
-                p.brand_id === brand.id
+                p.modelNumber === modelNumber && 
+                p.brandId === brand.id
               );
               
               if (catalogProduct) {
@@ -613,6 +613,128 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.error("Error importing competitor products:", error);
       res.status(500).json({ 
         error: "Failed to import competitor products",
+        details: error.message
+      });
+    }
+  });
+
+  // Import Sydney Tools catalog products from JSON
+  app.post("/api/import-products", async (req, res) => {
+    try {
+      const { products } = req.body;
+      
+      if (!products || !Array.isArray(products)) {
+        return res.status(400).json({ error: "Products array is required" });
+      }
+      
+      let savedCount = 0;
+      let skippedCount = 0;
+      const errors: string[] = [];
+      
+      // Find or create necessary categories
+      const existingCategories = await storage.getCategories();
+      let category = existingCategories.find(c => c.slug === 'battery-chargers');
+      
+      if (!category) {
+        category = await storage.createCategory({
+          name: 'Battery Chargers',
+          slug: 'battery-chargers'
+        });
+      }
+      
+      const existingProductTypes = await storage.getProductTypes();
+      let productType = existingProductTypes.find(pt => pt.slug === 'battery-chargers');
+      
+      if (!productType) {
+        productType = await storage.createProductType({
+          categoryId: category.id,
+          name: 'Battery Chargers',
+          slug: 'battery-chargers'
+        });
+      }
+      
+      // Find or create brand for each product
+      const brandMap = new Map<string, any>();
+      const existingCatalogProducts = await storage.listCatalogProducts();
+      
+      for (const product of products) {
+        try {
+          // Extract model number from title for better matching
+          let modelNumber = '';
+          const modelPatterns = [
+            /\b([A-Z]{2,}\d{4,}[A-Z]*)\b/i,  // SP61084, AE12000E format
+            /\b([A-Z]+\d+[A-Z]*\d*)\b/i,  // General alphanumeric
+            /\b(GENIUS\d+[A-Z]*)\b/i,  // NOCO format like GENIUS10AU
+            /\(([^)]+)\)/,  // Content in parentheses like (94065325i)
+          ];
+          
+          for (const pattern of modelPatterns) {
+            const match = product.title.match(pattern);
+            if (match) {
+              modelNumber = match[1].toUpperCase();
+              break;
+            }
+          }
+          
+          // Skip if product with this model number already exists
+          if (modelNumber) {
+            const exists = existingCatalogProducts.some(p => 
+              p.modelNumber === modelNumber
+            );
+            if (exists) {
+              skippedCount++;
+              continue;
+            }
+          }
+          
+          // Find or create brand
+          const brandName = product.brand || 'Unknown';
+          let brand = brandMap.get(brandName);
+          if (!brand) {
+            const existingBrands = await storage.getBrands();
+            brand = existingBrands.find(b => b.name.toLowerCase() === brandName.toLowerCase());
+            
+            if (!brand) {
+              brand = await storage.createBrand({
+                name: brandName,
+                slug: brandName.toLowerCase().replace(/[^a-z0-9]/g, '-')
+              });
+            }
+            brandMap.set(brandName, brand);
+          }
+          
+          // Create catalog product for Sydney Tools
+          const catalogProduct = await storage.createCatalogProduct({
+            name: product.title,
+            brandId: brand.id,
+            categoryId: category.id,
+            productTypeId: productType.id,
+            modelNumber: modelNumber || `${product.sku || 'UNKNOWN'}`,
+            imageUrl: product.image,
+            price: product.price.toString()
+          });
+          
+          console.log(`Imported Sydney Tools product: ${product.title} (${modelNumber})`);
+          savedCount++;
+          
+        } catch (error: any) {
+          console.error(`Error importing product ${product.title}:`, error);
+          errors.push(`${product.title}: ${error.message}`);
+        }
+      }
+      
+      res.json({
+        success: true,
+        message: `Imported ${savedCount} new products, skipped ${skippedCount} existing products`,
+        savedCount,
+        skippedCount,
+        errors: errors.length > 0 ? errors : undefined
+      });
+      
+    } catch (error: any) {
+      console.error("Error importing products:", error);
+      res.status(500).json({ 
+        error: "Failed to import products",
         details: error.message
       });
     }
