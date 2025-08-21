@@ -59,7 +59,7 @@ export default function ProductsPage() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showBulkImportDialog, setShowBulkImportDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<UnifiedProduct | null>(null);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryUrl, setCategoryUrl] = useState("");
   const [isExtractingCategory, setIsExtractingCategory] = useState(false);
@@ -139,7 +139,10 @@ export default function ProductsPage() {
 
   // Extract products from category page
   const extractFromCategory = useMutation({
-    mutationFn: (url: string) => apiRequest("POST", "/api/extract-category", { url }),
+    mutationFn: async (url: string) => {
+      const response = await apiRequest("POST", "/api/extract-category", { url });
+      return response.json();
+    },
     onSuccess: (data: any) => {
       console.log("Category extraction response:", data);
       setIsExtractingCategory(false);
@@ -558,7 +561,7 @@ export default function ProductsPage() {
                     <Input
                       id="edit-brand"
                       name="brand"
-                      defaultValue={editingProduct.brand || ""}
+                      defaultValue={(editingProduct as any).brand || ""}
                       placeholder="e.g., NOCO, CTEK"
                     />
                   </div>
@@ -567,7 +570,7 @@ export default function ProductsPage() {
                     <Input
                       id="edit-category"
                       name="category"
-                      defaultValue={editingProduct.category || ""}
+                      defaultValue={(editingProduct as any).category || ""}
                       placeholder="e.g., Battery Chargers"
                     />
                   </div>
