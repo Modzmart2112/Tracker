@@ -12,7 +12,8 @@ import {
   type InsertListingSnapshot, type ListingImage, type InsertListingImage,
   users, competitors, categories, productTypes, brandAliases, pages,
   products, productSpecs, priceSnapshots, priceBands, tasks,
-  brands, catalogProducts, competitorListings, listingSnapshots, listingImages
+  brands, catalogProducts, competitorListings, listingSnapshots, listingImages,
+  unifiedProducts, unifiedCompetitorLinks
 } from "@shared/schema";
 import type { IStorage } from "./storage";
 

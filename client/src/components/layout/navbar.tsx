@@ -14,12 +14,8 @@ import {
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: ChartLine },
-  { name: "Setup", href: "/catalog-manager", icon: FolderCog },
-  { name: "Catalog", href: "/catalog", icon: Package },
-  { name: "Categories", href: "/categories", icon: Folder },
   { name: "Products", href: "/products", icon: Box },
   { name: "Competitors", href: "/competitors", icon: Users },
-  { name: "Pages", href: "/pages", icon: Globe },
   { name: "Changes", href: "/changes", icon: History },
   { name: "Admin", href: "/admin", icon: Settings },
 ];

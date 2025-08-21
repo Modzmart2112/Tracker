@@ -99,6 +99,13 @@ export interface IStorage {
   // Listing Images
   createListingImage(image: InsertListingImage): Promise<ListingImage>;
   getListingImages(listingId: string): Promise<ListingImage[]>;
+
+  // Unified Products
+  getUnifiedProducts(): Promise<any[]>;
+  getUnifiedProduct(id: string): Promise<any>;
+  createUnifiedProduct(product: any): Promise<any>;
+  deleteUnifiedProduct(id: string): Promise<void>;
+  addCompetitorLink(productId: string, url: string): Promise<any>;
 }
 
 export class MemStorage implements IStorage {
@@ -120,6 +127,10 @@ export class MemStorage implements IStorage {
   private competitorListings: Map<string, CompetitorListing> = new Map();
   private listingSnapshots: Map<string, ListingSnapshot> = new Map();
   private listingImages: Map<string, ListingImage> = new Map();
+
+  // Unified products
+  private unifiedProducts: Map<string, any> = new Map();
+  private unifiedCompetitorLinks: Map<string, any[]> = new Map();
 
   constructor() {
     // No seed data - clean start
@@ -609,6 +620,58 @@ export class MemStorage implements IStorage {
     return Array.from(this.listingImages.values())
       .filter(i => i.listingId === listingId)
       .sort((a, b) => a.position - b.position);
+  }
+
+  // Unified Products implementation
+  async getUnifiedProducts(): Promise<any[]> {
+    const products = Array.from(this.unifiedProducts.values());
+    return products.map(product => {
+      const links = this.unifiedCompetitorLinks.get(product.id) || [];
+      return { ...product, competitorLinks: links };
+    });
+  }
+
+  async getUnifiedProduct(id: string): Promise<any> {
+    const product = this.unifiedProducts.get(id);
+    if (!product) return undefined;
+    const links = this.unifiedCompetitorLinks.get(id) || [];
+    return { ...product, competitorLinks: links };
+  }
+
+  async createUnifiedProduct(product: any): Promise<any> {
+    const id = randomUUID();
+    const now = new Date().toISOString();
+    const newProduct = {
+      ...product,
+      id,
+      createdAt: now,
+      updatedAt: now
+    };
+    this.unifiedProducts.set(id, newProduct);
+    this.unifiedCompetitorLinks.set(id, []);
+    return newProduct;
+  }
+
+  async deleteUnifiedProduct(id: string): Promise<void> {
+    this.unifiedProducts.delete(id);
+    this.unifiedCompetitorLinks.delete(id);
+  }
+
+  async addCompetitorLink(productId: string, url: string): Promise<any> {
+    const links = this.unifiedCompetitorLinks.get(productId) || [];
+    const id = randomUUID();
+    const newLink = {
+      id,
+      productId,
+      url,
+      competitorName: new URL(url).hostname.replace("www.", "").split(".")[0],
+      status: "pending",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    links.push(newLink);
+    this.unifiedCompetitorLinks.set(productId, links);
+    return newLink;
   }
 }
 

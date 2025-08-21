@@ -144,6 +144,31 @@ export const competitorListings = pgTable("competitor_listings", {
   uniqueProductCompetitor: sql`UNIQUE (product_id, competitor_id)`,
 }));
 
+// Simplified products table for unified product management
+export const unifiedProducts = pgTable("unified_products", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  sku: text("sku").notNull().unique(),
+  name: text("name").notNull(),
+  ourPrice: decimal("our_price", { precision: 10, scale: 2 }),
+  createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+// Competitor links for unified products
+export const unifiedCompetitorLinks = pgTable("unified_competitor_links", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  productId: varchar("product_id").notNull().references(() => unifiedProducts.id, { onDelete: "cascade" }),
+  url: text("url").notNull(),
+  competitorName: text("competitor_name"),
+  extractedTitle: text("extracted_title"),
+  extractedPrice: decimal("extracted_price", { precision: 10, scale: 2 }),
+  lastScraped: timestamp("last_scraped"),
+  status: text("status").default("pending"), // pending, success, error
+  errorMessage: text("error_message"),
+  createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: timestamp("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
 export const listingSnapshots = pgTable("listing_snapshots", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   listingId: varchar("listing_id").references(() => competitorListings.id).notNull(),

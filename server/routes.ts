@@ -327,6 +327,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
+  // Unified products routes
+  app.get("/api/products-unified", async (req, res) => {
+    try {
+      const productsWithLinks = await storage.getUnifiedProducts();
+      res.json(productsWithLinks);
+    } catch (error) {
+      console.error("Error fetching unified products:", error);
+      res.json([]); // Return empty array for now
+    }
+  });
+
+  app.post("/api/products-unified", async (req, res) => {
+    try {
+      const { sku, name, ourPrice, competitorUrls } = req.body;
+      const product = await storage.createUnifiedProduct({ sku, name, ourPrice });
+      
+      // Add competitor links
+      if (competitorUrls && competitorUrls.length > 0) {
+        for (const url of competitorUrls) {
+          await storage.addCompetitorLink(product.id, url);
+        }
+      }
+      
+      const productWithLinks = await storage.getUnifiedProduct(product.id);
+      res.json(productWithLinks);
+    } catch (error) {
+      console.error("Error creating unified product:", error);
+      res.status(500).json({ error: "Failed to create product" });
+    }
+  });
+
+  app.delete("/api/products-unified/:id", async (req, res) => {
+    try {
+      await storage.deleteUnifiedProduct(req.params.id);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting unified product:", error);
+      res.status(500).json({ error: "Failed to delete product" });
+    }
+  });
+
+  app.post("/api/extract-url", async (req, res) => {
+    try {
+      const { url } = req.body;
+      // For now, return mock data - this would be replaced with actual scraping
+      const mockData = {
+        title: "Sample Product Title",
+        price: 199.99,
+        competitorName: new URL(url).hostname.replace("www.", "").split(".")[0]
+      };
+      res.json(mockData);
+    } catch (error) {
+      console.error("Error extracting URL:", error);
+      res.status(500).json({ error: "Failed to extract URL data" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
