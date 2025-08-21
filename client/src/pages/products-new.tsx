@@ -1409,8 +1409,8 @@ export default function ProductsPage() {
                           </div>
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center shadow-lg">
-                              <span className="text-white font-bold text-2xl">
+                            <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center shadow-lg">
+                              <span className="text-white font-bold text-xl">
                                 {brand.charAt(0).toUpperCase()}
                               </span>
                             </div>
@@ -1480,8 +1480,8 @@ export default function ProductsPage() {
                           </div>
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center shadow-lg">
-                              <Grid className="h-8 w-8 text-white" />
+                            <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center shadow-lg">
+                              <Grid className="h-7 w-7 text-white" />
                             </div>
                           </div>
                         )}
@@ -1551,8 +1551,8 @@ export default function ProductsPage() {
                           </div>
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center shadow-lg">
-                              <Store className="h-8 w-8 text-white" />
+                            <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center shadow-lg">
+                              <Store className="h-7 w-7 text-white" />
                             </div>
                           </div>
                         )}
