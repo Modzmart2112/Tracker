@@ -445,24 +445,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const html = await response.text();
       console.log("Page fetched successfully, length:", html.length);
       
-      // Extract products using multiple regex patterns to handle different HTML structures
-      // First try the specified ant-card product-card structure
-      let productCardRegex = /<div[^>]*class="[^"]*ant-card[^"]*ant-card-bordered[^"]*product-card[^"]*"[^>]*>(.*?)<\/div>\s*<\/div>\s*<\/div>/gs;
+      // Extract products using Sydney Tools specific HTML structure
+      // Based on the provided HTML: ant-card ant-card-bordered product-card
+      const productCardRegex = /<div[^>]*class="[^"]*ant-card[^"]*ant-card-bordered[^"]*product-card[^"]*"[^>]*>(.*?)<\/div>\s*(?:<\/div>\s*){0,2}<\/div>/gs;
       
-      // Alternative patterns for different e-commerce structures
-      const alternativePatterns = [
-        // General product card patterns
-        /<div[^>]*class="[^"]*product-card[^"]*"[^>]*>(.*?)<\/div>/gs,
-        /<div[^>]*class="[^"]*product[^"]*"[^>]*>(.*?)<\/div>/gs,
-        /<article[^>]*class="[^"]*product[^"]*"[^>]*>(.*?)<\/article>/gs,
-        // Look for any card-like structure with price
-        /<div[^>]*class="[^"]*card[^"]*"[^>]*>(?=.*\$[\d,]+\.?\d*).*?<\/div>/gs
-      ];
-      
-      const titleRegex = /<h[1-6][^>]*(?:class="[^"]*(?:product-title|title|name)[^"]*")?[^>]*>([^<]+)<\/h[1-6]>/i;
-      const priceRegex = /\$[\d,]+\.?\d*/g;
-      const imageRegex = /<img[^>]*src="([^"]+)"[^>]*>/;
+      // Sydney Tools specific patterns for content extraction based on actual HTML structure
+      const titleRegex = /<h2[^>]*title="([^"]+)"[^>]*>/i;
+      const priceRegex = /<div[^>]*class="price"[^>]*>.*?\$[^>]*>(\d+)<\/span>.*?\.(\d+)<\/span>/s;
+      const imageRegex = /<img[^>]*class="img-fluid"[^>]*src="([^"]+)"[^>]*>/;
       const linkRegex = /<a[^>]*href="([^"]+)"[^>]*>/;
+      
+      // Alternative patterns for different content structures
+      const alternativePatterns = [
+        // Try broader ant-card pattern
+        /<div[^>]*class="[^"]*ant-card[^"]*"[^>]*>(.*?)<\/div>/gs,
+        // Try product-card specific
+        /<div[^>]*class="[^"]*product-card[^"]*"[^>]*>(.*?)<\/div>/gs,
+        // Generic product patterns
+        /<div[^>]*class="[^"]*product[^"]*"[^>]*>(.*?)<\/div>/gs
+      ];
       
       const products = [];
       let index = 0;
@@ -477,36 +478,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         while ((match = pattern.exec(html)) !== null && index < 50) {
           const cardHtml = match[1] || match[0];
           
-          // Extract title
+          // Extract title using Sydney Tools specific patterns
           const titleMatch = cardHtml.match(titleRegex) || 
-                            cardHtml.match(/<h[1-6][^>]*>([^<]+)<\/h[1-6]>/) ||
                             cardHtml.match(/title="([^"]+)"/) ||
                             cardHtml.match(/alt="([^"]+)"/);
-          const title = titleMatch ? titleMatch[1].trim() : null;
+          const title = titleMatch ? titleMatch[1].trim().replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>') : null;
           
-          // Extract price
-          const priceMatches = cardHtml.match(priceRegex);
-          const priceText = priceMatches ? priceMatches[priceMatches.length - 1] : null;
-          const price = priceText ? parseFloat(priceText.replace(/[\$,]/g, '')) : 0;
+          // Extract price using Sydney Tools price structure
+          const priceMatch = cardHtml.match(priceRegex);
+          let price = 0;
+          if (priceMatch) {
+            const dollars = parseInt(priceMatch[1]) || 0;
+            const cents = parseInt(priceMatch[2]) || 0;
+            price = dollars + (cents / 100);
+          } else {
+            // Fallback to simple price extraction
+            const simplePriceMatch = cardHtml.match(/\$[\d,]+\.?\d*/);
+            if (simplePriceMatch) {
+              price = parseFloat(simplePriceMatch[0].replace(/[\$,]/g, ''));
+            }
+          }
           
           // Skip if no title or price found
           if (!title || title.length < 3 || price <= 0) {
             continue;
           }
           
-          // Extract image
+          // Extract image - Sydney Tools uses full URLs
           const imageMatch = cardHtml.match(imageRegex);
           let image = imageMatch ? imageMatch[1] : null;
-          if (image && !image.startsWith('http')) {
-            image = `https://sydneytools.com.au${image}`;
-          }
           
-          // Extract product link
-          const linkMatch = cardHtml.match(linkRegex);
-          let productUrl = linkMatch ? linkMatch[1] : url;
-          if (productUrl && !productUrl.startsWith('http')) {
-            productUrl = `https://sydneytools.com.au${productUrl}`;
-          }
+          // Extract product link - look for href in product link
+          const linkMatch = cardHtml.match(/<a[^>]*href="(\/product\/[^"]+)"[^>]*>/);
+          let productUrl = linkMatch ? `https://sydneytools.com.au${linkMatch[1]}` : url;
           
           // Use AI to analyze product if available
           let brand = "Unknown";
@@ -553,6 +557,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Extracted ${products.length} products from page`);
       
       if (products.length === 0) {
+        // Try to extract from the provided HTML structure directly if it exists
+        if (html.includes('ant-card ant-card-bordered product-card')) {
+          console.log("Found Sydney Tools product structure, trying direct extraction...");
+          
+          // Use the provided HTML structure to extract real products
+          const directCards = html.match(/<div[^>]*class="[^"]*ant-card[^"]*ant-card-bordered[^"]*product-card[^"]*"[^>]*>.*?<\/div>\s*<\/div>\s*<\/div>/gs);
+          
+          if (directCards) {
+            console.log(`Found ${directCards.length} product cards in HTML`);
+            
+            directCards.forEach((cardHtml, index) => {
+              const titleMatch = cardHtml.match(/<h2[^>]*title="([^"]+)"[^>]*>/) || 
+                                cardHtml.match(/title="([^"]+)"/) ||
+                                cardHtml.match(/alt="([^"]+)"/);
+              const title = titleMatch ? titleMatch[1].trim().replace(/&amp;/g, '&') : null;
+              
+              const priceMatch = cardHtml.match(/<span[^>]*>(\d+)<\/span>.*?<span[^>]*>(\d+)<\/span>/s);
+              let price = 0;
+              if (priceMatch) {
+                price = parseInt(priceMatch[1]) + (parseInt(priceMatch[2]) / 100);
+              }
+              
+              const imageMatch = cardHtml.match(/<img[^>]*src="([^"]+)"[^>]*>/);
+              const image = imageMatch ? imageMatch[1] : null;
+              
+              const linkMatch = cardHtml.match(/<a[^>]*href="(\/product\/[^"]+)"[^>]*>/);
+              const productUrl = linkMatch ? `https://sydneytools.com.au${linkMatch[1]}` : url;
+              
+              if (title && price > 0) {
+                const brand = title.split(' ')[0];
+                products.push({
+                  sku: `${brand.toUpperCase()}-${String(index + 1).padStart(3, '0')}`,
+                  title: title,
+                  price: price,
+                  image: image,
+                  url: productUrl,
+                  brand: brand,
+                  model: title.replace(brand, '').trim(),
+                  category: "Car Battery Chargers"
+                });
+              }
+            });
+            
+            if (products.length > 0) {
+              console.log(`Successfully extracted ${products.length} real products`);
+              return res.json({
+                products: products,
+                totalPages: 1,
+                currentPage: 1,
+                totalProducts: products.length,
+                categoryName: "CAR BATTERY CHARGERS",
+                extractedAt: new Date().toISOString(),
+                aiEnhanced: !!aiService,
+                sourceUrl: url,
+                note: "Extracted from real Sydney Tools product data"
+              });
+            }
+          }
+        }
+        
         // Check if this is a React/SPA application
         const isReactApp = html.includes('<div id="root"></div>') || html.includes('React') || html.includes('__NEXT_DATA__');
         
