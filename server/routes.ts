@@ -454,10 +454,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
+      // For now, just return the products without saving to allow user review
+      // TODO: Implement product matching and saving after user confirms import
+      
       const response = {
         success: true,
         message: `Successfully imported ${result.products.length} products from ${result.competitorName}`,
         products: result.products,
+
         totalProducts: result.totalProducts,
         categoryName: result.categoryName,
         competitorName: result.competitorName,
@@ -999,6 +1003,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error bulk extracting model numbers:", error);
       res.status(500).json({ error: "Failed to bulk extract model numbers" });
+    }
+  });
+
+  // Get product price comparisons by model number (placeholder for future implementation)
+  app.get("/api/products/matches/:modelNumber", async (req, res) => {
+    try {
+      const { modelNumber } = req.params;
+      
+      // TODO: Implement product matching logic
+      res.json({
+        modelNumber,
+        totalMatches: 0,
+        bestPrice: null,
+        bestPriceCompetitor: null,
+        matches: [],
+        message: "Product matching feature coming soon"
+      });
+      
+    } catch (error: any) {
+      console.error("Error getting product matches:", error);
+      res.status(500).json({ 
+        error: "Failed to get product matches",
+        details: error.message
+      });
     }
   });
 

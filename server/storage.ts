@@ -112,6 +112,8 @@ export interface IStorage {
   }): Promise<any>;
   deleteUnifiedProduct(id: string): Promise<void>;
   addCompetitorLink(productId: string, url: string): Promise<any>;
+
+
 }
 
 export class MemStorage implements IStorage {

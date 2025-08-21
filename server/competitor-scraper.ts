@@ -71,13 +71,100 @@ export class CompetitorScraper {
   }
 
   private extractModel(title: string, brand: string): string {
-    return title.replace(brand, '').trim().replace(/^[-\s]+/, '');
+    // Extract model number patterns like SP61084, SP61093, etc.
+    const modelPatterns = [
+      /([A-Z]{2}\d{5})/i,  // SP61084 format
+      /([A-Z]+\d{3,})/i,   // General alphanumeric model
+      /(\b\d{5,}\b)/,      // 5+ digit numbers
+      /(Model\s+[A-Z0-9-]+)/i,
+      /([A-Z0-9-]{6,})/    // General model pattern
+    ];
+
+    for (const pattern of modelPatterns) {
+      const match = title.match(pattern);
+      if (match) {
+        return match[1].toUpperCase();
+      }
+    }
+
+    // Fallback: clean up title
+    return title.replace(brand, '').trim().replace(/^[-\s]+/, '').split(' ')[0] || 'Unknown';
   }
 
   private parsePrice(priceText: string): number {
+    // Remove currency symbols and extra text, keep only numbers, dots, and commas
     const cleanPrice = priceText.replace(/[^\d.,]/g, '');
-    const numberPrice = parseFloat(cleanPrice.replace(',', ''));
+    const numberPrice = parseFloat(cleanPrice.replace(/,/g, ''));
     return isNaN(numberPrice) ? 0 : numberPrice;
+  }
+
+  private extractSalePrice($product: any): { regularPrice: number; salePrice: number } {
+    // Look for sale price indicators
+    const salePriceSelectors = [
+      '.sale-price',
+      '.special-price', 
+      '.discount-price',
+      '.current-price',
+      '.price-sale',
+      '.price .sale',
+      '.woocommerce-Price-amount.amount:last-child', // WooCommerce sale price
+      '.price del + ins .amount', // Strike-through + sale price
+      '.price-current',
+      '.price-reduced'
+    ];
+
+    const regularPriceSelectors = [
+      '.regular-price',
+      '.original-price',
+      '.was-price',
+      '.price del .amount', // Strike-through price
+      '.price-was',
+      '.price-original'
+    ];
+
+    let salePrice = 0;
+    let regularPrice = 0;
+
+    // Try to find sale price
+    for (const selector of salePriceSelectors) {
+      const salePriceEl = $product.find(selector).first();
+      if (salePriceEl.length) {
+        const priceText = salePriceEl.text().trim();
+        salePrice = this.parsePrice(priceText);
+        if (salePrice > 0) break;
+      }
+    }
+
+    // Try to find regular price
+    for (const selector of regularPriceSelectors) {
+      const regularPriceEl = $product.find(selector).first();
+      if (regularPriceEl.length) {
+        const priceText = regularPriceEl.text().trim();
+        regularPrice = this.parsePrice(priceText);
+        if (regularPrice > 0) break;
+      }
+    }
+
+    // If no specific sale/regular price found, try general price selector
+    if (salePrice === 0 && regularPrice === 0) {
+      const priceSelectors = ['.price', '.woocommerce-Price-amount', '.amount', '[class*="price"]'];
+      for (const selector of priceSelectors) {
+        const priceEl = $product.find(selector).first();
+        if (priceEl.length) {
+          const priceText = priceEl.text().trim();
+          const price = this.parsePrice(priceText);
+          if (price > 0) {
+            salePrice = price;
+            break;
+          }
+        }
+      }
+    }
+
+    return { 
+      regularPrice: regularPrice || salePrice, 
+      salePrice: salePrice || regularPrice 
+    };
   }
 
   private normalizeImageUrl(imageUrl: string, baseUrl: string): string {
@@ -141,18 +228,9 @@ export class CompetitorScraper {
               }
             }
 
-            // Extract price
-            const priceSelectors = ['.price', '.woocommerce-Price-amount', '.amount', '[class*="price"]'];
-            let price = 0;
-            
-            for (const priceSel of priceSelectors) {
-              const priceEl = $product.find(priceSel).first();
-              if (priceEl.length) {
-                const priceText = priceEl.text().trim();
-                price = this.parsePrice(priceText);
-                if (price > 0) break;
-              }
-            }
+            // Extract price (including sale prices)
+            const priceData = this.extractSalePrice($product);
+            const price = priceData.salePrice;
 
             // Extract image
             const imgSelectors = ['img', '.product-image img', '.wp-post-image'];

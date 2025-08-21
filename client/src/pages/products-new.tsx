@@ -662,7 +662,14 @@ export default function ProductsPage() {
                           )}
                           <div className="flex-1">
                             <p className="font-medium text-sm">{product.title}</p>
-                            <p className="text-sm text-muted-foreground">SKU: {product.sku || `AUTO-${index + 1}`}</p>
+                            <div className="flex gap-4 text-sm text-muted-foreground">
+                              <span>SKU: {product.sku || `AUTO-${index + 1}`}</span>
+                              {product.brand && <span>Brand: {product.brand}</span>}
+                              {product.model && <span className="font-semibold text-blue-600">Model: {product.model}</span>}
+                            </div>
+                            {product.competitorName && (
+                              <p className="text-xs text-gray-500">From: {product.competitorName}</p>
+                            )}
                           </div>
                           <div className="text-right">
                             {product.isOnSale ? (
