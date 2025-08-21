@@ -10,6 +10,7 @@ import {
   ObjectStorageService,
   ObjectNotFoundError,
 } from "./objectStorage";
+import { extractModelNumberWithAI, bulkExtractModelNumbers } from "./ai-model-extractor";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const storage = getStorage();
@@ -913,6 +914,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error setting card image:", error);
       res.status(500).json({ error: "Internal server error" });
+    }
+  });
+
+  // AI Model Number Extraction endpoints
+  app.post("/api/extract-model-number", async (req, res) => {
+    try {
+      const { productName } = req.body;
+      if (!productName) {
+        return res.status(400).json({ error: "productName is required" });
+      }
+      
+      const modelNumber = await extractModelNumberWithAI(productName);
+      res.json({ modelNumber });
+    } catch (error) {
+      console.error("Error extracting model number:", error);
+      res.status(500).json({ error: "Failed to extract model number" });
+    }
+  });
+
+  app.post("/api/bulk-extract-models", async (req, res) => {
+    try {
+      const products = await storage.getCatalogProducts();
+      const productsToUpdate = products.filter(p => !p.modelNumber || p.modelNumber === 'N/A');
+      
+      if (productsToUpdate.length === 0) {
+        return res.json({ message: "All products already have model numbers", updated: 0 });
+      }
+      
+      const extractedModels = await bulkExtractModelNumbers(
+        productsToUpdate.map(p => ({ id: p.id, name: p.name }))
+      );
+      
+      let updateCount = 0;
+      for (const { id, modelNumber } of extractedModels) {
+        if (modelNumber && modelNumber !== 'N/A') {
+          await storage.updateCatalogProduct(id, { modelNumber });
+          updateCount++;
+        }
+      }
+      
+      res.json({ 
+        message: `Updated ${updateCount} products with AI-extracted model numbers`,
+        updated: updateCount,
+        total: productsToUpdate.length
+      });
+    } catch (error) {
+      console.error("Error bulk extracting model numbers:", error);
+      res.status(500).json({ error: "Failed to bulk extract model numbers" });
     }
   });
 
