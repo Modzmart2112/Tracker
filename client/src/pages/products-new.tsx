@@ -136,7 +136,19 @@ export default function ProductsPage() {
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
   const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
-  const [cardCustomizations, setCardCustomizations] = useState<Map<string, CardCustomization>>(new Map());
+  const [cardCustomizations, setCardCustomizations] = useState<Map<string, CardCustomization>>(() => {
+    // Load saved customizations from localStorage
+    try {
+      const saved = localStorage.getItem('cardCustomizations');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return new Map(Object.entries(parsed));
+      }
+    } catch (error) {
+      console.error('Failed to load card customizations:', error);
+    }
+    return new Map();
+  });
   const [editingCard, setEditingCard] = useState<CardCustomization | null>(null);
   const [showCardCustomDialog, setShowCardCustomDialog] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -466,6 +478,14 @@ export default function ProductsPage() {
     const newCustomizations = new Map(cardCustomizations);
     newCustomizations.set(customization.id, customization);
     setCardCustomizations(newCustomizations);
+    
+    // Save to localStorage
+    try {
+      const toSave = Object.fromEntries(newCustomizations);
+      localStorage.setItem('cardCustomizations', JSON.stringify(toSave));
+    } catch (error) {
+      console.error('Failed to save card customizations:', error);
+    }
   };
 
   const openCardEditor = (id: string, type: 'brand' | 'category' | 'competitor') => {
