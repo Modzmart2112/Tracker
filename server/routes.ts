@@ -502,18 +502,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const product of result.products) {
           try {
             // Find or create brand
-            let brand = brandMap.get(product.brand);
+            const brandName = product.brand || 'Unknown';
+            let brand = brandMap.get(brandName);
             if (!brand) {
               const existingBrands = await storage.getBrands();
-              brand = existingBrands.find(b => b.name.toLowerCase() === product.brand.toLowerCase());
+              brand = existingBrands.find(b => b.name.toLowerCase() === brandName.toLowerCase());
               
               if (!brand) {
                 brand = await storage.createBrand({
-                  name: product.brand,
-                  slug: product.brand.toLowerCase().replace(/[^a-z0-9]/g, '-')
+                  name: brandName,
+                  slug: brandName.toLowerCase().replace(/[^a-z0-9]/g, '-')
                 });
               }
-              brandMap.set(product.brand, brand);
+              brandMap.set(brandName, brand);
             }
             
             // Create catalog product
@@ -522,7 +523,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               brandId: brand.id,
               categoryId: category.id,
               productTypeId: productType.id,
-              modelNumber: product.modelNumber,
+              modelNumber: product.model || product.title.split(' ')[0],
               imageUrl: product.image,
               price: product.price.toString()
             });
@@ -531,7 +532,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const competitorListing = await storage.createCompetitorListing({
               productId: catalogProduct.id,
               competitorId: competitor.id,
-              url: product.productUrl || url,
+              url: product.url || url,
               mainImageUrl: product.image
             });
             
