@@ -37,7 +37,10 @@ import {
   Minus,
   Palette,
   Upload,
-  Settings
+  Settings,
+  Check,
+  CheckSquare,
+  Square
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -91,6 +94,8 @@ export default function ProductsPage() {
   const [isExtractingCategory, setIsExtractingCategory] = useState(false);
   const [extractedProducts, setExtractedProducts] = useState<any[]>([]);
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
+  const [selectedProducts, setSelectedProducts] = useState<Set<string>>(new Set());
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [cardCustomizations, setCardCustomizations] = useState<Map<string, CardCustomization>>(new Map());
   const [editingCard, setEditingCard] = useState<CardCustomization | null>(null);
   const [showCardCustomDialog, setShowCardCustomDialog] = useState(false);
@@ -129,6 +134,26 @@ export default function ProductsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/products-unified"] });
       toast({ title: "Product deleted" });
+    },
+  });
+
+  // Bulk delete mutation
+  const bulkDeleteProducts = useMutation({
+    mutationFn: async (ids: string[]) => {
+      await Promise.all(ids.map(id => apiRequest("DELETE", `/api/products-unified/${id}`)));
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products-unified"] });
+      const deletedCount = selectedProducts.size;
+      setSelectedProducts(new Set());
+      setShowBulkDeleteDialog(false);
+      toast({ 
+        title: "Products deleted successfully", 
+        description: `Deleted ${deletedCount} products`
+      });
+    },
+    onError: () => {
+      toast({ title: "Failed to delete products", variant: "destructive" });
     },
   });
 
@@ -240,6 +265,8 @@ export default function ProductsPage() {
     });
   };
 
+
+
   const handleAddUrl = () => {
     setNewProduct(prev => ({
       ...prev,
@@ -279,6 +306,27 @@ export default function ProductsPage() {
     (product.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (product.sku || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  // Bulk selection helper functions
+  const toggleProductSelection = (productId: string) => {
+    const newSelected = new Set(selectedProducts);
+    if (newSelected.has(productId)) {
+      newSelected.delete(productId);
+    } else {
+      newSelected.add(productId);
+    }
+    setSelectedProducts(newSelected);
+  };
+
+  const selectAllProducts = () => {
+    setSelectedProducts(new Set(filteredProducts.map(p => p.id)));
+  };
+
+  const clearSelection = () => {
+    setSelectedProducts(new Set());
+  };
+
+  const isAllSelected = filteredProducts.length > 0 && selectedProducts.size === filteredProducts.length;
 
   const getLowestCompetitorPrice = (links: CompetitorLink[]) => {
     const prices = links.filter(l => l.extractedPrice).map(l => l.extractedPrice!);
@@ -807,10 +855,10 @@ export default function ProductsPage() {
           </TabsList>
 
           <TabsContent value="all" className="mt-6">
-            {/* Modern Search Bar */}
+            {/* Modern Search Bar with Bulk Selection */}
             <Card className="bg-gradient-to-r from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 border-slate-200 dark:border-slate-700 shadow-xl mb-6">
               <CardContent className="p-6">
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 mb-4">
                   <div className="p-2 bg-red-100 dark:bg-red-900/20 rounded-lg">
                     <Search className="h-5 w-5 text-red-600" />
                   </div>
@@ -823,6 +871,62 @@ export default function ProductsPage() {
                   <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg">
                     <Filter className="h-5 w-5 text-slate-600 dark:text-slate-400" />
                   </div>
+                </div>
+                
+                {/* Bulk Selection Controls */}
+                <div className="flex items-center justify-between border-t border-slate-200 dark:border-slate-700 pt-4">
+                  <div className="flex items-center gap-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={isAllSelected ? clearSelection : selectAllProducts}
+                      className="flex items-center gap-2"
+                    >
+                      {isAllSelected ? (
+                        <CheckSquare className="h-4 w-4" />
+                      ) : (
+                        <Square className="h-4 w-4" />
+                      )}
+                      {isAllSelected ? 'Deselect All' : 'Select All'}
+                    </Button>
+                    
+                    {selectedProducts.size > 0 && (
+                      <span className="text-sm text-slate-600 dark:text-slate-400">
+                        {selectedProducts.size} of {filteredProducts.length} selected
+                      </span>
+                    )}
+                  </div>
+                  
+                  {selectedProducts.size > 0 && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          // Bulk edit - for now just select the first product for editing
+                          const firstSelectedId = Array.from(selectedProducts)[0];
+                          const firstProduct = products.find(p => p.id === firstSelectedId);
+                          if (firstProduct) {
+                            setEditingProduct(firstProduct);
+                            setShowEditDialog(true);
+                          }
+                        }}
+                        className="flex items-center gap-2"
+                      >
+                        <Edit className="h-4 w-4" />
+                        Edit Selected
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setShowBulkDeleteDialog(true)}
+                        className="flex items-center gap-2"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                        Delete Selected
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -842,8 +946,33 @@ export default function ProductsPage() {
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <Card className="bg-white border border-gray-200 shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden">
-                    
+                  <Card className={`bg-white border transition-all duration-300 overflow-hidden relative ${
+                    selectedProducts.has(product.id) 
+                      ? 'border-red-500 shadow-lg shadow-red-200' 
+                      : 'border-gray-200 shadow-md hover:shadow-lg'
+                  }`}>
+                    {/* Selection Checkbox */}
+                    <div className="absolute top-3 left-3 z-10">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={`h-8 w-8 rounded-full p-0 ${
+                          selectedProducts.has(product.id) 
+                            ? 'bg-red-600 text-white hover:bg-red-700' 
+                            : 'bg-white/80 backdrop-blur-sm hover:bg-white'
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleProductSelection(product.id);
+                        }}
+                      >
+                        {selectedProducts.has(product.id) ? (
+                          <Check className="h-4 w-4" />
+                        ) : (
+                          <div className="h-4 w-4 border border-gray-400 rounded-sm" />
+                        )}
+                      </Button>
+                    </div>
                     
                     {/* Product Image */}
                     <div className="h-48 w-full bg-white p-4 flex items-center justify-center">
@@ -1464,6 +1593,43 @@ export default function ProductsPage() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <Dialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Selected Products</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete {selectedProducts.size} selected products? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end space-x-3 mt-6">
+            <Button
+              variant="outline"
+              onClick={() => setShowBulkDeleteDialog(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => bulkDeleteProducts.mutate(Array.from(selectedProducts))}
+              disabled={bulkDeleteProducts.isPending}
+            >
+              {bulkDeleteProducts.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete {selectedProducts.size} Products
+                </>
+              )}
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
