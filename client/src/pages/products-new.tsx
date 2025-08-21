@@ -9,6 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Plus, 
@@ -32,7 +34,10 @@ import {
   Tag,
   Building2,
   Store,
-  Minus
+  Minus,
+  Palette,
+  Upload,
+  Settings
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -61,6 +66,17 @@ interface Product {
   updatedAt: string;
 }
 
+interface CardCustomization {
+  id: string;
+  type: 'brand' | 'category' | 'competitor';
+  title: string;
+  showTitle: boolean;
+  backgroundColor: string;
+  textColor: string;
+  logoUrl?: string;
+  customStyles?: string;
+}
+
 export default function ProductsPage() {
   const { toast } = useToast();
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -72,6 +88,9 @@ export default function ProductsPage() {
   const [isExtractingCategory, setIsExtractingCategory] = useState(false);
   const [extractedProducts, setExtractedProducts] = useState<any[]>([]);
   const [expandedProducts, setExpandedProducts] = useState<Set<string>>(new Set());
+  const [cardCustomizations, setCardCustomizations] = useState<Map<string, CardCustomization>>(new Map());
+  const [editingCard, setEditingCard] = useState<CardCustomization | null>(null);
+  const [showCardCustomDialog, setShowCardCustomDialog] = useState(false);
   const [newProduct, setNewProduct] = useState({
     sku: "",
     name: "",
@@ -280,6 +299,40 @@ export default function ProductsPage() {
     if (diff < -5) return { label: "Below Market", color: "text-green-600", icon: TrendingUp };
     if (diff > 5) return { label: "Above Market", color: "text-red-600", icon: AlertCircle };
     return { label: "Competitive", color: "text-blue-600", icon: CheckCircle2 };
+  };
+
+  // Card customization functions
+  const getCardCustomization = (id: string, type: 'brand' | 'category' | 'competitor'): CardCustomization => {
+    return cardCustomizations.get(id) || {
+      id,
+      type,
+      title: id,
+      showTitle: true,
+      backgroundColor: 'bg-white dark:bg-slate-900',
+      textColor: 'text-slate-900 dark:text-white',
+      logoUrl: '',
+      customStyles: ''
+    };
+  };
+
+  const updateCardCustomization = (customization: CardCustomization) => {
+    const newCustomizations = new Map(cardCustomizations);
+    newCustomizations.set(customization.id, customization);
+    setCardCustomizations(newCustomizations);
+  };
+
+  const openCardEditor = (id: string, type: 'brand' | 'category' | 'competitor') => {
+    const existing = getCardCustomization(id, type);
+    setEditingCard(existing);
+    setShowCardCustomDialog(true);
+  };
+
+  const saveCardCustomization = () => {
+    if (editingCard) {
+      updateCardCustomization(editingCard);
+      setShowCardCustomDialog(false);
+      setEditingCard(null);
+    }
   };
 
   if (isLoading) {
@@ -991,15 +1044,42 @@ export default function ProductsPage() {
                 const brandProducts = products.filter(p => (p.brand || 'Unknown') === brand);
                 const lowestPrice = Math.min(...brandProducts.map(p => p.ourPrice || Infinity).filter(p => p !== Infinity));
                 const highestPrice = Math.max(...brandProducts.map(p => p.ourPrice || 0));
+                const customization = getCardCustomization(brand, 'brand');
                 
                 return (
-                  <Card key={brand} className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-xl hover:shadow-2xl transition-all duration-300">
-                    <CardHeader>
-                      <CardTitle className="text-xl font-bold flex items-center justify-between">
-                        <span>{brand}</span>
-                        <Badge variant="secondary">{brandProducts.length}</Badge>
-                      </CardTitle>
-                      <CardDescription>
+                  <Card 
+                    key={brand} 
+                    className={`${customization.backgroundColor} border-slate-200 dark:border-slate-700 shadow-xl hover:shadow-2xl transition-all duration-300 relative group ${customization.customStyles}`}
+                  >
+                    {/* Edit Button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                      onClick={() => openCardEditor(brand, 'brand')}
+                    >
+                      <Settings className="h-3 w-3" />
+                    </Button>
+
+                    <CardHeader className="pb-4">
+                      {customization.logoUrl && (
+                        <div className="w-16 h-16 mb-3 mx-auto">
+                          <img 
+                            src={customization.logoUrl} 
+                            alt={`${brand} logo`}
+                            className="w-full h-full object-contain rounded-lg"
+                          />
+                        </div>
+                      )}
+                      
+                      {customization.showTitle && (
+                        <CardTitle className={`text-xl font-bold flex items-center justify-between ${customization.textColor}`}>
+                          <span>{customization.title}</span>
+                          <Badge variant="secondary">{brandProducts.length}</Badge>
+                        </CardTitle>
+                      )}
+                      
+                      <CardDescription className={customization.textColor}>
                         {lowestPrice !== Infinity && (
                           <span className="text-sm">
                             Price range: ${lowestPrice.toFixed(2)} - ${highestPrice.toFixed(2)}
@@ -1007,15 +1087,16 @@ export default function ProductsPage() {
                         )}
                       </CardDescription>
                     </CardHeader>
+                    
                     <CardContent>
                       <div className="space-y-2">
                         {brandProducts.slice(0, 3).map(product => (
-                          <div key={product.id} className="text-sm text-slate-600 dark:text-slate-400 truncate">
+                          <div key={product.id} className={`text-sm ${customization.textColor} opacity-75 truncate`}>
                             • {product.name}
                           </div>
                         ))}
                         {brandProducts.length > 3 && (
-                          <p className="text-xs text-slate-500">
+                          <p className={`text-xs ${customization.textColor} opacity-60`}>
                             +{brandProducts.length - 3} more products
                           </p>
                         )}
@@ -1032,18 +1113,46 @@ export default function ProductsPage() {
               {uniqueCategories.map(category => {
                 const categoryProducts = products.filter(p => (p.category || 'Uncategorized') === category);
                 const categoryBrands = Array.from(new Set(categoryProducts.map(p => p.brand || 'Unknown')));
+                const customization = getCardCustomization(category, 'category');
                 
                 return (
-                  <Card key={category} className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-xl hover:shadow-2xl transition-all duration-300">
-                    <CardHeader>
-                      <CardTitle className="text-xl font-bold flex items-center justify-between">
-                        <span>{category}</span>
-                        <Badge variant="secondary">{categoryProducts.length}</Badge>
-                      </CardTitle>
-                      <CardDescription>
+                  <Card 
+                    key={category} 
+                    className={`${customization.backgroundColor} border-slate-200 dark:border-slate-700 shadow-xl hover:shadow-2xl transition-all duration-300 relative group ${customization.customStyles}`}
+                  >
+                    {/* Edit Button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                      onClick={() => openCardEditor(category, 'category')}
+                    >
+                      <Settings className="h-3 w-3" />
+                    </Button>
+
+                    <CardHeader className="pb-4">
+                      {customization.logoUrl && (
+                        <div className="w-16 h-16 mb-3 mx-auto">
+                          <img 
+                            src={customization.logoUrl} 
+                            alt={`${category} icon`}
+                            className="w-full h-full object-contain rounded-lg"
+                          />
+                        </div>
+                      )}
+                      
+                      {customization.showTitle && (
+                        <CardTitle className={`text-xl font-bold flex items-center justify-between ${customization.textColor}`}>
+                          <span>{customization.title}</span>
+                          <Badge variant="secondary">{categoryProducts.length}</Badge>
+                        </CardTitle>
+                      )}
+                      
+                      <CardDescription className={customization.textColor}>
                         {categoryBrands.length} brands in this category
                       </CardDescription>
                     </CardHeader>
+                    
                     <CardContent>
                       <div className="flex flex-wrap gap-2">
                         {categoryBrands.slice(0, 5).map(brand => (
@@ -1077,27 +1186,55 @@ export default function ProductsPage() {
                   .filter(l => l.extractedPrice)
                   .reduce((sum, l) => sum + (l.extractedPrice || 0), 0) / 
                   (competitorLinks.filter(l => l.extractedPrice).length || 1);
+                const customization = getCardCustomization(competitor, 'competitor');
                 
                 return (
-                  <Card key={competitor} className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-xl hover:shadow-2xl transition-all duration-300">
-                    <CardHeader>
-                      <CardTitle className="text-xl font-bold flex items-center justify-between">
-                        <span>{competitor}</span>
-                        <Badge variant="secondary">{competitorProducts.length}</Badge>
-                      </CardTitle>
-                      <CardDescription>
+                  <Card 
+                    key={competitor} 
+                    className={`${customization.backgroundColor} border-slate-200 dark:border-slate-700 shadow-xl hover:shadow-2xl transition-all duration-300 relative group ${customization.customStyles}`}
+                  >
+                    {/* Edit Button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                      onClick={() => openCardEditor(competitor, 'competitor')}
+                    >
+                      <Settings className="h-3 w-3" />
+                    </Button>
+
+                    <CardHeader className="pb-4">
+                      {customization.logoUrl && (
+                        <div className="w-16 h-16 mb-3 mx-auto">
+                          <img 
+                            src={customization.logoUrl} 
+                            alt={`${competitor} logo`}
+                            className="w-full h-full object-contain rounded-lg"
+                          />
+                        </div>
+                      )}
+                      
+                      {customization.showTitle && (
+                        <CardTitle className={`text-xl font-bold flex items-center justify-between ${customization.textColor}`}>
+                          <span>{customization.title}</span>
+                          <Badge variant="secondary">{competitorProducts.length}</Badge>
+                        </CardTitle>
+                      )}
+                      
+                      <CardDescription className={customization.textColor}>
                         {competitorLinks.length} product links tracked
                       </CardDescription>
                     </CardHeader>
+                    
                     <CardContent>
                       <div className="space-y-3">
-                        <div className="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-800 rounded">
-                          <span className="text-sm text-slate-600 dark:text-slate-400">Avg Price</span>
-                          <span className="font-semibold">${avgPrice.toFixed(2)}</span>
+                        <div className={`flex justify-between items-center p-2 ${customization.backgroundColor === 'bg-white dark:bg-slate-900' ? 'bg-slate-50 dark:bg-slate-800' : 'bg-black/5 dark:bg-white/5'} rounded`}>
+                          <span className={`text-sm ${customization.textColor} opacity-75`}>Avg Price</span>
+                          <span className={`font-semibold ${customization.textColor}`}>${avgPrice.toFixed(2)}</span>
                         </div>
-                        <div className="flex justify-between items-center p-2 bg-slate-50 dark:bg-slate-800 rounded">
-                          <span className="text-sm text-slate-600 dark:text-slate-400">Last Scraped</span>
-                          <span className="text-xs text-slate-500">
+                        <div className={`flex justify-between items-center p-2 ${customization.backgroundColor === 'bg-white dark:bg-slate-900' ? 'bg-slate-50 dark:bg-slate-800' : 'bg-black/5 dark:bg-white/5'} rounded`}>
+                          <span className={`text-sm ${customization.textColor} opacity-75`}>Last Scraped</span>
+                          <span className={`text-xs ${customization.textColor} opacity-60`}>
                             {competitorLinks[0]?.lastScraped ? new Date(competitorLinks[0].lastScraped).toLocaleDateString() : 'Never'}
                           </span>
                         </div>
@@ -1110,6 +1247,186 @@ export default function ProductsPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Card Customization Dialog */}
+      <Dialog open={showCardCustomDialog} onOpenChange={setShowCardCustomDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Customize {editingCard?.type} Card</DialogTitle>
+            <DialogDescription>
+              Personalize the appearance of your {editingCard?.id} card with custom colors, title, and logo.
+            </DialogDescription>
+          </DialogHeader>
+
+          {editingCard && (
+            <div className="space-y-6">
+              {/* Title Settings */}
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={editingCard.showTitle}
+                    onCheckedChange={(checked) =>
+                      setEditingCard({ ...editingCard, showTitle: checked })
+                    }
+                  />
+                  <Label>Show Title</Label>
+                </div>
+                
+                {editingCard.showTitle && (
+                  <div>
+                    <Label htmlFor="card-title">Card Title</Label>
+                    <Input
+                      id="card-title"
+                      value={editingCard.title}
+                      onChange={(e) =>
+                        setEditingCard({ ...editingCard, title: e.target.value })
+                      }
+                      placeholder="Enter card title"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Logo/Image Settings */}
+              <div className="space-y-3">
+                <Label htmlFor="logo-url">Logo/Image URL</Label>
+                <Input
+                  id="logo-url"
+                  value={editingCard.logoUrl || ''}
+                  onChange={(e) =>
+                    setEditingCard({ ...editingCard, logoUrl: e.target.value })
+                  }
+                  placeholder="https://example.com/logo.png"
+                />
+                {editingCard.logoUrl && (
+                  <div className="w-16 h-16 border rounded-lg overflow-hidden">
+                    <img 
+                      src={editingCard.logoUrl} 
+                      alt="Logo preview"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Background Color */}
+              <div className="space-y-3">
+                <Label>Background Color</Label>
+                <Select
+                  value={editingCard.backgroundColor}
+                  onValueChange={(value) =>
+                    setEditingCard({ ...editingCard, backgroundColor: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="bg-white dark:bg-slate-900">Default</SelectItem>
+                    <SelectItem value="bg-red-50 dark:bg-red-950">Red</SelectItem>
+                    <SelectItem value="bg-blue-50 dark:bg-blue-950">Blue</SelectItem>
+                    <SelectItem value="bg-green-50 dark:bg-green-950">Green</SelectItem>
+                    <SelectItem value="bg-yellow-50 dark:bg-yellow-950">Yellow</SelectItem>
+                    <SelectItem value="bg-purple-50 dark:bg-purple-950">Purple</SelectItem>
+                    <SelectItem value="bg-pink-50 dark:bg-pink-950">Pink</SelectItem>
+                    <SelectItem value="bg-indigo-50 dark:bg-indigo-950">Indigo</SelectItem>
+                    <SelectItem value="bg-cyan-50 dark:bg-cyan-950">Cyan</SelectItem>
+                    <SelectItem value="bg-orange-50 dark:bg-orange-950">Orange</SelectItem>
+                    <SelectItem value="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950 dark:to-red-900">Red Gradient</SelectItem>
+                    <SelectItem value="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900">Blue Gradient</SelectItem>
+                    <SelectItem value="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900">Green Gradient</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Text Color */}
+              <div className="space-y-3">
+                <Label>Text Color</Label>
+                <Select
+                  value={editingCard.textColor}
+                  onValueChange={(value) =>
+                    setEditingCard({ ...editingCard, textColor: value })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="text-slate-900 dark:text-white">Default</SelectItem>
+                    <SelectItem value="text-red-700 dark:text-red-300">Red</SelectItem>
+                    <SelectItem value="text-blue-700 dark:text-blue-300">Blue</SelectItem>
+                    <SelectItem value="text-green-700 dark:text-green-300">Green</SelectItem>
+                    <SelectItem value="text-yellow-700 dark:text-yellow-300">Yellow</SelectItem>
+                    <SelectItem value="text-purple-700 dark:text-purple-300">Purple</SelectItem>
+                    <SelectItem value="text-pink-700 dark:text-pink-300">Pink</SelectItem>
+                    <SelectItem value="text-indigo-700 dark:text-indigo-300">Indigo</SelectItem>
+                    <SelectItem value="text-white">White</SelectItem>
+                    <SelectItem value="text-black">Black</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Custom CSS Classes */}
+              <div className="space-y-3">
+                <Label htmlFor="custom-styles">Custom CSS Classes</Label>
+                <Input
+                  id="custom-styles"
+                  value={editingCard.customStyles || ''}
+                  onChange={(e) =>
+                    setEditingCard({ ...editingCard, customStyles: e.target.value })
+                  }
+                  placeholder="border-2 border-red-500 shadow-lg"
+                />
+                <p className="text-xs text-slate-500">
+                  Add custom Tailwind CSS classes for advanced styling
+                </p>
+              </div>
+
+              {/* Preview */}
+              <div className="space-y-3">
+                <Label>Preview</Label>
+                <Card className={`${editingCard.backgroundColor} ${editingCard.customStyles} max-w-sm`}>
+                  <CardHeader className="pb-4">
+                    {editingCard.logoUrl && (
+                      <div className="w-12 h-12 mb-2 mx-auto">
+                        <img 
+                          src={editingCard.logoUrl} 
+                          alt="Preview logo"
+                          className="w-full h-full object-contain rounded-lg"
+                        />
+                      </div>
+                    )}
+                    
+                    {editingCard.showTitle && (
+                      <CardTitle className={`text-lg font-bold ${editingCard.textColor}`}>
+                        {editingCard.title}
+                      </CardTitle>
+                    )}
+                    
+                    <CardDescription className={editingCard.textColor}>
+                      Sample description text
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowCardCustomDialog(false)}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={saveCardCustomization}>
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
