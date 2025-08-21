@@ -794,8 +794,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const newProduct = await storage.createUnifiedProduct({
               sku: product.sku,
               name: product.title,
-              ourPrice: product.isOnSale ? product.originalPrice : product.price,
-              price: product.price,
+              ourPrice: product.price, // Current selling price (sale price if on sale)
+              price: product.price, // Current selling price (same as ourPrice)
+              targetPrice: product.isOnSale ? product.originalPrice : null, // Store original price in targetPrice when on sale
               image: product.image,
               brand: brand,
               brandId: brandId,

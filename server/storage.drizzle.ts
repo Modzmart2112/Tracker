@@ -484,13 +484,20 @@ export class DrizzleStorage implements IStorage {
           lastScraped: item.listing.lastSeenAt?.toISOString()
         }));
         
+        // Convert decimal strings to numbers properly
+        const currentPrice = row.product.price ? parseFloat(row.product.price) : null;
+        const originalPrice = row.product.targetPrice ? parseFloat(row.product.targetPrice) : null;
+        
+        // Show original price only if it's higher than current price (indicating a sale)
+        const isOnSale = originalPrice && currentPrice && originalPrice > currentPrice;
+        
         return {
           id: row.product.id,
           sku: row.product.ourSku || row.product.id.slice(0, 8).toUpperCase(),
           name: row.product.name || 'Unnamed Product',
-          ourPrice: row.product.targetPrice ? parseFloat(row.product.targetPrice) : null,
-          price: row.product.targetPrice ? parseFloat(row.product.targetPrice) : null,
-          originalPrice: row.product.targetPrice ? parseFloat(row.product.targetPrice) * 1.2 : null,
+          ourPrice: currentPrice,
+          price: currentPrice,
+          originalPrice: isOnSale ? originalPrice : null,
           image: row.product.imageUrl || null,
           brand: row.brand?.name || 'Unknown',
           category: row.category?.name || 'Uncategorized',
@@ -551,7 +558,7 @@ export class DrizzleStorage implements IStorage {
       productTypeId: null,
       ourSku: product.sku || null,
       quality: null,
-      targetPrice: product.ourPrice ? product.ourPrice.toString() : null,
+      targetPrice: product.targetPrice ? product.targetPrice.toString() : null,
       price: product.price ? product.price.toString() : null,
       imageUrl: product.image || null
     }).returning();
