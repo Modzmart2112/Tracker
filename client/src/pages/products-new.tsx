@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
+import { ObjectUploader } from "@/components/ObjectUploader";
 import { 
   Plus, 
   Package2, 
@@ -1416,196 +1417,140 @@ export default function ProductsPage() {
           </TabsContent>
 
           <TabsContent value="categories" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
               {uniqueCategories.map(category => {
                 const categoryProducts = products.filter(p => (p.category || 'Uncategorized') === category);
-                const categoryBrands = Array.from(new Set(categoryProducts.map(p => p.brand || 'Unknown')));
                 const customization = getCardCustomization(category, 'category');
                 
                 return (
-                  <Card 
-                    key={category} 
-                    className="relative group bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-slate-700 hover:border-blue-500/50 shadow-2xl hover:shadow-blue-500/20 transition-all duration-500 overflow-hidden"
+                  <motion.div
+                    key={category}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="cursor-pointer"
+                    onClick={() => {
+                      // Navigate to category page
+                      window.location.href = `/categories/${encodeURIComponent(category)}`;
+                    }}
                   >
-                    {/* Futuristic glow effect */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                    
-                    {/* Animated border gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-cyan-500 to-purple-500 opacity-0 group-hover:opacity-20 blur-sm transition-all duration-500" />
-                    
-                    {/* Edit Button */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 bg-black/50 border-blue-500/50 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 backdrop-blur-sm"
-                      onClick={() => openCardEditor(category, 'category')}
-                    >
-                      <Settings className="h-3 w-3" />
-                    </Button>
-
-                    <CardHeader className="relative z-10 pb-4">
-                      {/* Icon container with futuristic styling */}
-                      <div className="w-20 h-20 mb-4 mx-auto relative">
-                        <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-xl blur-sm" />
-                        <div className="relative w-full h-full bg-black/30 backdrop-blur-sm rounded-xl border border-slate-600 p-3 flex items-center justify-center">
-                          {customization.logoUrl ? (
+                    <Card className="aspect-square bg-white hover:shadow-lg transition-all duration-300 border border-gray-200 hover:border-red-300 relative group">
+                      {/* Product count badge */}
+                      <div className="absolute -top-2 -right-2 z-10">
+                        <Badge className="bg-red-600 text-white text-xs font-bold shadow-lg">
+                          {categoryProducts.length}
+                        </Badge>
+                      </div>
+                      
+                      {/* Edit Button */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-20 bg-white/90 border-gray-300 hover:border-red-500"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openCardEditor(category, 'category');
+                        }}
+                      >
+                        <Settings className="h-3 w-3" />
+                      </Button>
+                      
+                      <CardContent className="p-4 h-full flex flex-col items-center justify-center">
+                        {customization.logoUrl ? (
+                          <div className="w-full h-full flex items-center justify-center">
                             <img 
-                              src={customization.logoUrl} 
-                              alt={`${category} icon`}
-                              className="w-full h-full object-contain filter brightness-110"
+                              src={customization.logoUrl.startsWith('/objects/') 
+                                ? customization.logoUrl 
+                                : customization.logoUrl}
+                              alt={`${category} logo`}
+                              className="max-w-full max-h-full object-contain"
                             />
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+                          </div>
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center shadow-lg">
                               <Grid className="h-8 w-8 text-white" />
                             </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Title with futuristic styling */}
-                      <CardTitle className="text-xl font-bold text-center mb-3">
-                        <div className="flex items-center justify-center gap-3">
-                          <span className="bg-gradient-to-r from-white via-gray-200 to-white bg-clip-text text-transparent">
-                            {category}
-                          </span>
-                          <div className="relative">
-                            <Badge className="bg-gradient-to-r from-blue-600 to-purple-700 text-white border-blue-500 shadow-lg shadow-blue-500/25">
-                              {categoryProducts.length}
-                            </Badge>
-                            <div className="absolute inset-0 bg-blue-500/30 rounded-full blur animate-pulse" />
                           </div>
-                        </div>
-                      </CardTitle>
-                      
-                      {/* Brand count with tech styling */}
-                      <CardDescription className="text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
-                          <span className="text-gray-300 text-sm font-mono bg-black/30 px-3 py-1 rounded-full border border-slate-600">
-                            {categoryBrands.length} brands
-                          </span>
-                          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-blue-500/50 to-transparent" />
-                        </div>
-                      </CardDescription>
-                    </CardHeader>
-                    
-                    <CardContent>
-                      <div className="flex flex-wrap gap-2">
-                        {categoryBrands.slice(0, 5).map(brand => (
-                          <Badge key={brand} variant="outline" className="text-xs">
-                            {brand}
-                          </Badge>
-                        ))}
-                        {categoryBrands.length > 5 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{categoryBrands.length - 5} more
-                          </Badge>
                         )}
-                      </div>
-                    </CardContent>
-                  </Card>
+                        
+                        {/* Category name on hover */}
+                        <div className="absolute inset-x-0 bottom-0 bg-black/80 text-white text-xs font-medium py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-center">
+                          {category}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
                 );
               })}
             </div>
           </TabsContent>
 
           <TabsContent value="competitors" className="mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
               {competitors.map(competitor => {
                 const competitorProducts = products.filter(p => 
                   p.competitorLinks.some(l => (l.competitorName || 'Unknown') === competitor)
                 );
-                const competitorLinks = products.flatMap(p => 
-                  p.competitorLinks.filter(l => (l.competitorName || 'Unknown') === competitor)
-                );
-                const avgPrice = competitorLinks
-                  .filter(l => l.extractedPrice)
-                  .reduce((sum, l) => sum + (l.extractedPrice || 0), 0) / 
-                  (competitorLinks.filter(l => l.extractedPrice).length || 1);
                 const customization = getCardCustomization(competitor, 'competitor');
                 
                 return (
-                  <Card 
-                    key={competitor} 
-                    className="relative group bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border border-slate-700 hover:border-green-500/50 shadow-2xl hover:shadow-green-500/20 transition-all duration-500 overflow-hidden"
+                  <motion.div
+                    key={competitor}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="cursor-pointer"
+                    onClick={() => {
+                      // Navigate to competitor page
+                      window.location.href = `/competitors/${encodeURIComponent(competitor)}`;
+                    }}
                   >
-                    {/* Futuristic glow effect */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 via-transparent to-emerald-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                    
-                    {/* Animated border gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-r from-green-500 via-emerald-500 to-cyan-500 opacity-0 group-hover:opacity-20 blur-sm transition-all duration-500" />
-                    
-                    {/* Edit Button */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 bg-black/50 border-green-500/50 text-green-400 hover:bg-green-500/20 hover:text-green-300 backdrop-blur-sm"
-                      onClick={() => openCardEditor(competitor, 'competitor')}
-                    >
-                      <Settings className="h-3 w-3" />
-                    </Button>
-
-                    <CardHeader className="relative z-10 pb-4">
-                      {/* Logo container with futuristic styling */}
-                      <div className="w-20 h-20 mb-4 mx-auto relative">
-                        <div className="absolute inset-0 bg-gradient-to-br from-green-500/20 to-emerald-500/20 rounded-xl blur-sm" />
-                        <div className="relative w-full h-full bg-black/30 backdrop-blur-sm rounded-xl border border-slate-600 p-3 flex items-center justify-center">
-                          {customization.logoUrl ? (
+                    <Card className="aspect-square bg-white hover:shadow-lg transition-all duration-300 border border-gray-200 hover:border-red-300 relative group">
+                      {/* Product count badge */}
+                      <div className="absolute -top-2 -right-2 z-10">
+                        <Badge className="bg-red-600 text-white text-xs font-bold shadow-lg">
+                          {competitorProducts.length}
+                        </Badge>
+                      </div>
+                      
+                      {/* Edit Button */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-20 bg-white/90 border-gray-300 hover:border-red-500"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openCardEditor(competitor, 'competitor');
+                        }}
+                      >
+                        <Settings className="h-3 w-3" />
+                      </Button>
+                      
+                      <CardContent className="p-4 h-full flex flex-col items-center justify-center">
+                        {customization.logoUrl ? (
+                          <div className="w-full h-full flex items-center justify-center">
                             <img 
-                              src={customization.logoUrl} 
+                              src={customization.logoUrl.startsWith('/objects/') 
+                                ? customization.logoUrl 
+                                : customization.logoUrl}
                               alt={`${competitor} logo`}
-                              className="w-full h-full object-contain filter brightness-110"
+                              className="max-w-full max-h-full object-contain"
                             />
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
+                          </div>
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center shadow-lg">
                               <Store className="h-8 w-8 text-white" />
                             </div>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Title with futuristic styling */}
-                      <CardTitle className="text-xl font-bold text-center mb-3">
-                        <div className="flex items-center justify-center gap-3">
-                          <span className="bg-gradient-to-r from-white via-gray-200 to-white bg-clip-text text-transparent">
-                            {competitor}
-                          </span>
-                          <div className="relative">
-                            <Badge className="bg-gradient-to-r from-green-600 to-emerald-700 text-white border-green-500 shadow-lg shadow-green-500/25">
-                              {competitorProducts.length}
-                            </Badge>
-                            <div className="absolute inset-0 bg-green-500/30 rounded-full blur animate-pulse" />
                           </div>
+                        )}
+                        
+                        {/* Competitor name on hover */}
+                        <div className="absolute inset-x-0 bottom-0 bg-black/80 text-white text-xs font-medium py-2 px-3 opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-center">
+                          {competitor}
                         </div>
-                      </CardTitle>
-                      
-                      {/* Links count with tech styling */}
-                      <CardDescription className="text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-green-500/50 to-transparent" />
-                          <span className="text-gray-300 text-sm font-mono bg-black/30 px-3 py-1 rounded-full border border-slate-600">
-                            {competitorLinks.length} links tracked
-                          </span>
-                          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-green-500/50 to-transparent" />
-                        </div>
-                      </CardDescription>
-                    </CardHeader>
-                    
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className={`flex justify-between items-center p-2 ${customization.backgroundColor === 'bg-white dark:bg-slate-900' ? 'bg-slate-50 dark:bg-slate-800' : 'bg-black/5 dark:bg-white/5'} rounded`}>
-                          <span className={`text-sm ${customization.textColor} opacity-75`}>Avg Price</span>
-                          <span className={`font-semibold ${customization.textColor}`}>${avgPrice.toFixed(2)}</span>
-                        </div>
-                        <div className={`flex justify-between items-center p-2 ${customization.backgroundColor === 'bg-white dark:bg-slate-900' ? 'bg-slate-50 dark:bg-slate-800' : 'bg-black/5 dark:bg-white/5'} rounded`}>
-                          <span className={`text-sm ${customization.textColor} opacity-75`}>Last Scraped</span>
-                          <span className={`text-xs ${customization.textColor} opacity-60`}>
-                            {competitorLinks[0]?.lastScraped ? new Date(competitorLinks[0].lastScraped).toLocaleDateString() : 'Never'}
-                          </span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
                 );
               })}
             </div>
@@ -1654,24 +1599,67 @@ export default function ProductsPage() {
 
               {/* Logo/Image Settings */}
               <div className="space-y-3">
-                <Label htmlFor="logo-url">Logo/Image URL</Label>
-                <Input
-                  id="logo-url"
-                  value={editingCard.logoUrl || ''}
-                  onChange={(e) =>
-                    setEditingCard({ ...editingCard, logoUrl: e.target.value })
-                  }
-                  placeholder="https://example.com/logo.png"
-                />
+                <Label>Logo/Image</Label>
+                <div className="flex items-center gap-3">
+                  <ObjectUploader
+                    maxNumberOfFiles={1}
+                    maxFileSize={5242880} // 5MB
+                    onGetUploadParameters={async () => {
+                      const response = await apiRequest('/api/objects/upload', {
+                        method: 'POST'
+                      });
+                      return {
+                        method: 'PUT' as const,
+                        url: response.uploadURL
+                      };
+                    }}
+                    onComplete={async (result) => {
+                      if (result.successful?.[0]) {
+                        const uploadURL = result.successful[0].uploadURL;
+                        const response = await apiRequest('/api/card-images', {
+                          method: 'PUT',
+                          body: JSON.stringify({ imageURL: uploadURL })
+                        });
+                        setEditingCard({ ...editingCard, logoUrl: response.objectPath });
+                        toast({
+                          title: "Image uploaded",
+                          description: "Your image has been uploaded successfully"
+                        });
+                      }
+                    }}
+                    buttonClassName="w-full"
+                  >
+                    <ImageIcon className="h-4 w-4 mr-2" />
+                    Upload Image
+                  </ObjectUploader>
+                  
+                  {editingCard.logoUrl && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setEditingCard({ ...editingCard, logoUrl: '' })}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                
                 {editingCard.logoUrl && (
-                  <div className="w-16 h-16 border rounded-lg overflow-hidden">
+                  <div className="w-24 h-24 border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50">
                     <img 
-                      src={editingCard.logoUrl} 
+                      src={editingCard.logoUrl.startsWith('/objects/') 
+                        ? editingCard.logoUrl 
+                        : editingCard.logoUrl
+                      } 
                       alt="Logo preview"
                       className="w-full h-full object-contain"
                     />
                   </div>
                 )}
+                
+                <p className="text-xs text-gray-500">
+                  Upload an image to customize your card. Supported formats: JPG, PNG, GIF
+                </p>
               </div>
 
               {/* Background Color */}
