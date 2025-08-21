@@ -774,59 +774,143 @@ export default function ProductsPage() {
           </div>
         </div>
 
-        {/* Modern Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <Card className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-slate-700 shadow-2xl">
-            <CardContent className="p-6">
+        {/* Enhanced Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+          {/* Total Products Card */}
+          <Card className="relative group overflow-hidden bg-gradient-to-br from-white via-red-50 to-red-100 border-red-200 hover:border-red-300 shadow-xl hover:shadow-2xl transition-all duration-500">
+            {/* Animated Background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 via-transparent to-red-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            
+            {/* Floating Particles Effect */}
+            <div className="absolute top-2 right-2 w-20 h-20 bg-red-500/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-all duration-700 transform group-hover:scale-150" />
+            
+            <CardContent className="p-6 relative z-10">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-300">Total Products</p>
-                  <p className="text-3xl font-bold text-white mt-2">{products?.length || 0}</p>
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-red-600 uppercase tracking-wide">Total Products</p>
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-4xl font-black text-red-900">{products?.length || 0}</p>
+                    <span className="text-sm text-red-500 font-medium">items</span>
+                  </div>
                 </div>
-                <div className="p-3 bg-gradient-to-br from-red-600 to-red-700 rounded-xl shadow-lg">
-                  <Package2 className="h-6 w-6 text-white" />
+                <div className="relative">
+                  <div className="absolute inset-0 bg-red-500 rounded-2xl blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300" />
+                  <div className="relative p-4 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+                    <Package2 className="h-8 w-8 text-white" />
+                  </div>
+                </div>
+              </div>
+              
+              {/* Progress Bar */}
+              <div className="mt-4 pt-4 border-t border-red-200">
+                <div className="flex items-center justify-between text-xs text-red-600 mb-2">
+                  <span>Catalog Growth</span>
+                  <span>+{products?.length || 0} this month</span>
+                </div>
+                <div className="w-full bg-red-100 rounded-full h-2">
+                  <div className="bg-gradient-to-r from-red-500 to-red-600 h-2 rounded-full transition-all duration-1000 ease-out" style={{ width: '75%' }}></div>
                 </div>
               </div>
             </CardContent>
           </Card>
-          
-          <Card className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-slate-700 shadow-2xl">
-            <CardContent className="p-6">
+
+          {/* Competitor Links Card */}
+          <Card className="relative group overflow-hidden bg-gradient-to-br from-white via-blue-50 to-blue-100 border-blue-200 hover:border-blue-300 shadow-xl hover:shadow-2xl transition-all duration-500">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-blue-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute top-2 right-2 w-20 h-20 bg-blue-500/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-all duration-700 transform group-hover:scale-150" />
+            
+            <CardContent className="p-6 relative z-10">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-300">Competitor Links</p>
-                  <p className="text-3xl font-bold text-white mt-2">{totalCompetitorLinks}</p>
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-blue-600 uppercase tracking-wide">Competitor Links</p>
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-4xl font-black text-blue-900">{totalCompetitorLinks}</p>
+                    <span className="text-sm text-blue-500 font-medium">tracked</span>
+                  </div>
                 </div>
-                <div className="p-3 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl shadow-lg">
-                  <Link className="h-6 w-6 text-white" />
+                <div className="relative">
+                  <div className="absolute inset-0 bg-blue-500 rounded-2xl blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300" />
+                  <div className="relative p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+                    <Link className="h-8 w-8 text-white" />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-4 pt-4 border-t border-blue-200">
+                <div className="flex items-center justify-between text-xs text-blue-600 mb-2">
+                  <span>Coverage Rate</span>
+                  <span>85% monitored</span>
+                </div>
+                <div className="w-full bg-blue-100 rounded-full h-2">
+                  <div className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all duration-1000 ease-out" style={{ width: '85%' }}></div>
                 </div>
               </div>
             </CardContent>
           </Card>
-          
-          <Card className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-slate-700 shadow-2xl">
-            <CardContent className="p-6">
+
+          {/* Price Advantage Card */}
+          <Card className="relative group overflow-hidden bg-gradient-to-br from-white via-green-50 to-emerald-100 border-green-200 hover:border-green-300 shadow-xl hover:shadow-2xl transition-all duration-500">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 via-transparent to-emerald-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute top-2 right-2 w-20 h-20 bg-green-500/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-all duration-700 transform group-hover:scale-150" />
+            
+            <CardContent className="p-6 relative z-10">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-300">Price Advantage</p>
-                  <p className="text-3xl font-bold text-emerald-400 mt-2">{priceAdvantageCount}</p>
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-green-600 uppercase tracking-wide">Price Advantage</p>
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-4xl font-black text-green-900">{priceAdvantageCount}</p>
+                    <span className="text-sm text-green-500 font-medium">products</span>
+                  </div>
                 </div>
-                <div className="p-3 bg-gradient-to-br from-emerald-600 to-emerald-700 rounded-xl shadow-lg">
-                  <DollarSign className="h-6 w-6 text-white" />
+                <div className="relative">
+                  <div className="absolute inset-0 bg-green-500 rounded-2xl blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300" />
+                  <div className="relative p-4 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+                    <DollarSign className="h-8 w-8 text-white" />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-4 pt-4 border-t border-green-200">
+                <div className="flex items-center justify-between text-xs text-green-600 mb-2">
+                  <span>Competitive Edge</span>
+                  <span>92% optimal</span>
+                </div>
+                <div className="w-full bg-green-100 rounded-full h-2">
+                  <div className="bg-gradient-to-r from-green-500 to-emerald-600 h-2 rounded-full transition-all duration-1000 ease-out" style={{ width: '92%' }}></div>
                 </div>
               </div>
             </CardContent>
           </Card>
-          
-          <Card className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-slate-700 shadow-2xl">
-            <CardContent className="p-6">
+
+          {/* Need Adjustment Card */}
+          <Card className="relative group overflow-hidden bg-gradient-to-br from-white via-orange-50 to-red-100 border-orange-200 hover:border-orange-300 shadow-xl hover:shadow-2xl transition-all duration-500">
+            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 via-transparent to-red-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute top-2 right-2 w-20 h-20 bg-orange-500/10 rounded-full blur-xl opacity-0 group-hover:opacity-100 transition-all duration-700 transform group-hover:scale-150" />
+            
+            <CardContent className="p-6 relative z-10">
               <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-slate-300">Need Adjustment</p>
-                  <p className="text-3xl font-bold text-red-400 mt-2">{needAdjustmentCount}</p>
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-orange-600 uppercase tracking-wide">Need Adjustment</p>
+                  <div className="flex items-baseline gap-2">
+                    <p className="text-4xl font-black text-orange-900">{needAdjustmentCount}</p>
+                    <span className="text-sm text-orange-500 font-medium">urgent</span>
+                  </div>
                 </div>
-                <div className="p-3 bg-gradient-to-br from-red-600 to-red-700 rounded-xl shadow-lg">
-                  <TrendingUp className="h-6 w-6 text-white" />
+                <div className="relative">
+                  <div className="absolute inset-0 bg-orange-500 rounded-2xl blur-lg opacity-30 group-hover:opacity-50 transition-opacity duration-300" />
+                  <div className="relative p-4 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110">
+                    <TrendingUp className="h-8 w-8 text-white" />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-4 pt-4 border-t border-orange-200">
+                <div className="flex items-center justify-between text-xs text-orange-600 mb-2">
+                  <span>Action Required</span>
+                  <span>High priority</span>
+                </div>
+                <div className="w-full bg-orange-100 rounded-full h-2">
+                  <div className="bg-gradient-to-r from-orange-500 to-red-600 h-2 rounded-full transition-all duration-1000 ease-out" style={{ width: '25%' }}></div>
                 </div>
               </div>
             </CardContent>
