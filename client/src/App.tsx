@@ -13,6 +13,8 @@ import Pages from "@/pages/pages";
 import Changes from "@/pages/changes";
 import Admin from "@/pages/admin";
 import NotFound from "@/pages/not-found";
+import { CatalogPage } from "@/pages/catalog";
+import { CatalogManagerPage } from "@/pages/catalog-manager";
 
 function Router() {
   const [location] = useLocation();
@@ -34,6 +36,10 @@ function Router() {
         return { title: 'Recent Changes', subtitle: 'Track price and stock updates across all competitors' };
       case '/admin':
         return { title: 'Administration', subtitle: 'Manage system configuration and data' };
+      case '/catalog':
+        return { title: 'Product Catalog', subtitle: 'Manage your product catalog and brands' };
+      case '/catalog-manager':
+        return { title: 'Catalog Manager', subtitle: 'Manage categories, product types, and competitors' };
       default:
         return { title: 'Page Not Found', subtitle: 'The requested page could not be found' };
     }
@@ -58,6 +64,8 @@ function Router() {
           <Route path="/pages" component={Pages} />
           <Route path="/changes" component={Changes} />
           <Route path="/admin" component={Admin} />
+          <Route path="/catalog" component={CatalogPage} />
+          <Route path="/catalog-manager" component={CatalogManagerPage} />
           <Route component={NotFound} />
         </Switch>
       </div>
