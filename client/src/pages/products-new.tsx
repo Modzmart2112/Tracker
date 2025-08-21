@@ -307,6 +307,48 @@ export default function ProductsPage() {
     });
   };
 
+  // Helper function to extract model number from product name
+  const extractModelNumber = (name: string): string => {
+    if (!name) return 'N/A';
+    
+    // Remove common brand names first to avoid capturing them
+    const brandPatterns = [
+      /^(Schumacher|Matson|NOCO|DeWalt|Makita|Milwaukee|Bosch|Ryobi|SP Tools|Sydney Tools)\s+/i,
+      /^(Black & Decker|Black and Decker|Stanley|Craftsman|Ridgid)\s+/i,
+    ];
+    
+    let cleanedName = name;
+    for (const pattern of brandPatterns) {
+      cleanedName = cleanedName.replace(pattern, '');
+    }
+    
+    // Model number patterns (more specific patterns first)
+    const patterns = [
+      // SPi Pro25, SPi-IQ, SPiDS-200 etc
+      /\b(SP[iI][\s-]?(?:Pro|DS|IQ)?[\s-]?\d+[A-Z]*)\b/i,
+      // SPX457, GX8, MT3750 etc
+      /\b([A-Z]{2,}X?\d{2,}[A-Z]*)\b/,
+      // G1100AU, G3500AU etc
+      /\b(G\d+[A-Z]+)\b/,
+      // SS4L, JMC45 etc
+      /\b([A-Z]{2,}\d+[A-Z]*)\b/,
+      // DS-70, DS-35 etc
+      /\b([A-Z]{2}[\s-]\d+)\b/,
+      // Generic alphanumeric model (ABC123, 123ABC)
+      /\b([A-Z]+\d+[A-Z0-9]*|[0-9]+[A-Z]+[A-Z0-9]*)\b/i,
+    ];
+    
+    for (const pattern of patterns) {
+      const match = cleanedName.match(pattern);
+      if (match) {
+        // Clean up the match (remove extra spaces, normalize separators)
+        return match[1].replace(/\s+/g, '-').toUpperCase();
+      }
+    }
+    
+    return 'N/A';
+  };
+
 
 
   const handleAddUrl = () => {
