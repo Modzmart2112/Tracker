@@ -141,28 +141,32 @@ export default function ProductsPage() {
   const extractFromCategory = useMutation({
     mutationFn: (url: string) => apiRequest("POST", "/api/extract-category", { url }),
     onSuccess: (data: any) => {
+      console.log("Category extraction response:", data);
+      setIsExtractingCategory(false);
+      
       if (data.products && data.products.length > 0) {
         setExtractedProducts(data.products);
+        const noteMsg = data.note ? ` (${data.note})` : '';
         toast({ 
           title: "Category products extracted",
-          description: `Found ${data.products.length} products from ${data.totalPages || 1} page(s)`
+          description: `Found ${data.products.length} products from ${data.categoryName || 'category'}${noteMsg}`
         });
       } else {
         toast({ 
           title: "No products found",
-          description: "Could not extract products from this category page",
+          description: data.details || "Could not extract products from this category page",
           variant: "destructive"
         });
       }
-      setIsExtractingCategory(false);
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error("Category extraction error:", error);
+      setIsExtractingCategory(false);
       toast({ 
         title: "Extraction failed",
-        description: "Failed to extract products from category page",
+        description: error.message || "Failed to extract products from category page",
         variant: "destructive"
       });
-      setIsExtractingCategory(false);
     }
   });
 
