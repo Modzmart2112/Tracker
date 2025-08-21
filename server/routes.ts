@@ -620,9 +620,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Check if this is a React/SPA application
         const isReactApp = html.includes('<div id="root"></div>') || html.includes('React') || html.includes('__NEXT_DATA__');
         
-        // For React/SPA applications, demonstrate what real extraction would look like
+        // For React/SPA applications, try browser automation first, fallback to demo
         if (isReactApp) {
-          console.log("Detected React/SPA application - demonstrating real product extraction");
+          console.log("Detected React/SPA application - attempting Playwright browser automation");
+          
+          // Try real browser automation first
+          try {
+            const { playwrightScraper } = await import('./playwright-scraper');
+            const result = await playwrightScraper.scrapeSydneyTools(url);
+            
+            if (result.totalProducts > 0) {
+              return res.json({
+                ...result,
+                extractedAt: new Date().toISOString(),
+                aiEnhanced: false,
+                sourceUrl: url,
+                note: `🎉 SUCCESS! Extracted ${result.totalProducts} authentic products using real browser automation from Sydney Tools.`,
+                isDemo: false
+              });
+            }
+          } catch (error: any) {
+            console.error("Browser automation failed, falling back to demo:", error.message);
+          }
+          
+          console.log("Using demonstration data showing what real extraction would return");
           
           // This demonstrates what the system would extract from Sydney Tools car battery chargers page
           // Based on real product data visible on the Sydney Tools website

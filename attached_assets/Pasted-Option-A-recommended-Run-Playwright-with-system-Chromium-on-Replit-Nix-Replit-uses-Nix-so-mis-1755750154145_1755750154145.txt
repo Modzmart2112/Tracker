@@ -1,0 +1,285 @@
+Option A (recommended): Run Playwright with system Chromium on Replit (Nix)
+
+Replit uses Nix, so missing GTK/NSPR/NSS/etc. libs cause the launch failures. Add them via replit.nix, disable the sandbox, and use the system chromium Playwright channel.
+
+1) replit.nix (drop this in your repo root)
+{ pkgs }:
+
+{
+  deps = [
+    pkgs.nodejs_20
+    pkgs.chromium
+
+    # Core runtime libs Chromium needs
+    pkgs.glib
+    pkgs.nspr
+    pkgs.nss
+    pkgs.dbus
+    pkgs.atk
+    pkgs.cairo
+    pkgs.pango
+    pkgs.gdk-pixbuf
+    pkgs.freetype
+    pkgs.fontconfig
+    pkgs.alsa-lib
+    pkgs.libdrm
+    pkgs.libxkbcommon
+    pkgs.wayland
+    pkgs.cups
+
+    # X11 bits
+    pkgs.xorg.libX11
+    pkgs.xorg.libXcomposite
+    pkgs.xorg.libXdamage
+    pkgs.xorg.libXext
+    pkgs.xorg.libXfixes
+    pkgs.xorg.libXrandr
+    pkgs.xorg.libXrender
+    pkgs.xorg.libXcursor
+    pkgs.xorg.libXinerama
+    pkgs.xorg.libXi
+    pkgs.xorg.libXss
+
+    # Optional: fonts so price glyphs render consistently
+    pkgs.noto-fonts
+    pkgs.noto-fonts-cjk
+    pkgs.noto-fonts-emoji
+  ];
+
+  env = {
+    # Let Playwright keep browsers inside node_modules (handy on Replit)
+    PLAYWRIGHT_BROWSERS_PATH = "0";
+  };
+}
+
+2) package.json scripts
+{
+  "scripts": {
+    "postinstall": "npx playwright install chromium",
+    "scrape": "tsx src/scrape.ts"
+  },
+  "dependencies": {
+    "playwright": "^1.46.0",
+    "tsx": "^4.16.0"
+  }
+}
+
+3) src/scrape.ts (TypeScript, DOM-first with network fallback)
+
+This launches Chromium with --no-sandbox, waits for the SPA to render, autoscrolls (or clicks “Load more”), and extracts products. It also sniffs network JSON during navigation as a plan-B; if an internal API returns the product list, we grab it directly (faster and less brittle).
+
+import { chromium, Browser, Page } from "playwright";
+
+const TARGET = "https://sydneytools.com.au/category/automotive/car-battery-chargers";
+
+type Product = {
+  title: string;
+  price: string | null;
+  url: string;
+  image: string | null;
+};
+
+async function getChromiumPath(): Promise<string | undefined> {
+  try {
+    const { execSync } = await import("node:child_process");
+    return execSync("which chromium").toString().trim();
+  } catch {
+    return undefined; // Playwright-downloaded Chromium will be used
+  }
+}
+
+async function autoScroll(page: Page) {
+  await page.evaluate(async () => {
+    const sleep = (ms: number) => new Promise(res => setTimeout(res, ms));
+    let last = 0;
+    for (let i = 0; i < 30; i++) {
+      window.scrollTo(0, document.body.scrollHeight);
+      await sleep(400);
+      const sh = document.documentElement.scrollHeight;
+      if (sh === last) break;
+      last = sh;
+    }
+  });
+}
+
+async function clickLoadMoreIfPresent(page: Page) {
+  // Try to click any kind of load more/pagination button a few times
+  for (let i = 0; i < 6; i++) {
+    const btn = page.locator("button:has-text('Load more'), button:has-text('Show more'), a:has-text('Load more'), a:has-text('Show more')");
+    if (await btn.first().isVisible().catch(() => false)) {
+      await btn.first().click({ timeout: 2000 }).catch(() => {});
+      await page.waitForLoadState("networkidle", { timeout: 8000 }).catch(() => {});
+    } else {
+      break;
+    }
+  }
+}
+
+async function extractFromDOM(page: Page): Promise<Product[]> {
+  // Anchor pattern is robust across many SPAs: product tiles link to /product/*
+  await page.waitForSelector("a[href^='/product/']", { timeout: 30000 });
+
+  const products = await page.$$eval("a[href^='/product/']", (anchors) => {
+    const items: Product[] = [];
+    const seen = new Set<string>();
+
+    for (const a of anchors as HTMLAnchorElement[]) {
+      try {
+        const href = new URL(a.getAttribute("href")!, location.origin).toString();
+        if (seen.has(href)) continue;
+
+        // Find nearest card container to scope title/price/img
+        const card = (a.closest("article, li, div") ?? a) as HTMLElement;
+
+        // Title: try text of anchor, fallback to nearest heading
+        let title = (a.textContent || "").trim();
+        if (!title) {
+          const h = card.querySelector("h3,h2,h4,[data-testid*='title']");
+          title = (h?.textContent || "").trim();
+        }
+        if (!title) continue;
+
+        // Price: search common selectors or text pattern with $
+        let priceEl =
+          card.querySelector("[data-testid*='price'], .price, [class*='price']") as HTMLElement | null;
+        let price = (priceEl?.textContent || "").replace(/\s+/g, " ").trim();
+        if (!price || !/\d/.test(price)) {
+          // Fallback: scan text for a $amount pattern
+          const text = (card.textContent || "").replace(/\s+/g, " ");
+          const m = text.match(/\$\s?\d[\d,]*\.?\d{0,2}/);
+          price = m ? m[0] : null;
+        }
+
+        // Image: prefer product image inside the card
+        let imgEl = card.querySelector("img");
+        let image =
+          (imgEl?.getAttribute("src") ||
+           imgEl?.getAttribute("data-src") ||
+           imgEl?.getAttribute("data-lazy") ||
+           null);
+
+        items.push({ title, price, url: href, image });
+        seen.add(href);
+      } catch {}
+    }
+    return items;
+  });
+
+  return products;
+}
+
+async function main() {
+  const execPath = await getChromiumPath();
+  const browser: Browser = await chromium.launch({
+    headless: true,
+    executablePath: execPath, // if undefined, Playwright’s own Chromium is used
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"]
+  });
+
+  // If you need AU IP: add your proxy here
+  // const context = await browser.newContext({ proxy: { server: "http://USERNAME:PASSWORD@au-proxy:PORT" } });
+
+  const context = await browser.newContext({
+    userAgent:
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115 Safari/537.36",
+    viewport: { width: 1366, height: 900 }
+  });
+
+  const page = await context.newPage();
+
+  // Capture any JSON API the SPA calls as a fast fallback
+  const apiProducts: any[] = [];
+  page.on("response", async (resp) => {
+    const url = resp.url();
+    try {
+      // Heuristics: category/search endpoints usually return an array of products
+      if (/\b(search|product|category|listing)\b/i.test(url) && resp.request().resourceType() === "xhr") {
+        const ctype = resp.headers()["content-type"] || "";
+        if (ctype.includes("application/json")) {
+          const json = await resp.json().catch(() => null);
+          if (json) {
+            // Try to auto-detect product arrays in common shapes
+            const candidates = [json, json?.data, json?.results, json?.items, json?.products];
+            for (const c of candidates) {
+              if (Array.isArray(c) && c.length) {
+                apiProducts.push(...c);
+                break;
+              }
+            }
+          }
+        }
+      }
+    } catch {}
+  });
+
+  await page.goto(TARGET, { waitUntil: "domcontentloaded", timeout: 60000 });
+  await page.waitForLoadState("networkidle", { timeout: 15000 }).catch(() => {});
+  await clickLoadMoreIfPresent(page);
+  await autoScroll(page);
+
+  let products = await extractFromDOM(page);
+
+  // If DOM failed or looks too short, try to normalize from captured API JSON
+  if (products.length < 8 && apiProducts.length) {
+    products = apiProducts.map((p: any) => ({
+      title: p.title || p.name || "",
+      price: typeof p.price === "string" ? p.price :
+             (p.price?.current || p.price?.value ? `$${p.price.current ?? p.price.value}` : null),
+      url: p.url ? new URL(p.url, "https://sydneytools.com.au").toString()
+                 : (p.slug ? `https://sydneytools.com.au/product/${p.slug}` : ""),
+      image: p.image || p.img || p.thumbnail || null
+    })).filter((x: Product) => x.title && x.url);
+  }
+
+  console.log(JSON.stringify({ count: products.length, products }, null, 2));
+
+  await browser.close();
+}
+
+main().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});
+
+
+Run it
+
+Open the Replit shell → npm i (this runs npx playwright install chromium)
+
+npm run scrape
+
+Notes for Replit containers
+
+Always pass --no-sandbox / --disable-setuid-sandbox.
+
+If /nix/store/.../chromium path changes between rebuilds, the script auto-detects it (which chromium).
+
+If your project needs an AU IP, add a residential proxy in the newContext({ proxy }) block (several providers offer AU exits).
+
+Option B: Remote browser (no system deps at all)
+
+If you want to ship immediately without fighting libs, point Playwright at a hosted Chromium (e.g., Browserless, Scrapfly, Apify, ZenRows). You keep your scraping code; only the connect step changes:
+
+import { chromium } from "playwright";
+
+// Example with Browserless (Playwright over WebSocket)
+const browser = await chromium.connectOverCDP({
+  wsEndpoint: "wss://chrome.browserless.io/playwright?token=YOUR_TOKEN"
+});
+const context = await browser.newContext(); // proxy optional
+const page = await context.newPage();
+await page.goto("https://sydneytools.com.au/category/automotive/car-battery-chargers", { waitUntil: "domcontentloaded" });
+// ...same extraction as above
+
+
+Pros: zero ops, scales, stable; Cons: adds a small per-minute cost; choose an AU region/proxy if you need Australian egress.
+
+Option C: Skip the browser by using the site’s own JSON
+
+Many React/SPA category pages fetch a JSON/GraphQL payload with the product list. Two ways to leverage that:
+
+Once with Playwright, sniff the XHR that returns the category’s products (the page.on('response', ...) in my script logs the candidate endpoint).
+
+Then switch your production scraper to plain fetch against that endpoint with the same headers/cookies. This is faster, cheaper, and less brittle.
+
+If they embed structured data, you can also parse application/ld+json on the category page (DOM fetch) to recover itemListElement (sometimes includes name/url/price).
