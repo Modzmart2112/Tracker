@@ -60,64 +60,80 @@ export default function Dashboard() {
     .slice(0, 10);
 
   return (
-    <div className="flex-1 overflow-auto">
+    <div className="flex-1 overflow-auto bg-gradient-to-br from-slate-50 via-white to-slate-50">
       <Header 
         title="Competitor Overview"
-        subtitle="Monitor all competitors and important price changes"
+        subtitle="Real-time monitoring of all competitors and market dynamics"
         showActions={false}
       />
       
-      <div className="p-8 space-y-8">
+      <div className="p-8 space-y-8 max-w-7xl mx-auto">
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="border-slate-200">
-            <CardContent className="p-6">
+          <Card className="relative border-0 shadow-lg bg-gradient-to-br from-blue-500 to-cyan-600 text-white overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16" />
+            <CardContent className="p-6 relative">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-slate-600 text-sm font-medium">Total Competitors</p>
-                  <p className="text-3xl font-bold text-slate-900">{meta?.competitors?.length || 0}</p>
+                  <p className="text-cyan-100 text-sm font-medium uppercase tracking-wider">Total Competitors</p>
+                  <p className="text-4xl font-bold mt-2">{meta?.competitors?.length || 0}</p>
+                  <div className="h-0.5 w-8 bg-cyan-300 mt-2" />
                 </div>
-                <Store className="text-blue-600" size={24} />
+                <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+                  <Store className="text-white" size={24} />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-slate-200">
-            <CardContent className="p-6">
+          <Card className="relative border-0 shadow-lg bg-gradient-to-br from-emerald-500 to-green-600 text-white overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16" />
+            <CardContent className="p-6 relative">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-slate-600 text-sm font-medium">Products Tracked</p>
-                  <p className="text-3xl font-bold text-slate-900">{allProducts.length}</p>
+                  <p className="text-green-100 text-sm font-medium uppercase tracking-wider">Products Tracked</p>
+                  <p className="text-4xl font-bold mt-2">{allProducts.length}</p>
+                  <div className="h-0.5 w-8 bg-green-300 mt-2" />
                 </div>
-                <Package className="text-green-600" size={24} />
+                <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+                  <Package className="text-white" size={24} />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-slate-200">
-            <CardContent className="p-6">
+          <Card className="relative border-0 shadow-lg bg-gradient-to-br from-orange-500 to-red-600 text-white overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16" />
+            <CardContent className="p-6 relative">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-slate-600 text-sm font-medium">Price Changes (48h)</p>
-                  <p className="text-3xl font-bold text-slate-900">{recentChanges.length}</p>
+                  <p className="text-orange-100 text-sm font-medium uppercase tracking-wider">Price Changes</p>
+                  <p className="text-4xl font-bold mt-2">{recentChanges.length}</p>
+                  <p className="text-xs text-orange-200 mt-1">Last 48 hours</p>
                 </div>
-                <Activity className="text-orange-600" size={24} />
+                <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+                  <Activity className="text-white" size={24} />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-slate-200">
-            <CardContent className="p-6">
+          <Card className="relative border-0 shadow-lg bg-gradient-to-br from-purple-500 to-indigo-600 text-white overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16" />
+            <CardContent className="p-6 relative">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-slate-600 text-sm font-medium">Avg Price</p>
-                  <p className="text-3xl font-bold text-slate-900">
+                  <p className="text-purple-100 text-sm font-medium uppercase tracking-wider">Average Price</p>
+                  <p className="text-4xl font-bold mt-2">
                     ${allProducts.length > 0 
                       ? (allProducts.reduce((sum: number, p: any) => sum + (p.currentPrice || 0), 0) / allProducts.length).toFixed(0)
                       : '0'}
                   </p>
+                  <div className="h-0.5 w-8 bg-purple-300 mt-2" />
                 </div>
-                <DollarSign className="text-purple-600" size={24} />
+                <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
+                  <DollarSign className="text-white" size={24} />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -126,8 +142,8 @@ export default function Dashboard() {
         {/* Competitor Overview Cards */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* All Competitors */}
-          <Card className="border-slate-200">
-            <CardHeader className="border-b border-slate-200">
+          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+            <CardHeader className="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
               <CardTitle className="text-lg font-semibold text-slate-900">
                 Your Competitors
               </CardTitle>
@@ -181,8 +197,8 @@ export default function Dashboard() {
           </Card>
 
           {/* Important Price Changes */}
-          <Card className="border-slate-200">
-            <CardHeader className="border-b border-slate-200">
+          <Card className="border-0 shadow-xl bg-white/80 backdrop-blur-sm">
+            <CardHeader className="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-white">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-lg font-semibold text-slate-900">
