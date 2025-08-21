@@ -78,9 +78,11 @@ export const priceSnapshots = pgTable("price_snapshots", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   productId: varchar("product_id").references(() => products.id).notNull(),
   priceDecimal: decimal("price_decimal", { precision: 10, scale: 2 }).notNull(),
+  originalPriceDecimal: decimal("original_price_decimal", { precision: 10, scale: 2 }),
   currency: text("currency").notNull().default("AUD"),
   inStock: boolean("in_stock").notNull(),
   promoText: text("promo_text"),
+  onSale: boolean("on_sale").notNull().default(false),
   scrapedAt: timestamp("scraped_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 

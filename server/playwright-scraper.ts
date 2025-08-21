@@ -4,6 +4,8 @@ interface ScrapedProduct {
   sku: string;
   title: string;
   price: number;
+  originalPrice?: number | null;
+  isOnSale?: boolean;
   image: string;
   url: string;
   brand?: string;
@@ -171,49 +173,60 @@ export class PlaywrightScraper {
             
             if (!title) continue;
 
-            // Look for price in broader container hierarchy
+            // Look for sale and regular pricing information
             let price = null;
-            let priceDebug = 'No price found';
+            let originalPrice = null;
+            let isOnSale = false;
             
-            // Start with immediate parent and work outward
+            // Start with immediate parent and work outward to find pricing container
             let searchContainer = a.parentElement;
             let level = 1;
             
             while (searchContainer && !price && level <= 4) {
-              // Look for sale price in green first
-              const greenPriceEl = searchContainer.querySelector('.price[style*="green"]') || 
-                                   searchContainer.querySelector('[style*="color: green"]') ||
-                                   searchContainer.querySelector('[style*="color:green"]');
+              const containerText = searchContainer.textContent || '';
               
-              if (greenPriceEl) {
-                const greenText = greenPriceEl.textContent || '';
-                const greenMatch = greenText.replace(/\s+/g, '').match(/(\d+\.?\d*)/);
-                if (greenMatch) {
-                  price = `$${greenMatch[1]}`;
-                  priceDebug = `Green price found at level ${level}: ${price}`;
-                  break;
+              // Look for sale price structure: "Normally $399" followed by green "$349"
+              const normallyMatch = containerText.match(/Normally\s*\$\s?(\d+\.?\d*)/i);
+              if (normallyMatch) {
+                originalPrice = normallyMatch[1];
+                isOnSale = true;
+                
+                // Now look for the sale price in green
+                const greenPriceEl = searchContainer.querySelector('.price[style*="green"]') || 
+                                     searchContainer.querySelector('[style*="color: green"]') ||
+                                     searchContainer.querySelector('[style*="color:green"]');
+                
+                if (greenPriceEl) {
+                  const greenText = greenPriceEl.textContent || '';
+                  const greenMatch = greenText.replace(/\s+/g, '').match(/(\d+\.?\d*)/);
+                  if (greenMatch) {
+                    price = greenMatch[1];
+                    break;
+                  }
                 }
               }
               
-              // Look for any price element
-              const priceEl = searchContainer.querySelector('.price');
-              if (priceEl) {
-                const priceText = priceEl.textContent || '';
-                const priceMatch = priceText.match(/\$?\s?(\d+\.?\d*)/);
-                if (priceMatch) {
-                  price = `$${priceMatch[1]}`;
-                  priceDebug = `Regular price found at level ${level}: ${price}`;
-                  break;
+              // If no sale detected, look for regular price
+              if (!price) {
+                const priceEl = searchContainer.querySelector('.price');
+                if (priceEl) {
+                  const priceText = priceEl.textContent || '';
+                  const priceMatch = priceText.match(/\$?\s?(\d+\.?\d*)/);
+                  if (priceMatch) {
+                    price = priceMatch[1];
+                    break;
+                  }
                 }
               }
               
-              // Look for any dollar amount in text
-              const allText = searchContainer.textContent || '';
-              const dollarMatches = allText.match(/\$\s?\d[\d,]*\.?\d{0,2}/g);
-              if (dollarMatches && dollarMatches.length > 0) {
-                price = dollarMatches[dollarMatches.length - 1];
-                priceDebug = `Text price found at level ${level}: ${price}`;
-                break;
+              // Fallback: any dollar amount in text
+              if (!price) {
+                const dollarMatches = containerText.match(/\$\s?\d[\d,]*\.?\d{0,2}/g);
+                if (dollarMatches && dollarMatches.length > 0) {
+                  const lastPrice = dollarMatches[dollarMatches.length - 1];
+                  price = lastPrice.replace(/[^0-9.]/g, '');
+                  break;
+                }
               }
               
               searchContainer = searchContainer.parentElement;
@@ -230,6 +243,8 @@ export class PlaywrightScraper {
             items.push({ 
               title, 
               price, 
+              originalPrice,
+              isOnSale,
               url: href, 
               image: image || '' 
             });
@@ -256,13 +271,16 @@ export class PlaywrightScraper {
 
       // Convert to our format
       const scrapedProducts: ScrapedProduct[] = products.map((p: any, index: number) => {
-        const priceNum = p.price ? parseFloat(p.price.replace(/[^0-9.]/g, '')) : 0;
+        const priceNum = p.price ? parseFloat(p.price.toString().replace(/[^0-9.]/g, '')) : 0;
+        const originalPriceNum = p.originalPrice ? parseFloat(p.originalPrice.toString().replace(/[^0-9.]/g, '')) : null;
         const brand = p.title.split(' ')[0] || 'BRAND';
         
         return {
           sku: `${brand.toUpperCase().replace(/[^A-Z0-9]/g, '')}-${String(index + 1).padStart(3, '0')}`,
           title: p.title,
           price: priceNum,
+          originalPrice: originalPriceNum,
+          isOnSale: p.isOnSale || false,
           image: p.image && p.image.startsWith('http') ? p.image : (p.image ? `https://sydneytools.com.au${p.image}` : ''),
           url: p.url,
           brand,

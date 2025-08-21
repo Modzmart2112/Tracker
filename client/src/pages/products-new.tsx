@@ -821,7 +821,23 @@ export default function ProductsPage() {
                                   </Badge>
                                 )}
                                 {link.extractedPrice && (
-                                  <span className="font-bold text-emerald-600 dark:text-emerald-400">${link.extractedPrice}</span>
+                                  <div className="flex items-center gap-2">
+                                    {(link as any).isOnSale && (link as any).originalPrice ? (
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                                          now ${link.extractedPrice}
+                                        </span>
+                                        <span className="text-xs text-slate-400 line-through">
+                                          was ${(link as any).originalPrice}
+                                        </span>
+                                        <Badge variant="destructive" className="text-xs px-1.5 py-0.5 bg-red-100 text-red-700 border-red-200">
+                                          SALE
+                                        </Badge>
+                                      </div>
+                                    ) : (
+                                      <span className="font-bold text-emerald-600 dark:text-emerald-400">${link.extractedPrice}</span>
+                                    )}
+                                  </div>
                                 )}
                               </div>
                               {link.extractedImage && (
