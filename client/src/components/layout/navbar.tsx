@@ -24,7 +24,7 @@ export function Navbar() {
   const [location] = useLocation();
 
   return (
-    <nav className="bg-gradient-to-r from-black via-gray-900 to-black border-b border-gray-800 px-8 shadow-xl">
+    <nav className="bg-gradient-to-r from-gray-900 via-black to-gray-900 border-b border-gray-800 px-8 shadow-xl">
       <div className="flex items-center justify-between">
         <ul className="flex items-center space-x-1">
           {navigation.map((item) => {
