@@ -1,0 +1,278 @@
+Build me a modern competitor-analysis web app
+Goal
+
+Create a web app that lets me track competitors across categories → product types → products, starting with Automotive → Jump Starters. I want to:
+
+See brand coverage: which Jump Starter brands each competitor carries vs Sydney Tools.
+
+Compare price bands per brand (entry vs professional ranges) across competitors.
+
+Add specific page URLs to scrape (competitor PLPs/PDPs), pull pricing, availability, promo flags, images, and specs, then track changes over time.
+
+Generate a competitive edge dashboard: coverage gaps, price undercuts, “lowest price per brand,” “who leads entry/pro tiers,” and recent changes.
+
+Expand easily to other categories/product types later.
+
+Tech Stack
+
+Frontend: Next.js (App Router) + TypeScript + TailwindCSS + shadcn/ui (Card, Table, Badge, Tabs, Dialog, Sheet) + TanStack Query.
+
+Backend API: FastAPI (Python) for scraping & orchestration (simple, fast to iterate). Serve REST endpoints.
+
+Scraping: Playwright (Python, headless Chromium) with per-site extractors + robust fallbacks (semantic selectors + text heuristics).
+
+DB: Postgres (use Neon in prod, SQLite in dev OK). ORM: SQLAlchemy + Alembic (migrations).
+
+Queue/Scheduling: APScheduler inside FastAPI for periodic recrawls (later: move to Celery/Redis if needed).
+
+Storage: Store canonical images as URLs; optional local cache folder /storage/images with hash filenames.
+
+Auth: Basic email+password (NextAuth Email provider against API) is fine for MVP.
+
+Infra: Single Replit repo with apps/web (Next.js) and apps/api (FastAPI). Use docker-compose for local dev parity.
+
+Data Model (tables)
+
+competitors (id, name, site_domain, status)
+
+categories (id, name, slug) // e.g., “Automotive”
+
+product_types (id, category_id FK, name, slug) // e.g., “Jump Starters”
+
+brand_aliases (id, brand_canonical, alias) // normalize “NOCO” vs “Noco”
+
+pages (id, competitor_id FK, category_id FK, product_type_id FK, url, page_type ENUM[PLP,PDP], active BOOL, last_http_status, last_scraped_at)
+
+products (id, competitor_id FK, brand, model, title, canonical_sku NULLABLE, product_type_id FK, image_url, product_url, first_seen_at, last_seen_at)
+
+product_specs (id, product_id FK, key, value) // e.g., “peak_amps”, “battery_type”
+
+price_snapshots (id, product_id FK, price_decimal, currency, in_stock BOOL, promo_text, scraped_at TIMESTAMP)
+
+price_bands (materialized nightly): per competitor+brand, compute entry (p25) and pro (p75) price—used for comparisons.
+
+site_extractors (id, competitor_id FK, notes, json_schema) // CSS/xpath patterns & fallbacks per site
+
+tasks (id, page_id FK, status, run_reason ENUM[manual, schedule], started_at, finished_at, error)
+
+Notes
+
+Brand normalization via brand_aliases.
+
+Dedup products by (competitor_id + normalized_title or model).
+
+Snapshots are append-only to preserve history.
+
+“Sydney Tools” can be added as a “competitor” with special flag is_us BOOL, so we appear in the comparison matrix.
+
+Scraper Requirements
+
+Input: list of URLs (pages) I can add in the UI (PLP or PDP).
+
+PLP extraction: iterate result tiles; capture product link, title, brand (infer from title or chip), price, image, promo badges, and availability. Enqueue discovered PDPs.
+
+PDP extraction: normalize brand & model, title, price, in_stock, images, key specs (peak amps, battery type, capacity, sockets, weight, warranty).
+
+Anti-fragile selectors: Start with CSS, fall back to text contains (e.g., labels like “Price”, “In Stock”). Use per-site extractor JSON (stored in site_extractors.json_schema) with overridable keys:
+
+{
+  "plp_item": ".product-card",
+  "plp_title": ".product-card__title",
+  "plp_price": ".price,.money",
+  "plp_image": "img",
+  "pdp_title": "h1",
+  "pdp_price": ".price .amount,.money",
+  "pdp_specs_table": "table.specs, .product-specs"
+}
+
+
+Browser setup: Playwright with randomized viewport, user agent, polite delays (250–800ms jitter), concurrency cap, and robots.txt check (log & respect). Exponential backoff for 429/5xx.
+
+Scheduler: Per page: daily default; configurable frequency per page. Manual “Run now” button in UI.
+
+Change detection: Compare latest snapshot with previous; store diffs and surface in “Recent Changes”.
+
+Images: Save first large image URL; optional local cache (download once, hashed path). Handle CDN params.
+
+API (FastAPI)
+
+POST /auth/login
+
+GET /meta → categories, product types, competitors
+
+POST /competitors (name, domain)
+
+POST /pages (competitor_id, category_id, product_type_id, url, page_type)
+
+POST /scrape/run (page_id | competitor_id | product_type_id) → kicks tasks
+
+GET /products?competitor_id=&product_type_id=&brand=
+
+GET /brands/matrix?product_type_id= → brand coverage by competitor
+
+GET /price-bands?product_type_id=&brand= → entry/pro per competitor
+
+GET /leaderboard/lowest?product_type_id= → lowest price per brand & competitor (with URLs)
+
+GET /changes/recent?product_type_id=&hours=24 → price/stock changes
+
+GET /products/:id → details + history
+
+GET /export/csv?product_type_id= → current snapshot export
+
+Admin:
+
+GET /extractors/:competitor_id
+
+PUT /extractors/:competitor_id (update JSON)
+
+POST /brand-alias (alias → canonical)
+
+Frontend (Next.js) Pages
+
+Dashboard
+
+KPI tiles: brands covered vs Sydney Tools, % undercut, #price drops last 24h, #OOS changes.
+
+“Recent Changes” table (product, competitor, old→new price, time).
+
+Category Explorer
+
+Select Category → Product Type (e.g., Automotive → Jump Starters).
+
+Brand Coverage Matrix (competitors × brands) with counts & links. Missing-brand highlights (opportunity).
+
+Price Bands
+
+Pick brand → chart/table of entry (p25) and pro (p75) by competitor. Show lowest “pro” and lowest “entry” winners.
+
+Product List
+
+Filters: competitor, brand, price range, stock, promo.
+
+Columns: image, title, brand, price (current), min/max/median, last change, competitor, link.
+
+Row click → drawer with price history chart (matplotlib via image or lightweight chart.js), specs, and timeline.
+
+Pages & Schedules
+
+CRUD for scraping pages (add URL, choose competitor, PLP/PDP, category/product_type).
+
+Table: last run status, next run, run now.
+
+Admin
+
+Brand aliases editor.
+
+Extractor JSON editor (per competitor).
+
+CSV import for bulk URLs.
+
+Price Bands Logic
+
+Nightly job computes per competitor+brand within product_type:
+
+Entry band = 25th percentile of current prices
+
+Pro band = 75th percentile
+Also compute median, min, max. Store in price_bands table.
+
+Competitive Edge Insights (MVP)
+
+Who carries what: brand coverage vs Sydney Tools (heatmap).
+
+Undercut detector: for each brand, find competitor(s) with lower entry than our entry and lower pro than our pro.
+
+Gap finder: brands we don’t carry that multiple competitors do (opportunity score).
+
+Promo radar: products with promo badges or strikethroughs in last 7 days.
+
+Stock advantage: products OOS elsewhere but in-stock for us.
+
+Security & Compliance
+
+Respect robots.txt; configurable per competitor to allow manual override (opt-in only with legal approval).
+
+Polite rate limits; user-agent string identifies our crawler.
+
+Store only public data. No login-gated scraping without explicit consent.
+
+Secrets via .env (DB URL, NEXTAUTH_SECRET).
+
+Dev Experience
+
+Monorepo:
+
+/apps/web      # Next.js
+/apps/api      # FastAPI + Playwright
+/packages/ui   # (optional) shared UI
+/infra         # docker-compose, Alembic
+
+
+Scripts:
+
+make dev → start API on :8000, Web on :3000
+
+alembic upgrade head for DB
+
+Seed data: competitors (Sydney Tools [is_us=true], Bunnings, Total Tools, Tool Kit Depot, TradeTools), category “Automotive”, product_type “Jump Starters”.
+
+Acceptance Criteria (MVP)
+
+I can add a competitor page URL, run scrape, and see products with images, price, stock, and link.
+
+I can open Automotive → Jump Starters and see a brand coverage matrix comparing all competitors vs Sydney Tools.
+
+I can view entry/pro price bands per brand across competitors and identify the lowest.
+
+I can see a Recent Changes feed (price/stock/promo) from the last 24h.
+
+I can export a CSV of the current Jump Starter catalog across competitors.
+
+Simple auth works.
+
+Stretch (nice to have)
+
+Price history charts (sparklines) inline in tables.
+
+Alerting: notify when a tracked SKU undercuts our price by X% or when a new brand appears.
+
+“Spec normalization” for Jump Starters (peak amps, battery type) and filters by spec.
+
+Smart PLP pagination detection (next buttons, infinite scroll).
+
+Screenshot capture per PDP (for audit).
+
+ENV Vars
+DATABASE_URL=postgresql+psycopg2://user:pass@host:5432/db
+APP_ENV=dev
+SCRAPE_CONCURRENCY=3
+SCRAPE_DELAY_MS_MIN=250
+SCRAPE_DELAY_MS_MAX=800
+NEXTAUTH_SECRET=...
+API_BASE_URL=http://localhost:8000
+
+Example: Adding pages (seed)
+
+Total Tools – Automotive Jump Starters PLP
+
+Tool Kit Depot – Jump Starters PLP
+
+TradeTools – Jump Starters PLP
+
+Bunnings – Jump Starters PLP
+
+Sydney Tools – Jump Starters PLP
+(URLs added via UI; mark as page_type=PLP and map to category/product_type.)
+
+Implementation Notes
+
+Use Playwright context per site with stealth options; randomize UA and viewport.
+
+Normalize prices to USD or AUD consistently (use AUD for AU competitors; store currency code).
+
+When price text includes ranges or “from”, capture min and note price_type.
+
+Derive “entry” vs “pro” bands from distribution; don’t hardcode brand tiers.
+
+Deliver this as a working MVP with seed data, a clean UI, and dummy competitor URLs (I’ll replace with real ones).
