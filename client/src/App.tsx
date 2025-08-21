@@ -10,7 +10,7 @@ import Competitors from "@/pages/competitors";
 import Changes from "@/pages/changes";
 import Admin from "@/pages/admin";
 import NotFound from "@/pages/not-found";
-
+import ProductsPage from "@/pages/products-new";
 
 function Router() {
   const [location] = useLocation();
@@ -20,7 +20,8 @@ function Router() {
     switch(location) {
       case '/':
         return { title: 'Competitor Overview', subtitle: 'Real-time monitoring of all competitors and market dynamics' };
-
+      case '/products':
+        return { title: 'Product Management', subtitle: 'Add products and track competitor prices' };
       case '/competitors':
         return { title: 'Competitors Management', subtitle: 'Manage competitor websites and monitoring' };
       case '/changes':
@@ -39,13 +40,13 @@ function Router() {
       <Header 
         title={title}
         subtitle={subtitle}
-        showActions={false}
+        showActions={location === '/products'}
       />
       <Navbar />
       <div className="flex-1 overflow-auto">
         <Switch>
           <Route path="/" component={Dashboard} />
-
+          <Route path="/products" component={ProductsPage} />
           <Route path="/competitors" component={Competitors} />
           <Route path="/changes" component={Changes} />
           <Route path="/admin" component={Admin} />
