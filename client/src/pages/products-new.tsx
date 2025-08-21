@@ -65,6 +65,7 @@ interface CompetitorLink {
 interface Product {
   id: string;
   sku: string;
+  modelNumber?: string;
   name: string;
   ourPrice?: number;
   price?: number;
@@ -72,6 +73,7 @@ interface Product {
   image?: string;
   brand?: string;
   category?: string;
+  productPageUrl?: string;
   competitorLinks: CompetitorLink[];
   createdAt: string;
   updatedAt: string;
@@ -87,6 +89,39 @@ interface CardCustomization {
   logoUrl?: string;
   customStyles?: string;
 }
+
+// Extract model number from product title
+const extractModelNumber = (productName: string): string => {
+  if (!productName) return 'N/A';
+  
+  // Common patterns for model numbers in product titles
+  // Pattern 1: Alphanumeric combinations with optional hyphens (e.g., SPi Pro25, SC1446, DSR115)
+  const patterns = [
+    /\b([A-Z]{2,}[\s-]?[A-Z0-9]+[0-9]+[A-Z0-9]*)\b/i,  // e.g., SPi Pro25, DSR115
+    /\b([A-Z]+[0-9]+[A-Z0-9]*)\b/,                        // e.g., SC1446, IP65
+    /\b([0-9]+[A-Z]+[0-9]*)\b/,                           // e.g., 12V50A
+    /\b([A-Z][0-9]{2,}[A-Z0-9]*)\b/,                      // e.g., T12345
+  ];
+  
+  for (const pattern of patterns) {
+    const match = productName.match(pattern);
+    if (match) {
+      return match[1];
+    }
+  }
+  
+  // If no pattern matches, try to find any alphanumeric code after the brand name
+  const words = productName.split(/\s+/);
+  for (let i = 1; i < words.length; i++) {
+    const word = words[i];
+    // Check if word contains both letters and numbers
+    if (/[A-Z]/i.test(word) && /[0-9]/.test(word)) {
+      return word;
+    }
+  }
+  
+  return 'N/A';
+};
 
 export default function ProductsPage() {
   const { toast } = useToast();
@@ -948,7 +983,7 @@ export default function ProductsPage() {
                     <Search className="h-5 w-5 text-red-600" />
                   </div>
                   <Input
-                    placeholder="Search products by name or SKU..."
+                    placeholder="Search products by name or model number..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="flex-1 border-0 bg-transparent text-lg placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-red-500"
@@ -1161,8 +1196,8 @@ export default function ProductsPage() {
                             <div className="space-y-3">
                               <div className="grid grid-cols-2 gap-4 text-sm">
                                 <div>
-                                  <p className="text-gray-500">SKU</p>
-                                  <p className="font-medium">{product.sku}</p>
+                                  <p className="text-gray-500">Model Number</p>
+                                  <p className="font-medium">{product.modelNumber || extractModelNumber(product.name)}</p>
                                 </div>
                                 <div>
                                   <p className="text-gray-500">Brand</p>
@@ -1179,6 +1214,26 @@ export default function ProductsPage() {
                                   </p>
                                 </div>
                               </div>
+                              
+                              {/* Product Page Link */}
+                              {product.productPageUrl && (
+                                <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-xs text-blue-600 font-semibold mb-1">Product Page</p>
+                                      <p className="text-xs text-gray-600 truncate">{product.productPageUrl}</p>
+                                    </div>
+                                    <a
+                                      href={product.productPageUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="ml-2 p-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+                                    >
+                                      <ExternalLink className="h-4 w-4" />
+                                    </a>
+                                  </div>
+                                </div>
+                              )}
                               
                               {/* Competitor Prices */}
                               {product.competitorLinks.length > 0 && (

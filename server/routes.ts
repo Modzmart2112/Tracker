@@ -794,9 +794,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
             
             matchedCount++;
           } else {
+            // Helper function to extract model number from title
+            const extractModelNumber = (title: string): string => {
+              if (!title) return 'N/A';
+              const patterns = [
+                /\b([A-Z]{2,}[\s-]?[A-Z0-9]+[0-9]+[A-Z0-9]*)\b/i,
+                /\b([A-Z]+[0-9]+[A-Z0-9]*)\b/,
+                /\b([0-9]+[A-Z]+[0-9]*)\b/,
+                /\b([A-Z][0-9]{2,}[A-Z0-9]*)\b/,
+              ];
+              for (const pattern of patterns) {
+                const match = title.match(pattern);
+                if (match) return match[1];
+              }
+              const words = title.split(/\s+/);
+              for (let i = 1; i < words.length; i++) {
+                if (/[A-Z]/i.test(words[i]) && /[0-9]/.test(words[i])) {
+                  return words[i];
+                }
+              }
+              return 'N/A';
+            };
+            
             // New product - create it with brand and category IDs
             const newProduct = await storage.createUnifiedProduct({
               sku: product.sku,
+              modelNumber: extractModelNumber(product.title),
               name: product.title,
               ourPrice: product.price, // Current selling price (sale price if on sale)
               price: product.price, // Current selling price (same as ourPrice)
@@ -805,7 +828,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               brand: brand,
               brandId: brandId,
               category: category,
-              categoryId: 'battery-chargers' // Since we're importing battery chargers
+              categoryId: 'battery-chargers', // Since we're importing battery chargers
+              productPageUrl: product.url || sourceUrl
             });
             
             // Add the source URL as a competitor link

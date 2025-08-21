@@ -478,9 +478,9 @@ export class DrizzleStorage implements IStorage {
           id: item.listing.id,
           url: item.listing.url,
           competitorName: item.competitor?.name || item.listing.competitorId,
-          extractedTitle: item.listing.title || undefined,
-          extractedPrice: item.listing.priceNumeric || undefined,
-          status: item.listing.isActive ? "success" : "pending",
+          extractedTitle: item.listing.titleOverride || undefined,
+          extractedPrice: undefined, // Price is stored in listing snapshots
+          status: item.listing.active ? "success" : "pending",
           lastScraped: item.listing.lastSeenAt?.toISOString()
         }));
         
@@ -494,6 +494,7 @@ export class DrizzleStorage implements IStorage {
         return {
           id: row.product.id,
           sku: row.product.ourSku || row.product.id.slice(0, 8).toUpperCase(),
+          modelNumber: row.product.modelNumber || 'N/A',
           name: row.product.name || 'Unnamed Product',
           ourPrice: currentPrice,
           price: currentPrice,
@@ -501,6 +502,7 @@ export class DrizzleStorage implements IStorage {
           image: row.product.imageUrl || null,
           brand: row.brand?.name || 'Unknown',
           category: row.category?.name || 'Uncategorized',
+          productPageUrl: row.product.productPageUrl || null,
           competitorLinks,
           createdAt: row.product.createdAt?.toISOString() || new Date().toISOString(),
           updatedAt: new Date().toISOString()
@@ -523,19 +525,21 @@ export class DrizzleStorage implements IStorage {
       id: listing.id,
       url: listing.url,
       competitorName: listing.competitorId,
-      extractedTitle: listing.title || undefined,
-      extractedPrice: listing.priceNumeric || undefined,
-      status: listing.isActive ? "success" : "pending",
+      extractedTitle: listing.titleOverride || undefined,
+      extractedPrice: undefined, // Price is stored in listing snapshots
+      status: listing.active ? "success" : "pending",
       lastScraped: listing.lastSeenAt?.toISOString()
     }));
     
     return {
       id: product.id,
       sku: product.id.slice(0, 8).toUpperCase(),
-      name: product.name || product.title || 'Unnamed Product',
+      modelNumber: product.modelNumber || 'N/A',
+      name: product.name || 'Unnamed Product',
       ourPrice: 0,
       brand: product.brandId || 'Unknown',
       category: product.categoryId || 'Uncategorized',
+      productPageUrl: product.productPageUrl || null,
       competitorLinks,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -550,17 +554,19 @@ export class DrizzleStorage implements IStorage {
     const productName = product.name || product.title || 'Unnamed Product';
     console.log('Product name resolved to:', productName);
     
-    // Save the product with price, image, brand and category
+    // Save the product with price, image, brand, category, modelNumber and productPageUrl
     const result = await this.db.insert(catalogProducts).values({
       name: productName,
       brandId: product.brandId || null,
       categoryId: product.categoryId || null,
       productTypeId: null,
       ourSku: product.sku || null,
+      modelNumber: product.modelNumber || null,
       quality: null,
       targetPrice: product.targetPrice ? product.targetPrice.toString() : null,
       price: product.price ? product.price.toString() : null,
-      imageUrl: product.image || null
+      imageUrl: product.image || null,
+      productPageUrl: product.productPageUrl || null
     }).returning();
     
     const catalogProduct = result[0];
@@ -568,12 +574,14 @@ export class DrizzleStorage implements IStorage {
     return {
       id: catalogProduct.id,
       sku: product.sku || catalogProduct.id.slice(0, 8).toUpperCase(),
+      modelNumber: product.modelNumber || 'N/A',
       name: catalogProduct.name || productName,
       ourPrice: product.ourPrice || product.price || 0,
       price: product.price || 0,
       image: product.image || null,
       brand: product.brand || 'Unknown',
       category: product.category || 'Uncategorized',
+      productPageUrl: product.productPageUrl || null,
       competitorLinks: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -617,11 +625,8 @@ export class DrizzleStorage implements IStorage {
       productId,
       competitorId,
       url,
-      title: null,
-      priceNumeric: null,
-      priceText: null,
-      isInStock: true,
-      isActive: true
+      titleOverride: null,
+      active: true
     });
     
     return {

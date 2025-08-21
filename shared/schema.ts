@@ -124,11 +124,13 @@ export const catalogProducts = pgTable("catalog_products", {
   categoryId: varchar("category_id").references(() => categories.id),
   productTypeId: varchar("product_type_id").references(() => productTypes.id),
   ourSku: text("our_sku"),
+  modelNumber: text("model_number"),
   quality: qualityTierEnum("quality"),
   notes: text("notes"),
   targetPrice: decimal("target_price", { precision: 12, scale: 2 }),
   price: decimal("price", { precision: 10, scale: 2 }),
   imageUrl: text("image_url"),
+  productPageUrl: text("product_page_url"),
   createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
@@ -152,8 +154,10 @@ export const competitorListings = pgTable("competitor_listings", {
 export const unifiedProducts = pgTable("unified_products", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   sku: text("sku").notNull().unique(),
+  modelNumber: text("model_number"),
   name: text("name").notNull(),
   ourPrice: decimal("our_price", { precision: 10, scale: 2 }),
+  productPageUrl: text("product_page_url"),
   createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   updatedAt: timestamp("updated_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
