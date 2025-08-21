@@ -117,32 +117,7 @@ export function Header({
             </div>
           </div>
           
-          {/* Page title and subtitle */}
-          <div className="flex items-end justify-between">
-            <div>
-              {breadcrumbs.length > 0 && (
-                <nav className="flex items-center space-x-2 text-xs text-[#CB0000] mb-2">
-                  {breadcrumbs.map((crumb, index) => (
-                    <span key={index} className="flex items-center">
-                      {index > 0 && <span className="mx-2 text-gray-600">›</span>}
-                      <span className={index === breadcrumbs.length - 1 ? "text-white font-medium" : "text-gray-400"}>
-                        {crumb.label}
-                      </span>
-                    </span>
-                  ))}
-                </nav>
-              )}
-              <h2 className="text-3xl font-bold text-white mb-2">{title}</h2>
-              {subtitle && (
-                <p className="text-gray-400">{subtitle}</p>
-              )}
-            </div>
-            
-            <div className="flex items-center space-x-2 text-xs text-gray-500">
-              <Zap size={14} className="text-[#CB0000]" />
-              <span>Real-time updates enabled</span>
-            </div>
-          </div>
+          
         </div>
       </div>
     </header>
