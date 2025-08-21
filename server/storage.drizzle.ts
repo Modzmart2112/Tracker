@@ -497,8 +497,10 @@ export class DrizzleStorage implements IStorage {
     return {
       id: product.id,
       sku: product.id.slice(0, 8).toUpperCase(),
-      name: product.title,
+      name: product.name || product.title || 'Unnamed Product',
       ourPrice: 0,
+      brand: product.brandId || 'Unknown',
+      category: product.categoryId || 'Uncategorized',
       competitorLinks,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -506,8 +508,15 @@ export class DrizzleStorage implements IStorage {
   }
 
   async createUnifiedProduct(product: any): Promise<any> {
+    // Debug logging
+    console.log('Creating unified product with data:', JSON.stringify(product));
+    
+    // Ensure we have a name
+    const productName = product.name || product.title || 'Unnamed Product';
+    console.log('Product name resolved to:', productName);
+    
     const catalogProduct = await this.createCatalogProduct({
-      title: product.name || product.title,
+      name: productName,
       brandId: null,
       productTypeId: null
     });
@@ -515,8 +524,10 @@ export class DrizzleStorage implements IStorage {
     return {
       id: catalogProduct.id,
       sku: product.sku || catalogProduct.id.slice(0, 8).toUpperCase(),
-      name: catalogProduct.title,
+      name: catalogProduct.name || productName,
       ourPrice: product.ourPrice || 0,
+      brand: product.brand || 'Unknown',
+      category: product.category || 'Uncategorized',
       competitorLinks: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
