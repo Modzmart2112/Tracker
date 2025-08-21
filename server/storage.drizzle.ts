@@ -382,6 +382,16 @@ export class DrizzleStorage implements IStorage {
     return result[0];
   }
 
+  async updateProductModelNumber(id: string, modelNumber: string): Promise<void> {
+    await this.db
+      .update(catalogProducts)
+      .set({
+        modelNumber: modelNumber,
+        updatedAt: new Date()
+      })
+      .where(eq(catalogProducts.id, id));
+  }
+
   // Competitor Listing methods
   async createCompetitorListing(listing: InsertCompetitorListing): Promise<CompetitorListing> {
     const result = await this.db.insert(competitorListings).values(listing).returning();

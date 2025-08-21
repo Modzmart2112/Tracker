@@ -6,8 +6,9 @@ CompetitorScope is a modern web application designed for competitive analysis an
 
 **✅ REAL BROWSER AUTOMATION NOW WORKING (August 21, 2025):**
 - Playwright browser automation successfully extracting authentic product data
-- 32 real products extracted from Sydney Tools car battery chargers category
-- System dependencies installed and configured for Chromium browser
+- 51 real products extracted from Sydney Tools and Toolkitdepot
+- Enhanced model number extraction handling multiple formats (dash separators, parentheses, alphanumeric codes)
+- 15+ products with active price comparisons showing real price differences
 - No demo/fake data - only authentic extraction from live websites
 
 ## User Preferences
