@@ -1,0 +1,215 @@
+What we’re building (quick map)
+
+Catalog products (ours): brand, category, product type, quality tier (entry/mid/pro), our SKU, notes.
+
+Competitor listings: for each catalog product, attach competitor(s) + PDP URL (+ optional competitor SKU/title/brand override).
+
+Daily tracker: scrape each listing URL → price, stock, promo/giveaway text, main image(s) → append listing snapshots.
+
+UI flow: Add product → add competitor listings → dashboard shows per-product comparison grid (who sells it, price, last change, promo badge).
+
+Stage A — Schema: catalog + listings + snapshots
+
+Prompt 1 — Extend Drizzle schema (safe, additive)
+
+You are updating this repo.
+Goal: Add catalog + listing entities without breaking existing tables. Create new tables and enums in shared/schema.ts and matching Zod insert schemas.
+Add:
+
+qualityTierEnum = ['entry','mid','pro']
+
+brands(id uuid pk, name text unique, slug text unique)
+
+catalog_products(id, name, brandId FK, categoryId FK, productTypeId FK, ourSku text, quality qualityTierEnum, notes text, createdAt timestamp default now())
+
+competitor_listings(id, productId FK catalog_products, competitorId FK competitors, url text, listingSku text null, titleOverride text null, brandOverride text null, mainImageUrl text null, active bool default true, firstSeenAt ts, lastSeenAt ts)
+
+listing_snapshots(id, listingId FK competitor_listings, price decimal(12,2) null, currency text default 'AUD', inStock bool null, promoText text null, hasGiveaway bool default false, scrapedAt timestamp default now(), httpStatus int null)
+
+listing_images(id, listingId FK, imageUrl text, position int default 0)
+Indices:
+
+Unique on competitor_listings(productId, competitorId)
+
+Index listing_snapshots(listingId, scrapedAt desc)
+Constraints: Keep existing products/price_snapshots intact; we’ll migrate later.
+Exit criteria: drizzle-kit push generates migrations and succeeds; export new Zod Insert* schemas.
+Changed files: only shared/schema.ts, drizzle.config.ts if needed.
+
+Stage B — Storage & routes for catalog + listings
+
+Prompt 2 — Storage interface + Drizzle adapter
+
+Goal: Implement DB methods for the new entities and expose REST routes.
+Tasks:
+
+In server/storage.ts (or storage.drizzle.ts if you split adapters) add methods:
+
+createBrand/getBrands
+
+createCatalogProduct/listCatalogProducts/getCatalogProductById
+
+createCompetitorListing/listListingsByProduct/updateListing
+
+createListingSnapshot/getLatestListingSnapshotsByProduct/getListingHistory
+
+Add routes in server/routes.ts:
+
+POST /api/brands
+
+POST /api/catalog/products | GET /api/catalog/products | GET /api/catalog/products/:id
+
+POST /api/listings | GET /api/listings?productId= | PATCH /api/listings/:id
+
+GET /api/listings/:id/history (last N snapshots)
+Validation: use Zod from shared/schema.ts.
+Exit criteria: curl tests work and data persists.
+
+Quick verify (copy/paste):
+
+# create a brand
+curl -sX POST localhost:3000/api/brands -H 'Content-Type: application/json' \
+  -d '{"name":"NOCO","slug":"noco"}' | jq
+
+# create a catalog product
+curl -sX POST localhost:3000/api/catalog/products -H 'Content-Type: application/json' \
+  -d '{"name":"GBX75 12V Jump Starter","brandId":"<id>","categoryId":"<automotive>","productTypeId":"<jump-starters>","ourSku":"GBX75","quality":"pro"}' | jq
+
+# add a competitor listing
+curl -sX POST localhost:3000/api/listings -H 'Content-Type: application/json' \
+  -d '{"productId":"<prodId>","competitorId":"<bunningsId>","url":"https://example.com/pdp"}' | jq
+
+Stage C — UI: Add Product wizard + per-product competitor grid
+
+Prompt 3 — Add Product + Listings UI
+
+Goal: In the client, add a 2-step wizard to /products page: (1) create catalog product (brand/category/type/quality, our SKU), (2) attach competitor listings (competitor select + URL field, repeatable).
+Tasks:
+
+Component: AddProductWizard with stepper, uses shadcn Form, Select, Input.
+
+After save, navigate to a Product Detail page at /products/:id.
+
+Product Detail shows a Competitor Grid: columns = Competitor, URL, Price (latest), In Stock, Promo, Last Change, Actions (Edit URL, “Run now”).
+Backend: read from new endpoints.
+Exit criteria: I can add a product and at least one listing, and see it in the grid (price blank until scraped).
+
+Stage D — Scraper that targets listing URLs (HTTP first)
+
+Prompt 4 — Listing scraper
+
+Goal: Implement a scraper that takes a single listing URL and writes a listing_snapshot + listing_images.
+Tasks:
+
+server/scrape/listing.ts: fetch with undici/got, parse with cheerio. Extract: price, inStock (true/false/unknown), promoText (visible badges/strikethrough ribbons), hasGiveaway (keyword regex: free|bonus|giveaway|cashback|redemption|gift|bundle|pack), mainImageUrl and up to 5 images.
+
+Upsert competitor_listings.mainImageUrl if new.
+
+Append listing_snapshots with httpStatus.
+
+Add endpoint POST /api/scrape/run accepting { listingId? productId? }. If productId, run all its listings sequentially.
+Failure: return {status:"partial", reason} and still write a snapshot with httpStatus.
+Exit criteria: “Run now” on a listing produces a snapshot row and updates UI with latest price.
+
+Stage E — Scheduler (daily)
+
+Prompt 5 — Daily job
+
+Goal: Run all active listings once per day.
+Tasks:
+
+Add server/scheduler.ts with node-cron (or setInterval) to queue scrape/run for each active listing at ~10:00 local time.
+
+Avoid thundering herd: randomize a small delay (e.g., 2–8s) between listings.
+
+Add GET /api/schedule/next to introspect schedule.
+Exit criteria: Logs show scheduled runs; manual trigger works.
+
+Stage F — Playwright fallback (JS pages)
+
+Prompt 6 — JS fallback
+
+Goal: Add Playwright when HTTP parse misses critical fields.
+Tasks:
+
+server/scrape/playwright.ts → getHtml(url) with headless Chromium (document install command: npx playwright install chromium).
+
+listing.ts tries HTTP first; if price===null && inStock===null, retry via Playwright.
+
+Respect simple robots.txt (fetch and skip if disallowed; log).
+Exit criteria: A JS-rendered PDP returns price via fallback.
+
+Stage G — Brands, categories, quality management UI
+
+Prompt 7 — Admin master data
+
+Goal: Add /admin/master-data page to manage Brands, Categories, Product Types, Brand Aliases, and the Quality Tier values.
+Tasks:
+
+CRUD tables with inline rows for Brands + Brand Aliases (alias → canonical).
+
+Product Types linked to Categories (Automotive → Jump Starters).
+
+Quality tiers are enum; show them as radio chips when creating a product.
+Exit criteria: I can add a brand, create a type, and they appear in the Add Product wizard.
+
+Stage H — Product detail: price history + promo badges
+
+Prompt 8 — Product detail deep-dive
+
+Goal: Enhance /products/:id with:
+
+Price history sparkline per listing (last 30 snapshots).
+
+“Last change” chips (↑/↓, % change) and a Promo badge if hasGiveaway=true.
+
+Hover tooltip showing promoText.
+Backend: GET /api/listings/:id/history?limit=30.
+Exit criteria: Visual diffs are visible and match snapshot data.
+
+Stage I — Insights & alerts (optional but powerful)
+
+Prompt 9 — Alerts & exports
+
+Goal: Add basic alerts and CSV.
+Tasks:
+
+alerts(id, productId nullable, competitorId nullable, ruleJson, active) and alerts_log(id, alertId, matchedCount, createdAt).
+
+Rule example: { "type":"undercut", "percent":5 } → alert when any competitor’s latest price for a product is ≥5% below our set “target price” (add targetPrice to catalog_products, nullable).
+
+Cron evaluates daily post-scrape; writes alerts_log.
+
+GET /api/export/csv?productId= → latest snapshot across all listings for that product, with image URLs and promo flags.
+Exit criteria: I can set a rule and see a log entry when matched; CSV opens in Excel.
+
+Stage J — (Future) Migrate old products/price_snapshots
+
+Prompt 10 — Clean migration (only if needed)
+
+Goal: If older endpoints/screens depend on legacy products/price_snapshots, add a migration job to populate the new catalog_products/competitor_listings structure and switch UI to it.
+Exit criteria: Old pages still work; new pages are the source of truth.
+
+Small but important implementation details
+
+Giveaway detection: use a case-insensitive regex against visible text and common promo sections:
+/(free|bonus|giveaway|gift|cashback|redemption|bundle|pack|promo)/i
+Keep the raw promoText for audit; hasGiveaway is a boolean derived field.
+
+Price parse:
+
+Strip currency symbols and thousands separators.
+
+Handle “From $X”, ranges like “$X–$Y” (store min, note priceType: 'from'|'range' if you want later).
+
+Images: store the first large image as competitor_listings.mainImageUrl; put the rest in listing_images. Don’t download yet—just URLs.
+
+UX: in the Product Detail grid, colour-code by cheapest price; show our row (Sydney Tools) with a subtle highlight.
+
+DB: stick with Neon Postgres in Replit via DATABASE_URL. Don’t install Postgres locally.
+
+“Accuracy wrapper” (prepend to each prompt)
+
+Change exactly one feature set as described.
+Constraints: only touch necessary files; list changed files at end. Update lockfiles if deps change. Provide copy-paste run commands and 1–2 curl examples. If scraping fails, return {status:"partial", reason} and still write a snapshot with httpStatus.
+Exit criteria: restate 2–4 checks I can perform locally.

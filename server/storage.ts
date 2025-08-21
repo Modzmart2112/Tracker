@@ -4,7 +4,10 @@ import {
   type BrandAlias, type InsertBrandAlias, type Page, type InsertPage,
   type Product, type InsertProduct, type ProductSpec, type InsertProductSpec,
   type PriceSnapshot, type InsertPriceSnapshot, type PriceBand, type InsertPriceBand,
-  type Task, type InsertTask
+  type Task, type InsertTask,
+  type Brand, type InsertBrand, type CatalogProduct, type InsertCatalogProduct,
+  type CompetitorListing, type InsertCompetitorListing, type ListingSnapshot,
+  type InsertListingSnapshot, type ListingImage, type InsertListingImage
 } from "@shared/schema";
 import { randomUUID } from "crypto";
 
@@ -72,6 +75,30 @@ export interface IStorage {
   // Analytics
   getBrandCoverageMatrix(productTypeId: string): Promise<any>;
   getKPIMetrics(): Promise<any>;
+
+  // Brands
+  createBrand(brand: InsertBrand): Promise<Brand>;
+  getBrands(): Promise<Brand[]>;
+  getBrand(id: string): Promise<Brand | undefined>;
+
+  // Catalog Products
+  createCatalogProduct(product: InsertCatalogProduct): Promise<CatalogProduct>;
+  listCatalogProducts(): Promise<CatalogProduct[]>;
+  getCatalogProductById(id: string): Promise<CatalogProduct | undefined>;
+
+  // Competitor Listings
+  createCompetitorListing(listing: InsertCompetitorListing): Promise<CompetitorListing>;
+  listListingsByProduct(productId: string): Promise<CompetitorListing[]>;
+  updateListing(id: string, updates: Partial<CompetitorListing>): Promise<CompetitorListing | undefined>;
+
+  // Listing Snapshots
+  createListingSnapshot(snapshot: InsertListingSnapshot): Promise<ListingSnapshot>;
+  getLatestListingSnapshotsByProduct(productId: string): Promise<ListingSnapshot[]>;
+  getListingHistory(listingId: string, limit?: number): Promise<ListingSnapshot[]>;
+
+  // Listing Images
+  createListingImage(image: InsertListingImage): Promise<ListingImage>;
+  getListingImages(listingId: string): Promise<ListingImage[]>;
 }
 
 export class MemStorage implements IStorage {
@@ -86,6 +113,13 @@ export class MemStorage implements IStorage {
   private priceSnapshots: Map<string, PriceSnapshot> = new Map();
   private priceBands: Map<string, PriceBand> = new Map();
   private tasks: Map<string, Task> = new Map();
+  
+  // New catalog entities
+  private brands: Map<string, Brand> = new Map();
+  private catalogProducts: Map<string, CatalogProduct> = new Map();
+  private competitorListings: Map<string, CompetitorListing> = new Map();
+  private listingSnapshots: Map<string, ListingSnapshot> = new Map();
+  private listingImages: Map<string, ListingImage> = new Map();
 
   constructor() {
     // No seed data - clean start
@@ -445,6 +479,136 @@ export class MemStorage implements IStorage {
       priceChanges: 0,
       stockChanges: 0
     };
+  }
+
+  // Brand methods
+  async createBrand(brand: InsertBrand): Promise<Brand> {
+    const id = randomUUID();
+    const newBrand: Brand = { ...brand, id };
+    this.brands.set(id, newBrand);
+    return newBrand;
+  }
+
+  async getBrands(): Promise<Brand[]> {
+    return Array.from(this.brands.values());
+  }
+
+  async getBrand(id: string): Promise<Brand | undefined> {
+    return this.brands.get(id);
+  }
+
+  // Catalog Product methods
+  async createCatalogProduct(product: InsertCatalogProduct): Promise<CatalogProduct> {
+    const id = randomUUID();
+    const newProduct: CatalogProduct = { 
+      ...product, 
+      id,
+      notes: product.notes || null,
+      targetPrice: product.targetPrice || null,
+      createdAt: new Date()
+    };
+    this.catalogProducts.set(id, newProduct);
+    return newProduct;
+  }
+
+  async listCatalogProducts(): Promise<CatalogProduct[]> {
+    return Array.from(this.catalogProducts.values());
+  }
+
+  async getCatalogProductById(id: string): Promise<CatalogProduct | undefined> {
+    return this.catalogProducts.get(id);
+  }
+
+  // Competitor Listing methods
+  async createCompetitorListing(listing: InsertCompetitorListing): Promise<CompetitorListing> {
+    const id = randomUUID();
+    const now = new Date();
+    const newListing: CompetitorListing = { 
+      ...listing, 
+      id,
+      listingSku: listing.listingSku || null,
+      titleOverride: listing.titleOverride || null,
+      brandOverride: listing.brandOverride || null,
+      mainImageUrl: listing.mainImageUrl || null,
+      active: listing.active ?? true,
+      firstSeenAt: now,
+      lastSeenAt: now
+    };
+    this.competitorListings.set(id, newListing);
+    return newListing;
+  }
+
+  async listListingsByProduct(productId: string): Promise<CompetitorListing[]> {
+    return Array.from(this.competitorListings.values()).filter(l => l.productId === productId);
+  }
+
+  async updateListing(id: string, updates: Partial<CompetitorListing>): Promise<CompetitorListing | undefined> {
+    const listing = this.competitorListings.get(id);
+    if (!listing) return undefined;
+    
+    const updated = { ...listing, ...updates, lastSeenAt: new Date() };
+    this.competitorListings.set(id, updated);
+    return updated;
+  }
+
+  // Listing Snapshot methods
+  async createListingSnapshot(snapshot: InsertListingSnapshot): Promise<ListingSnapshot> {
+    const id = randomUUID();
+    const newSnapshot: ListingSnapshot = { 
+      ...snapshot, 
+      id,
+      price: snapshot.price || null,
+      currency: snapshot.currency || "AUD",
+      inStock: snapshot.inStock ?? null,
+      promoText: snapshot.promoText || null,
+      hasGiveaway: snapshot.hasGiveaway ?? false,
+      httpStatus: snapshot.httpStatus || null,
+      scrapedAt: new Date()
+    };
+    this.listingSnapshots.set(id, newSnapshot);
+    return newSnapshot;
+  }
+
+  async getLatestListingSnapshotsByProduct(productId: string): Promise<ListingSnapshot[]> {
+    const listings = await this.listListingsByProduct(productId);
+    const latestSnapshots: ListingSnapshot[] = [];
+    
+    for (const listing of listings) {
+      const snapshots = Array.from(this.listingSnapshots.values())
+        .filter(s => s.listingId === listing.id)
+        .sort((a, b) => b.scrapedAt.getTime() - a.scrapedAt.getTime());
+      
+      if (snapshots.length > 0) {
+        latestSnapshots.push(snapshots[0]);
+      }
+    }
+    
+    return latestSnapshots;
+  }
+
+  async getListingHistory(listingId: string, limit: number = 30): Promise<ListingSnapshot[]> {
+    return Array.from(this.listingSnapshots.values())
+      .filter(s => s.listingId === listingId)
+      .sort((a, b) => b.scrapedAt.getTime() - a.scrapedAt.getTime())
+      .slice(0, limit);
+  }
+
+  // Listing Image methods
+  async createListingImage(image: InsertListingImage): Promise<ListingImage> {
+    const id = randomUUID();
+    const newImage: ListingImage = { 
+      ...image, 
+      id,
+      position: image.position || 0
+    };
+    this.listingImages.set(id, newImage);
+    return newImage;
+  }
+
+  async getListingImages(listingId: string): Promise<ListingImage[]> {
+    return Array.from(this.listingImages.values())
+      .filter(i => i.listingId === listingId)
+      .sort((a, b) => a.position - b.position);
   }
 }
 

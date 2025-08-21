@@ -6,6 +6,7 @@ import { z } from "zod";
 export const pageTypeEnum = pgEnum("page_type", ["PLP", "PDP"]);
 export const taskStatusEnum = pgEnum("task_status", ["pending", "running", "completed", "failed"]);
 export const runReasonEnum = pgEnum("run_reason", ["manual", "schedule"]);
+export const qualityTierEnum = pgEnum("quality_tier", ["entry", "mid", "pro"]);
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -107,6 +108,63 @@ export const tasks = pgTable("tasks", {
   error: text("error"),
 });
 
+// New catalog and listing tables
+export const brands = pgTable("brands", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull().unique(),
+  slug: text("slug").notNull().unique(),
+});
+
+export const catalogProducts = pgTable("catalog_products", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  brandId: varchar("brand_id").references(() => brands.id).notNull(),
+  categoryId: varchar("category_id").references(() => categories.id).notNull(),
+  productTypeId: varchar("product_type_id").references(() => productTypes.id).notNull(),
+  ourSku: text("our_sku").notNull(),
+  quality: qualityTierEnum("quality").notNull(),
+  notes: text("notes"),
+  targetPrice: decimal("target_price", { precision: 12, scale: 2 }),
+  createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const competitorListings = pgTable("competitor_listings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  productId: varchar("product_id").references(() => catalogProducts.id).notNull(),
+  competitorId: varchar("competitor_id").references(() => competitors.id).notNull(),
+  url: text("url").notNull(),
+  listingSku: text("listing_sku"),
+  titleOverride: text("title_override"),
+  brandOverride: text("brand_override"),
+  mainImageUrl: text("main_image_url"),
+  active: boolean("active").notNull().default(true),
+  firstSeenAt: timestamp("first_seen_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  lastSeenAt: timestamp("last_seen_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+}, (table) => ({
+  uniqueProductCompetitor: sql`UNIQUE (product_id, competitor_id)`,
+}));
+
+export const listingSnapshots = pgTable("listing_snapshots", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  listingId: varchar("listing_id").references(() => competitorListings.id).notNull(),
+  price: decimal("price", { precision: 12, scale: 2 }),
+  currency: text("currency").notNull().default("AUD"),
+  inStock: boolean("in_stock"),
+  promoText: text("promo_text"),
+  hasGiveaway: boolean("has_giveaway").notNull().default(false),
+  scrapedAt: timestamp("scraped_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  httpStatus: integer("http_status"),
+}, (table) => ({
+  listingScrapedAtIdx: sql`CREATE INDEX IF NOT EXISTS listing_scraped_at_idx ON listing_snapshots (listing_id, scraped_at DESC)`,
+}));
+
+export const listingImages = pgTable("listing_images", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  listingId: varchar("listing_id").references(() => competitorListings.id).notNull(),
+  imageUrl: text("image_url").notNull(),
+  position: integer("position").notNull().default(0),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertCompetitorSchema = createInsertSchema(competitors).omit({ id: true });
@@ -119,6 +177,13 @@ export const insertProductSpecSchema = createInsertSchema(productSpecs).omit({ i
 export const insertPriceSnapshotSchema = createInsertSchema(priceSnapshots).omit({ id: true, scrapedAt: true });
 export const insertPriceBandSchema = createInsertSchema(priceBands).omit({ id: true, updatedAt: true });
 export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true, startedAt: true, finishedAt: true });
+
+// New catalog and listing insert schemas
+export const insertBrandSchema = createInsertSchema(brands).omit({ id: true });
+export const insertCatalogProductSchema = createInsertSchema(catalogProducts).omit({ id: true, createdAt: true });
+export const insertCompetitorListingSchema = createInsertSchema(competitorListings).omit({ id: true, firstSeenAt: true, lastSeenAt: true });
+export const insertListingSnapshotSchema = createInsertSchema(listingSnapshots).omit({ id: true, scrapedAt: true });
+export const insertListingImageSchema = createInsertSchema(listingImages).omit({ id: true });
 
 // Types
 export type User = typeof users.$inferSelect;
@@ -143,3 +208,15 @@ export type PriceBand = typeof priceBands.$inferSelect;
 export type InsertPriceBand = z.infer<typeof insertPriceBandSchema>;
 export type Task = typeof tasks.$inferSelect;
 export type InsertTask = z.infer<typeof insertTaskSchema>;
+
+// New catalog and listing types
+export type Brand = typeof brands.$inferSelect;
+export type InsertBrand = z.infer<typeof insertBrandSchema>;
+export type CatalogProduct = typeof catalogProducts.$inferSelect;
+export type InsertCatalogProduct = z.infer<typeof insertCatalogProductSchema>;
+export type CompetitorListing = typeof competitorListings.$inferSelect;
+export type InsertCompetitorListing = z.infer<typeof insertCompetitorListingSchema>;
+export type ListingSnapshot = typeof listingSnapshots.$inferSelect;
+export type InsertListingSnapshot = z.infer<typeof insertListingSnapshotSchema>;
+export type ListingImage = typeof listingImages.$inferSelect;
+export type InsertListingImage = z.infer<typeof insertListingImageSchema>;

@@ -7,8 +7,12 @@ import {
   type Product, type InsertProduct, type ProductSpec, type InsertProductSpec,
   type PriceSnapshot, type InsertPriceSnapshot, type PriceBand, type InsertPriceBand,
   type Task, type InsertTask,
+  type Brand, type InsertBrand, type CatalogProduct, type InsertCatalogProduct,
+  type CompetitorListing, type InsertCompetitorListing, type ListingSnapshot,
+  type InsertListingSnapshot, type ListingImage, type InsertListingImage,
   users, competitors, categories, productTypes, brandAliases, pages,
-  products, productSpecs, priceSnapshots, priceBands, tasks
+  products, productSpecs, priceSnapshots, priceBands, tasks,
+  brands, catalogProducts, competitorListings, listingSnapshots, listingImages
 } from "@shared/schema";
 import type { IStorage } from "./storage";
 
@@ -336,5 +340,103 @@ export class DrizzleStorage implements IStorage {
       priceChanges24h: recentChanges.length,
       activeTasks: activeTasks.count || 0,
     };
+  }
+
+  // Brand methods
+  async createBrand(brand: InsertBrand): Promise<Brand> {
+    const result = await this.db.insert(brands).values(brand).returning();
+    return result[0];
+  }
+
+  async getBrands(): Promise<Brand[]> {
+    return await this.db.select().from(brands);
+  }
+
+  async getBrand(id: string): Promise<Brand | undefined> {
+    const result = await this.db.select().from(brands).where(eq(brands.id, id));
+    return result[0];
+  }
+
+  // Catalog Product methods
+  async createCatalogProduct(product: InsertCatalogProduct): Promise<CatalogProduct> {
+    const result = await this.db.insert(catalogProducts).values(product).returning();
+    return result[0];
+  }
+
+  async listCatalogProducts(): Promise<CatalogProduct[]> {
+    return await this.db.select().from(catalogProducts);
+  }
+
+  async getCatalogProductById(id: string): Promise<CatalogProduct | undefined> {
+    const result = await this.db.select().from(catalogProducts).where(eq(catalogProducts.id, id));
+    return result[0];
+  }
+
+  // Competitor Listing methods
+  async createCompetitorListing(listing: InsertCompetitorListing): Promise<CompetitorListing> {
+    const result = await this.db.insert(competitorListings).values(listing).returning();
+    return result[0];
+  }
+
+  async listListingsByProduct(productId: string): Promise<CompetitorListing[]> {
+    return await this.db.select().from(competitorListings)
+      .where(eq(competitorListings.productId, productId));
+  }
+
+  async updateListing(id: string, updates: Partial<CompetitorListing>): Promise<CompetitorListing | undefined> {
+    const result = await this.db.update(competitorListings)
+      .set({ ...updates, lastSeenAt: new Date() })
+      .where(eq(competitorListings.id, id))
+      .returning();
+    return result[0];
+  }
+
+  // Listing Snapshot methods
+  async createListingSnapshot(snapshot: InsertListingSnapshot): Promise<ListingSnapshot> {
+    const result = await this.db.insert(listingSnapshots).values(snapshot).returning();
+    return result[0];
+  }
+
+  async getLatestListingSnapshotsByProduct(productId: string): Promise<ListingSnapshot[]> {
+    const listings = await this.listListingsByProduct(productId);
+    const latestSnapshots: ListingSnapshot[] = [];
+    
+    for (const listing of listings) {
+      const result = await this.db
+        .select()
+        .from(listingSnapshots)
+        .where(eq(listingSnapshots.listingId, listing.id))
+        .orderBy(desc(listingSnapshots.scrapedAt))
+        .limit(1);
+      
+      if (result.length > 0) {
+        latestSnapshots.push(result[0]);
+      }
+    }
+    
+    return latestSnapshots;
+  }
+
+  async getListingHistory(listingId: string, limit: number = 30): Promise<ListingSnapshot[]> {
+    return await this.db
+      .select()
+      .from(listingSnapshots)
+      .where(eq(listingSnapshots.listingId, listingId))
+      .orderBy(desc(listingSnapshots.scrapedAt))
+      .limit(limit);
+  }
+
+  // Listing Image methods
+  async createListingImage(image: InsertListingImage): Promise<ListingImage> {
+    const result = await this.db.insert(listingImages).values(image).returning();
+    return result[0];
+  }
+
+  async getListingImages(listingId: string): Promise<ListingImage[]> {
+    return await this.db
+      .select()
+      .from(listingImages)
+      .where(eq(listingImages.listingId, listingId))
+      .orderBy(listingImages.position);
   }
 }

@@ -1,7 +1,11 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { getStorage } from "./storage.factory";
-import { insertCompetitorSchema, insertPageSchema, insertProductSchema, insertTaskSchema } from "@shared/schema";
+import { 
+  insertCompetitorSchema, insertPageSchema, insertProductSchema, insertTaskSchema,
+  insertBrandSchema, insertCatalogProductSchema, insertCompetitorListingSchema,
+  insertListingSnapshotSchema
+} from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   const storage = getStorage();
@@ -221,6 +225,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.setHeader("Content-Type", "text/csv");
     res.setHeader("Content-Disposition", "attachment; filename=products.csv");
     res.send(csvRows.join("\n"));
+  });
+
+  // Brand endpoints
+  app.post("/api/brands", async (req, res) => {
+    try {
+      const validatedData = insertBrandSchema.parse(req.body);
+      const brand = await storage.createBrand(validatedData);
+      res.json(brand);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid brand data" });
+    }
+  });
+
+  app.get("/api/brands", async (req, res) => {
+    const brands = await storage.getBrands();
+    res.json(brands);
+  });
+
+  // Catalog Product endpoints
+  app.post("/api/catalog/products", async (req, res) => {
+    try {
+      const validatedData = insertCatalogProductSchema.parse(req.body);
+      const product = await storage.createCatalogProduct(validatedData);
+      res.json(product);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid catalog product data" });
+    }
+  });
+
+  app.get("/api/catalog/products", async (req, res) => {
+    const products = await storage.listCatalogProducts();
+    res.json(products);
+  });
+
+  app.get("/api/catalog/products/:id", async (req, res) => {
+    const product = await storage.getCatalogProductById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ error: "Catalog product not found" });
+    }
+    res.json(product);
+  });
+
+  // Competitor Listing endpoints
+  app.post("/api/listings", async (req, res) => {
+    try {
+      const validatedData = insertCompetitorListingSchema.parse(req.body);
+      const listing = await storage.createCompetitorListing(validatedData);
+      res.json(listing);
+    } catch (error) {
+      res.status(400).json({ error: "Invalid listing data" });
+    }
+  });
+
+  app.get("/api/listings", async (req, res) => {
+    const { productId } = req.query;
+    if (!productId) {
+      return res.status(400).json({ error: "productId query parameter is required" });
+    }
+    const listings = await storage.listListingsByProduct(productId as string);
+    res.json(listings);
+  });
+
+  app.patch("/api/listings/:id", async (req, res) => {
+    try {
+      const listing = await storage.updateListing(req.params.id, req.body);
+      if (!listing) {
+        return res.status(404).json({ error: "Listing not found" });
+      }
+      res.json(listing);
+    } catch (error) {
+      res.status(400).json({ error: "Failed to update listing" });
+    }
+  });
+
+  // Listing History endpoints
+  app.get("/api/listings/:id/history", async (req, res) => {
+    const { limit } = req.query;
+    const history = await storage.getListingHistory(
+      req.params.id,
+      limit ? parseInt(limit as string, 10) : 30
+    );
+    res.json(history);
+  });
+
+  // Scrape endpoint for running listing scrapes
+  app.post("/api/scrape/run", async (req, res) => {
+    const { listingId, productId } = req.body;
+    
+    if (!listingId && !productId) {
+      return res.status(400).json({ error: "Either listingId or productId is required" });
+    }
+
+    // For now, just return a placeholder response
+    // In Stage D, this will be replaced with actual scraping logic
+    res.json({ 
+      status: "queued", 
+      message: "Scraping task queued",
+      listingId,
+      productId 
+    });
   });
 
   const httpServer = createServer(app);
