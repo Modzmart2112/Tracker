@@ -429,7 +429,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
     ? await import("./ai-service")
     : null;
 
-  // Extract products from category page  
+  // Import competitor products from any site
+  app.post("/api/import-competitor", async (req, res) => {
+    try {
+      const { url } = req.body;
+      
+      if (!url) {
+        return res.status(400).json({ error: "URL is required" });
+      }
+
+      console.log(`Importing competitor products from: ${url}`);
+      
+      // Import the competitor scraper
+      const { competitorScraper } = await import('./competitor-scraper');
+      
+      // Scrape the competitor site
+      const result = await competitorScraper.scrapeCompetitor(url);
+      
+      if (result.products.length === 0) {
+        return res.status(400).json({ 
+          error: "No products found on this competitor page",
+          details: `Attempted to scrape ${result.competitorName} but found no products.`,
+          suggestion: "Please verify the URL is a product listing page."
+        });
+      }
+
+      res.json({
+        success: true,
+        message: `Successfully imported ${result.products.length} products from ${result.competitorName}`,
+        ...result
+      });
+
+    } catch (error: any) {
+      console.error("Error importing competitor products:", error);
+      res.status(500).json({ 
+        error: "Failed to import competitor products",
+        details: error.message
+      });
+    }
+  });
+
+  // Extract products from category page (Sydney Tools focused)
   app.post("/api/extract-category", async (req, res) => {
     try {
       const { url } = req.body;
@@ -686,21 +726,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const categoryMatch = url.match(/\/category\/([^\/]+)\/([^\/\?]+)/);
       const categoryName = categoryMatch ? categoryMatch[2].replace(/-/g, ' ').toUpperCase() : 'PRODUCTS';
       
-      // Return the extracted products
-      res.json({
-        products: products,
-        totalPages: 1,
-        currentPage: 1,
-        totalProducts: products.length,
-        categoryName: categoryName,
-        extractedAt: new Date().toISOString(),
-        aiEnhanced: !!aiService,
-        sourceUrl: url
-      });
-      
       // Use AI to analyze products if available
       let enrichedProducts = products;
-      if (aiService) {
+      if (aiService && products.length > 0) {
         try {
           const categoryInfo = await aiService.analyzeCategoryUrl(url);
           const analyzed = await aiService.bulkAnalyzeProducts(products);
@@ -718,15 +746,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Simulate pagination info
+      // Return the final extracted products
       res.json({
         products: enrichedProducts,
-        totalPages: Math.ceil(products.length / 20),
+        totalPages: Math.ceil(enrichedProducts.length / 20),
         currentPage: 1,
-        totalProducts: products.length,
-        categoryName: "PRODUCTS",
+        totalProducts: enrichedProducts.length,
+        categoryName: categoryName,
         extractedAt: new Date().toISOString(),
-        aiEnhanced: !!aiService
+        aiEnhanced: !!aiService && enrichedProducts.length > 0,
+        sourceUrl: url
       });
     } catch (error: any) {
       console.error("Error extracting category:", error);

@@ -151,6 +151,8 @@ export default function ProductsPage() {
   });
   const [editingCard, setEditingCard] = useState<CardCustomization | null>(null);
   const [showCardCustomDialog, setShowCardCustomDialog] = useState(false);
+  const [showCompetitorImportDialog, setShowCompetitorImportDialog] = useState(false);
+  const [competitorUrl, setCompetitorUrl] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(16); // 4 cards per row × 4 rows = 16 per page
   const [newProduct, setNewProduct] = useState({
@@ -277,6 +279,29 @@ export default function ProductsPage() {
       toast({ 
         title: "Extraction failed",
         description: error.message || "Failed to extract products from category page",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Import competitor products
+  const importCompetitor = useMutation({
+    mutationFn: (data: { url: string }) => 
+      apiRequest("POST", "/api/import-competitor", data),
+    onSuccess: (data: any) => {
+      if (data.success && data.products.length > 0) {
+        setExtractedProducts(data.products);
+        setShowBulkImportDialog(true);
+        toast({ 
+          title: "Competitor Import Successful",
+          description: `Found ${data.products.length} products from ${data.competitorName}. Review and import them.`
+        });
+      }
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Import failed",
+        description: error.message || "Failed to import competitor products",
         variant: "destructive"
       });
     }
@@ -646,12 +671,6 @@ export default function ProductsPage() {
           </Dialog>
           
           <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-            <DialogTrigger asChild>
-              <Button className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 shadow-lg">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Product
-              </Button>
-            </DialogTrigger>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-2xl">
               <DialogHeader>
                 <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-red-600 to-red-700 bg-clip-text text-transparent">
@@ -1085,36 +1104,108 @@ export default function ProductsPage() {
                     )}
                   </div>
                   
-                  {selectedProducts.size > 0 && (
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          // Bulk edit - for now just select the first product for editing
-                          const firstSelectedId = Array.from(selectedProducts)[0];
-                          const firstProduct = products.find(p => p.id === firstSelectedId);
-                          if (firstProduct) {
-                            setEditingProduct(firstProduct);
-                            setShowEditDialog(true);
-                          }
-                        }}
-                        className="flex items-center gap-2"
-                      >
-                        <Edit className="h-4 w-4" />
-                        Edit Selected
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => setShowBulkDeleteDialog(true)}
-                        className="flex items-center gap-2"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        Delete Selected
-                      </Button>
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {/* Add Product Button */}
+                    <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+                      <DialogTrigger asChild>
+                        <Button className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 shadow-lg">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Product
+                        </Button>
+                      </DialogTrigger>
+                    </Dialog>
+
+                    {/* Competitor Import Button */}
+                    <Dialog open={showCompetitorImportDialog} onOpenChange={setShowCompetitorImportDialog}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" className="border-red-200 hover:border-red-300 hover:bg-red-50">
+                          <Store className="h-4 w-4 mr-2" />
+                          Import Competitor
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>Import Competitor Products</DialogTitle>
+                          <DialogDescription>
+                            Enter a competitor's category page URL to import their products for comparison.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor="competitor-url">Competitor URL</Label>
+                            <Input
+                              id="competitor-url"
+                              value={competitorUrl}
+                              onChange={(e) => setCompetitorUrl(e.target.value)}
+                              placeholder="https://toolkitdepot.com.au/automotive/battery-chargers/"
+                              className="mt-1"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Paste a category or product listing page URL from any competitor site.
+                            </p>
+                          </div>
+                          <div className="flex justify-end gap-2">
+                            <Button 
+                              variant="outline" 
+                              onClick={() => setShowCompetitorImportDialog(false)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button 
+                              onClick={() => {
+                                if (competitorUrl) {
+                                  importCompetitor.mutate({ url: competitorUrl });
+                                  setShowCompetitorImportDialog(false);
+                                  setCompetitorUrl("");
+                                }
+                              }}
+                              disabled={!competitorUrl || importCompetitor.isPending}
+                            >
+                              {importCompetitor.isPending ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  Importing...
+                                </>
+                              ) : (
+                                "Import Products"
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+
+                    {selectedProducts.size > 0 && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            // Bulk edit - for now just select the first product for editing
+                            const firstSelectedId = Array.from(selectedProducts)[0];
+                            const firstProduct = products.find(p => p.id === firstSelectedId);
+                            if (firstProduct) {
+                              setEditingProduct(firstProduct);
+                              setShowEditDialog(true);
+                            }
+                          }}
+                          className="flex items-center gap-2"
+                        >
+                          <Edit className="h-4 w-4" />
+                          Edit Selected
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => setShowBulkDeleteDialog(true)}
+                          className="flex items-center gap-2"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Delete Selected
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
