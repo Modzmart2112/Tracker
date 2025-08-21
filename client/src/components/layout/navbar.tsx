@@ -24,7 +24,7 @@ export function Navbar() {
   const [location] = useLocation();
 
   return (
-    <nav className="bg-gradient-to-r from-gray-900 via-black to-gray-900 border-b border-gray-800 px-8 shadow-xl">
+    <nav className="bg-gradient-to-r from-red-900 via-black to-red-900 border-b border-red-800 px-8 shadow-xl">
       <div className="flex items-center justify-between">
         <ul className="flex items-center space-x-1">
           {navigation.map((item) => {
@@ -36,15 +36,15 @@ export function Navbar() {
                 <Link href={item.href} className={`
                   relative flex items-center space-x-2 px-6 py-4 text-sm font-medium transition-all duration-200
                   ${isActive 
-                    ? "text-[#CB0000]" 
-                    : "text-gray-400 hover:text-white"
+                    ? "text-red-500" 
+                    : "text-gray-300 hover:text-white"
                   }
                   group
                 `}>
-                  <Icon size={18} className={isActive ? "text-[#CB0000]" : "text-gray-500 group-hover:text-white"} />
+                  <Icon size={18} className={isActive ? "text-red-500" : "text-gray-400 group-hover:text-white"} />
                   <span>{item.name}</span>
                   {isActive && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-[#CB0000] to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-red-500 to-transparent" />
                   )}
                   {!isActive && (
                     <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 group-hover:opacity-30 transition-opacity" />
@@ -56,11 +56,11 @@ export function Navbar() {
         </ul>
         
         <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2 text-gray-400 text-sm">
-            <Activity size={16} className="text-[#CB0000] animate-pulse" />
+          <div className="flex items-center space-x-2 text-gray-300 text-sm">
+            <Activity size={16} className="text-red-500 animate-pulse" />
             <span>Live Monitoring</span>
           </div>
-          <div className="h-6 w-px bg-gray-800" />
+          <div className="h-6 w-px bg-red-800" />
           <button className="text-gray-400 hover:text-white transition-colors">
             <Settings size={18} />
           </button>
