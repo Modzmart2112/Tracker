@@ -6,9 +6,10 @@ CompetitorScope is a modern web application designed for competitive analysis an
 
 **✅ REAL BROWSER AUTOMATION NOW WORKING (August 21, 2025):**
 - Playwright browser automation successfully extracting authentic product data
-- 51 real products extracted from Sydney Tools and Toolkitdepot
+- 55 real products total: 33 Sydney Tools + 22 Toolkit Depot competitor listings  
 - Enhanced model number extraction handling multiple formats (dash separators, parentheses, alphanumeric codes)
-- 15+ products with active price comparisons showing real price differences
+- 22 products with active price comparisons showing real price differences
+- Perfect product matching: no duplicates, competitor data merged via relationships
 - No demo/fake data - only authentic extraction from live websites
 
 ## User Preferences
