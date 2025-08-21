@@ -192,6 +192,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Manual price monitoring trigger
+  app.post("/api/price-monitoring/run", async (req, res) => {
+    try {
+      const { scheduler } = await import('./scheduler');
+      
+      if (scheduler.isCurrentlyRunning()) {
+        return res.status(409).json({ 
+          error: "Price monitoring is already running",
+          message: "Please wait for the current monitoring cycle to complete"
+        });
+      }
+
+      // Run price monitoring in background
+      scheduler.runManualPriceCheck().then(results => {
+        console.log(`Manual price check completed with ${results.length} results`);
+      }).catch(error => {
+        console.error('Manual price check failed:', error);
+      });
+
+      res.json({ 
+        message: "Price monitoring started",
+        note: "Check console logs for progress updates"
+      });
+    } catch (error) {
+      console.error('Price monitoring error:', error);
+      res.status(500).json({ error: "Failed to start price monitoring" });
+    }
+  });
+
+  // Get price monitoring status
+  app.get("/api/price-monitoring/status", async (req, res) => {
+    try {
+      const { scheduler } = await import('./scheduler');
+      const isRunning = scheduler.isCurrentlyRunning();
+      
+      // Get recent price monitoring tasks
+      const tasks = await storage.getTasks();
+      const priceTasks = tasks.filter(t => t.runReason === "scheduled").slice(0, 5);
+      
+      res.json({
+        isRunning,
+        nextRun: "Daily at 12:00 AM AEST",
+        recentTasks: priceTasks,
+        currentTime: new Date().toLocaleString('en-AU', { timeZone: 'Australia/Sydney' })
+      });
+    } catch (error) {
+      res.status(500).json({ error: "Failed to get monitoring status" });
+    }
+  });
+
   // Tasks endpoints
   app.get("/api/tasks", async (req, res) => {
     const tasks = await storage.getTasks();

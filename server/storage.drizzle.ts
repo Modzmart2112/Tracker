@@ -293,6 +293,25 @@ export class DrizzleStorage implements IStorage {
     return result[0];
   }
 
+  // Additional methods needed for price monitoring
+  async getCompetitorListings(): Promise<CompetitorListing[]> {
+    return await this.db.select().from(competitorListings);
+  }
+
+  async updateCatalogProduct(id: string, updates: Partial<CatalogProduct>): Promise<CatalogProduct | undefined> {
+    const result = await this.db.update(catalogProducts)
+      .set(updates)
+      .where(eq(catalogProducts.id, id))
+      .returning();
+    return result[0];
+  }
+
+  async getListingSnapshots(listingId: string): Promise<ListingSnapshot[]> {
+    return await this.db.select().from(listingSnapshots)
+      .where(eq(listingSnapshots.listingId, listingId))
+      .orderBy(desc(listingSnapshots.scrapedAt));
+  }
+
   // Analytics
   async getBrandCoverageMatrix(productTypeId: string): Promise<any> {
     const productsData = await this.db

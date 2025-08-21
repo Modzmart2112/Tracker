@@ -113,6 +113,11 @@ export interface IStorage {
   deleteUnifiedProduct(id: string): Promise<void>;
   addCompetitorLink(productId: string, url: string): Promise<any>;
 
+  // Additional methods needed for price monitoring
+  getCompetitorListings(): Promise<CompetitorListing[]>;
+  updateCatalogProduct(id: string, updates: Partial<CatalogProduct>): Promise<CatalogProduct | undefined>;
+  getListingSnapshots(listingId: string): Promise<ListingSnapshot[]>;
+
 
 }
 
@@ -213,7 +218,12 @@ export class MemStorage implements IStorage {
 
   async createCompetitor(competitor: InsertCompetitor): Promise<Competitor> {
     const id = randomUUID();
-    const newCompetitor: Competitor = { ...competitor, id };
+    const newCompetitor: Competitor = { 
+      ...competitor, 
+      id,
+      status: competitor.status ?? "active",
+      isUs: competitor.isUs ?? false
+    };
     this.competitors.set(id, newCompetitor);
     return newCompetitor;
   }
@@ -688,6 +698,26 @@ export class MemStorage implements IStorage {
     links.push(newLink);
     this.unifiedCompetitorLinks.set(productId, links);
     return newLink;
+  }
+
+  // Additional methods needed for price monitoring
+  async getCompetitorListings(): Promise<CompetitorListing[]> {
+    return Array.from(this.competitorListings.values());
+  }
+
+  async updateCatalogProduct(id: string, updates: Partial<CatalogProduct>): Promise<CatalogProduct | undefined> {
+    const product = this.catalogProducts.get(id);
+    if (!product) return undefined;
+    
+    const updated = { ...product, ...updates };
+    this.catalogProducts.set(id, updated);
+    return updated;
+  }
+
+  async getListingSnapshots(listingId: string): Promise<ListingSnapshot[]> {
+    return Array.from(this.listingSnapshots.values())
+      .filter(s => s.listingId === listingId)
+      .sort((a, b) => b.scrapedAt.getTime() - a.scrapedAt.getTime());
   }
 }
 
