@@ -1292,13 +1292,13 @@ export default function ProductsPage() {
 
           {/* Pagination Controls */}
           {filteredProducts.length > itemsPerPage && (
-            <div className="flex flex-col items-center justify-center pt-6 border-t border-slate-200 dark:border-slate-700 space-y-4">
+            <div className="w-full flex flex-col items-center justify-center pt-6 border-t border-slate-200 dark:border-slate-700 space-y-4">
               <div className="text-center">
                 <span className="text-sm text-slate-600 dark:text-slate-400">
                   Showing {Math.min(startIndex + 1, filteredProducts.length)} to {Math.min(endIndex, filteredProducts.length)} of {filteredProducts.length} products
                 </span>
               </div>
-              <div className="flex items-center justify-center space-x-1">
+              <div className="flex items-center justify-center space-x-1 mx-auto">
                 <Button
                   variant="outline"
                   size="sm"
