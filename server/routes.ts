@@ -773,22 +773,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           }
           
-          // Check if we already have a similar product (matching logic)
+          // Check if we already have a product with exact same SKU
           const existingProducts = await storage.getUnifiedProducts();
           const matchedProduct = existingProducts.find(existing => {
-            // Match by SKU first
-            if (existing.sku === product.sku) return true;
-            
-            // Match by similar name and brand
-            const existingWords = existing.name.toLowerCase().split(/\s+/);
-            const newWords = product.title.toLowerCase().split(/\s+/);
-            const commonWords = existingWords.filter(word => 
-              newWords.includes(word) && word.length > 3
-            );
-            
-            // If more than 60% of words match, consider it the same product
-            const matchRatio = commonWords.length / Math.min(existingWords.length, newWords.length);
-            return matchRatio > 0.6 && existing.brand === brand;
+            return existing.sku === product.sku;
           });
           
           if (matchedProduct) {

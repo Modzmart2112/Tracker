@@ -1001,9 +1001,11 @@ export default function ProductsPage() {
                           <span className="text-red-600 font-bold text-2xl">
                             ${product.price || product.ourPrice || '0'}
                           </span>
-                          <span className="text-xs text-gray-500 line-through">
-                            {product.originalPrice && `$${product.originalPrice}`}
-                          </span>
+                          {product.originalPrice && product.originalPrice > (product.price || product.ourPrice || 0) && (
+                            <span className="text-xs text-gray-500 line-through">
+                              ${product.originalPrice}
+                            </span>
+                          )}
                         </div>
                         
                         <Button
