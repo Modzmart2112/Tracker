@@ -1,9 +1,11 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { getStorage } from "./storage.factory";
 import { insertCompetitorSchema, insertPageSchema, insertProductSchema, insertTaskSchema } from "@shared/schema";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  const storage = getStorage();
+  
   // Meta endpoints
   app.get("/api/meta", async (req, res) => {
     const categories = await storage.getCategories();

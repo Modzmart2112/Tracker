@@ -28,6 +28,8 @@ Preferred communication style: Simple, everyday language.
 - **Schema Design**: Relational database with tables for competitors, categories, product types, pages, products, price snapshots, and tracking metadata
 - **Database Provider**: Configured for Neon Database in production with PostgreSQL dialect
 - **Migrations**: Drizzle Kit for database schema migrations and management
+- **Storage Architecture**: Factory pattern implementation with automatic selection between MemStorage (development) and DrizzleStorage (production) based on DATABASE_URL environment variable
+- **Database Connection**: Uses pg (node-postgres) driver with connection pooling for efficient database operations
 
 ### Key Data Entities
 - **Competitors**: Store competitor information including site domains and tracking status
