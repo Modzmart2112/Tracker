@@ -371,16 +371,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/extract-url", async (req, res) => {
     try {
       const { url } = req.body;
-      // For now, return mock data - this would be replaced with actual scraping
+      // Simulate extracting product from URL
       const mockData = {
         title: "Sample Product Title",
         price: 199.99,
-        competitorName: new URL(url).hostname.replace("www.", "").split(".")[0]
+        competitorName: new URL(url).hostname.replace("www.", "").split(".")[0],
+        image: "https://via.placeholder.com/150"
       };
       res.json(mockData);
     } catch (error) {
       console.error("Error extracting URL:", error);
       res.status(500).json({ error: "Failed to extract URL data" });
+    }
+  });
+
+  // Extract products from category page  
+  app.post("/api/extract-category", async (req, res) => {
+    try {
+      const { url } = req.body;
+      
+      // Simulate extracting products from Sydney Tools category page
+      // Based on the HTML structure: class="ant-card ant-card-bordered product-card"
+      // In production, this would use a real web scraper like Puppeteer or Playwright
+      
+      // Parse category from URL for realistic mock data
+      const categoryMatch = url.match(/\/category\/([^\/]+)\/([^\/\?]+)/);
+      const category = categoryMatch ? categoryMatch[2].replace(/-/g, ' ') : 'products';
+      
+      // Generate realistic mock products based on category
+      const mockProductTemplates = {
+        'car-battery-chargers': [
+          { brand: 'NOCO', model: 'Boost Plus GB40', specs: '1000A 12V', price: 149.99 },
+          { brand: 'NOCO', model: 'Boost HD GB70', specs: '2000A 12V', price: 249.99 },
+          { brand: 'CTEK', model: 'MXS 5.0', specs: '12V Battery Charger', price: 129.99 },
+          { brand: 'CTEK', model: 'MXS 10', specs: '12V/24V Charger', price: 259.99 },
+          { brand: 'Projecta', model: 'Pro-Charge PC1600', specs: '16A 12V/24V', price: 449.00 },
+          { brand: 'Century', model: 'CC1212', specs: '12V 12A Charger', price: 89.99 },
+          { brand: 'NOCO', model: 'Genius G3500', specs: '6V/12V 3.5A', price: 119.99 },
+          { brand: 'Victron', model: 'Blue Smart', specs: 'IP65 12V 15A', price: 189.00 },
+        ],
+        'default': [
+          { brand: 'Milwaukee', model: 'M18 FUEL', specs: 'Brushless Drill', price: 299.00 },
+          { brand: 'DeWalt', model: 'DCK240C2', specs: '20V Combo Kit', price: 249.00 },
+          { brand: 'Makita', model: 'DHP481Z', specs: '18V Hammer Drill', price: 189.00 },
+        ]
+      };
+      
+      const templates = mockProductTemplates[categoryMatch?.[2]] || mockProductTemplates.default;
+      
+      // Simulate multiple pages of products
+      const productsPerPage = 24;
+      const totalProducts = templates.length;
+      const totalPages = Math.ceil(totalProducts / productsPerPage);
+      
+      const products = templates.map((template, index) => ({
+        sku: `${template.brand.toUpperCase()}-${String(index + 1).padStart(3, '0')}`,
+        title: `${template.brand} ${template.model} ${template.specs}`,
+        price: template.price,
+        image: `https://via.placeholder.com/300x300/CB0000/ffffff?text=${encodeURIComponent(template.brand)}`,
+        url: `${url.split('?')[0]}/product/${template.model.toLowerCase().replace(/\s+/g, '-')}`
+      }));
+      
+      // Simulate pagination info
+      res.json({
+        products: products,
+        totalPages: totalPages,
+        currentPage: 1,
+        totalProducts: totalProducts,
+        categoryName: category.replace(/-/g, ' ').toUpperCase(),
+        extractedAt: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error extracting category:", error);
+      res.status(500).json({ error: "Failed to extract category products" });
+    }
+  });
+
+  // Bulk import products
+  app.post("/api/products-unified/bulk", async (req, res) => {
+    try {
+      const { products } = req.body;
+      let addedCount = 0;
+      
+      for (const product of products) {
+        try {
+          const newProduct = await storage.createUnifiedProduct({
+            sku: product.sku,
+            name: product.title,
+            ourPrice: product.price
+          });
+          
+          // Add the source URL as a competitor link
+          if (product.url) {
+            await storage.addCompetitorLink(newProduct.id, product.url);
+          }
+          
+          addedCount++;
+        } catch (err) {
+          console.error("Failed to add product:", err);
+        }
+      }
+      
+      res.json({ count: addedCount });
+    } catch (error) {
+      console.error("Error bulk importing products:", error);
+      res.status(500).json({ error: "Failed to bulk import products" });
     }
   });
 

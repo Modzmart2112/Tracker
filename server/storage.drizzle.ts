@@ -440,4 +440,141 @@ export class DrizzleStorage implements IStorage {
       .where(eq(listingImages.listingId, listingId))
       .orderBy(listingImages.position);
   }
+
+  // Unified Products implementation (using catalog products)
+  async getUnifiedProducts(): Promise<any[]> {
+    const products = await this.db.select().from(catalogProducts);
+    const productsWithLinks = await Promise.all(
+      products.map(async (product) => {
+        const listings = await this.db
+          .select()
+          .from(competitorListings)
+          .where(eq(competitorListings.productId, product.id));
+        
+        const competitorLinks = listings.map(listing => ({
+          id: listing.id,
+          url: listing.url,
+          competitorName: listing.competitorId,
+          extractedTitle: listing.title || undefined,
+          extractedPrice: listing.priceNumeric || undefined,
+          status: listing.isActive ? "success" : "pending",
+          lastScraped: listing.lastSeenAt?.toISOString()
+        }));
+        
+        return {
+          id: product.id,
+          sku: product.id.slice(0, 8).toUpperCase(),
+          name: product.title,
+          ourPrice: 0,
+          competitorLinks,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+      })
+    );
+    return productsWithLinks;
+  }
+
+  async getUnifiedProduct(id: string): Promise<any> {
+    const product = await this.getCatalogProductById(id);
+    if (!product) return undefined;
+    
+    const listings = await this.db
+      .select()
+      .from(competitorListings)
+      .where(eq(competitorListings.productId, id));
+    
+    const competitorLinks = listings.map(listing => ({
+      id: listing.id,
+      url: listing.url,
+      competitorName: listing.competitorId,
+      extractedTitle: listing.title || undefined,
+      extractedPrice: listing.priceNumeric || undefined,
+      status: listing.isActive ? "success" : "pending",
+      lastScraped: listing.lastSeenAt?.toISOString()
+    }));
+    
+    return {
+      id: product.id,
+      sku: product.id.slice(0, 8).toUpperCase(),
+      name: product.title,
+      ourPrice: 0,
+      competitorLinks,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  async createUnifiedProduct(product: any): Promise<any> {
+    const catalogProduct = await this.createCatalogProduct({
+      title: product.name,
+      brandId: null,
+      productTypeId: null
+    });
+    
+    return {
+      id: catalogProduct.id,
+      sku: product.sku || catalogProduct.id.slice(0, 8).toUpperCase(),
+      name: catalogProduct.title,
+      ourPrice: product.ourPrice || 0,
+      competitorLinks: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+  }
+
+  async deleteUnifiedProduct(id: string): Promise<void> {
+    // Delete associated listings first
+    await this.db.delete(competitorListings)
+      .where(eq(competitorListings.productId, id));
+    
+    // Then delete the product
+    await this.db.delete(catalogProducts)
+      .where(eq(catalogProducts.id, id));
+  }
+
+  async addCompetitorLink(productId: string, url: string): Promise<any> {
+    const competitorName = new URL(url).hostname.replace("www.", "").split(".")[0];
+    
+    // Check if competitor exists, if not create it
+    let competitor = await this.db
+      .select()
+      .from(competitors)
+      .where(eq(competitors.siteDomain, new URL(url).hostname))
+      .limit(1);
+    
+    let competitorId: string;
+    if (competitor.length === 0) {
+      const newCompetitor = await this.createCompetitor({
+        name: competitorName,
+        siteDomain: new URL(url).hostname,
+        status: "active",
+        isUs: false
+      });
+      competitorId = newCompetitor.id;
+    } else {
+      competitorId = competitor[0].id;
+    }
+    
+    const listing = await this.createCompetitorListing({
+      productId,
+      competitorId,
+      url,
+      title: null,
+      priceNumeric: null,
+      priceText: null,
+      isInStock: true,
+      isActive: true
+    });
+    
+    return {
+      id: listing.id,
+      productId,
+      url,
+      competitorName,
+      status: "pending",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+  }
 }

@@ -22,7 +22,10 @@ import {
   AlertCircle,
   Clock,
   Search,
-  Filter
+  Filter,
+  Grid,
+  Image as ImageIcon,
+  ShoppingCart
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -32,8 +35,11 @@ interface CompetitorLink {
   competitorName: string;
   extractedTitle?: string;
   extractedPrice?: number;
+  extractedImage?: string;
   lastScraped?: string;
   status: "pending" | "success" | "error";
+  isCategory?: boolean;
+  productCount?: number;
 }
 
 interface Product {
@@ -49,7 +55,11 @@ interface Product {
 export default function ProductsPage() {
   const { toast } = useToast();
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showBulkImportDialog, setShowBulkImportDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [categoryUrl, setCategoryUrl] = useState("");
+  const [isExtractingCategory, setIsExtractingCategory] = useState(false);
+  const [extractedProducts, setExtractedProducts] = useState<any[]>([]);
   const [newProduct, setNewProduct] = useState({
     sku: "",
     name: "",
@@ -104,6 +114,57 @@ export default function ProductsPage() {
         });
       }
     },
+  });
+
+  // Extract products from category page
+  const extractFromCategory = useMutation({
+    mutationFn: (url: string) => apiRequest("POST", "/api/extract-category", { url }),
+    onSuccess: (data: any) => {
+      if (data.products && data.products.length > 0) {
+        setExtractedProducts(data.products);
+        toast({ 
+          title: "Category products extracted",
+          description: `Found ${data.products.length} products from ${data.totalPages || 1} page(s)`
+        });
+      } else {
+        toast({ 
+          title: "No products found",
+          description: "Could not extract products from this category page",
+          variant: "destructive"
+        });
+      }
+      setIsExtractingCategory(false);
+    },
+    onError: () => {
+      toast({ 
+        title: "Extraction failed",
+        description: "Failed to extract products from category page",
+        variant: "destructive"
+      });
+      setIsExtractingCategory(false);
+    }
+  });
+
+  // Bulk import products
+  const bulkImportProducts = useMutation({
+    mutationFn: (products: any[]) => apiRequest("POST", "/api/products-unified/bulk", { products }),
+    onSuccess: (data: any) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/products-unified"] });
+      setShowBulkImportDialog(false);
+      setExtractedProducts([]);
+      setCategoryUrl("");
+      toast({ 
+        title: "Products imported successfully",
+        description: `Added ${data.count} products to your catalog`
+      });
+    },
+    onError: () => {
+      toast({ 
+        title: "Import failed",
+        description: "Failed to import products",
+        variant: "destructive"
+      });
+    }
   });
 
   const resetForm = () => {
@@ -188,13 +249,113 @@ export default function ProductsPage() {
             Track your products and monitor competitor prices in real-time
           </p>
         </div>
-        <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-          <DialogTrigger asChild>
-            <Button className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 shadow-lg">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Product
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Dialog open={showBulkImportDialog} onOpenChange={setShowBulkImportDialog}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="border-red-600 text-red-600 hover:bg-red-50">
+                <Grid className="h-4 w-4 mr-2" />
+                Import Category
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Import Products from Category Page</DialogTitle>
+                <DialogDescription>
+                  Enter a category page URL to extract all products with their titles, prices, and images.
+                  Supports pagination automatically.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="categoryUrl">Category Page URL</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id="categoryUrl"
+                      value={categoryUrl}
+                      onChange={(e) => setCategoryUrl(e.target.value)}
+                      placeholder="https://sydneytools.com.au/category/automotive/car-battery-chargers"
+                      className="flex-1"
+                    />
+                    <Button
+                      onClick={() => {
+                        setIsExtractingCategory(true);
+                        extractFromCategory.mutate(categoryUrl);
+                      }}
+                      disabled={!categoryUrl || isExtractingCategory}
+                    >
+                      {isExtractingCategory ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Extracting...
+                        </>
+                      ) : (
+                        <>
+                          <Search className="h-4 w-4 mr-2" />
+                          Extract
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                {extractedProducts.length > 0 && (
+                  <div className="space-y-4">
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm font-medium">
+                        Found {extractedProducts.length} products
+                      </p>
+                      <Button
+                        size="sm"
+                        onClick={() => bulkImportProducts.mutate(extractedProducts)}
+                        disabled={bulkImportProducts.isPending}
+                      >
+                        {bulkImportProducts.isPending ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Importing...
+                          </>
+                        ) : (
+                          <>
+                            <ShoppingCart className="h-4 w-4 mr-2" />
+                            Import All
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                    
+                    <div className="max-h-96 overflow-y-auto border rounded-lg p-4 space-y-3">
+                      {extractedProducts.map((product, index) => (
+                        <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                          {product.image && (
+                            <img 
+                              src={product.image} 
+                              alt={product.title}
+                              className="w-16 h-16 object-cover rounded"
+                            />
+                          )}
+                          <div className="flex-1">
+                            <p className="font-medium text-sm">{product.title}</p>
+                            <p className="text-sm text-muted-foreground">SKU: {product.sku || `AUTO-${index + 1}`}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-lg">${product.price}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+          
+          <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+            <DialogTrigger asChild>
+              <Button className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 shadow-lg">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Product
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Add New Product</DialogTitle>
@@ -294,6 +455,7 @@ export default function ProductsPage() {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Search Bar */}
@@ -442,10 +604,23 @@ export default function ProductsPage() {
                               >
                                 {link.competitorName || "Extracting..."}
                               </Badge>
+                              {link.isCategory && (
+                                <Badge variant="outline" className="text-xs">
+                                  <Grid className="h-3 w-3 mr-1" />
+                                  Category ({link.productCount || 0})
+                                </Badge>
+                              )}
                               {link.extractedPrice && (
                                 <span className="font-semibold">${link.extractedPrice}</span>
                               )}
                             </div>
+                            {link.extractedImage && (
+                              <img 
+                                src={link.extractedImage} 
+                                alt={link.extractedTitle || "Product"}
+                                className="w-12 h-12 object-cover rounded mt-1"
+                              />
+                            )}
                             <p className="text-xs text-muted-foreground truncate mt-1">
                               {link.url}
                             </p>
