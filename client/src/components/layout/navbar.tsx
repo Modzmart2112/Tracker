@@ -24,7 +24,7 @@ export function Navbar() {
   const [location] = useLocation();
 
   return (
-    <nav className="bg-gray-900 border-b border-gray-800 px-8">
+    <nav className="bg-gray-900 border-b border-gray-800 px-8 py-2">
       <div className="flex items-center justify-between">
         <ul className="flex items-center">
           {navigation.map((item) => {
@@ -35,7 +35,7 @@ export function Navbar() {
               <li key={item.name}>
                 <Link href={item.href} className="relative group">
                   <div className={`
-                    flex items-center space-x-2 px-4 py-3 text-xs font-medium uppercase tracking-wider transition-all duration-200
+                    flex items-center space-x-2 px-4 py-4 text-xs font-medium uppercase tracking-wider transition-all duration-200</div>
                     ${isActive 
                       ? "text-white" 
                       : "text-gray-500 hover:text-gray-300"
