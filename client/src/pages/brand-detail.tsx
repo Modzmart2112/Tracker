@@ -1,6 +1,6 @@
 
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useRoute, useLocation } from "wouter";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
@@ -40,8 +40,9 @@ interface Product {
 }
 
 export default function BrandDetailPage() {
-  const { brandName } = useParams<{ brandName: string }>();
-  const navigate = useNavigate();
+  const [match, params] = useRoute("/brands/:brandName");
+  const [location, setLocation] = useLocation();
+  const brandName = params?.brandName;
   const { toast } = useToast();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -95,7 +96,7 @@ export default function BrandDetailPage() {
             <Button
               variant="outline"
               size="icon"
-              onClick={() => navigate(-1)}
+              onClick={() => setLocation("/")}
               className="border-red-600 text-red-600 hover:bg-red-50"
             >
               <ArrowLeft className="h-4 w-4" />
