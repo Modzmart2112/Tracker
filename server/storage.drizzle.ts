@@ -491,7 +491,6 @@ export class DrizzleStorage implements IStorage {
       .leftJoin(competitors, eq(competitorListings.competitorId, competitors.id));
     
     // Also fetch the latest price snapshots for each listing
-    // Use a subquery to get the latest snapshot for each listing
     const listingPrices = await this.db
       .select({
         listingId: listingSnapshots.listingId,
@@ -501,20 +500,18 @@ export class DrizzleStorage implements IStorage {
         scrapedAt: listingSnapshots.scrapedAt
       })
       .from(listingSnapshots)
-      .orderBy(desc(listingSnapshots.scrapedAt));
+      .distinctOn([listingSnapshots.listingId])
+      .orderBy(listingSnapshots.listingId, desc(listingSnapshots.scrapedAt));
     
-    // Create a map of listing prices (keep only the latest for each listing)
+    // Create a map of listing prices
     const priceMap = new Map();
     for (const snapshot of listingPrices) {
-      // Only set if not already set (since we ordered by scrapedAt DESC, first occurrence is the latest)
-      if (!priceMap.has(snapshot.listingId)) {
-        priceMap.set(snapshot.listingId, {
-          price: snapshot.price,
-          currency: snapshot.currency,
-          inStock: snapshot.inStock,
-          scrapedAt: snapshot.scrapedAt
-        });
-      }
+      priceMap.set(snapshot.listingId, {
+        price: snapshot.price,
+        currency: snapshot.currency,
+        inStock: snapshot.inStock,
+        scrapedAt: snapshot.scrapedAt
+      });
     }
     
     // Group by product ID to combine competitor links

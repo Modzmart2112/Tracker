@@ -170,36 +170,57 @@ export class CompetitorScraper {
 
   async scrapeToolkitDepot(url: string): Promise<ScrapingResult> {
     try {
-      console.log(`Using Playwright scraper for Toolkit Depot: ${url}`);
+      console.log(`Scraping Toolkit Depot: ${url}`);
       
-      // Use the dedicated Playwright scraper for TKD to handle sale prices
-      const { playwrightScraper } = await import('./playwright-scraper');
-      const result = await playwrightScraper.scrapeToolkitDepot(url);
+      let allProducts: CompetitorProduct[] = [];
+      let currentPage = 1;
+      const maxPages = 3; // Limit to 3 pages since we expect ~22 products total
       
-      // Transform the result to match CompetitorProduct format
-      const transformedProducts: CompetitorProduct[] = result.products.map(p => ({
-        title: p.title,
-        price: p.price,
-        regularPrice: p.originalPrice || p.price,
-        salePrice: p.isOnSale ? p.price : undefined,
-        image: p.image,
-        url: p.url,
-        brand: p.brand,
-        model: p.model,
-        category: p.category,
-        sku: p.sku,
-        competitorName: result.competitorName
-      }));
+      const competitorName = this.extractCompetitorName(url);
+      const categoryName = this.extractCategoryFromUrl(url);
       
-      console.log(`Extracted ${transformedProducts.length} products from Toolkit Depot with sale prices`);
-      
+      while (currentPage <= maxPages) {
+        const pageUrl = currentPage === 1 ? url : `${url.split('?')[0]}?page=${currentPage}`;
+        console.log(`Scraping page ${currentPage}: ${pageUrl}`);
+        
+        const response = await axios.get(pageUrl, {
+          headers: { 'User-Agent': this.userAgent }
+        });
+
+        const $ = cheerio.load(response.data);
+        
+        const pageProducts = await this.extractProductsFromPage($, url, competitorName, categoryName, allProducts.length);
+        
+        if (pageProducts.length === 0) {
+          console.log(`No products found on page ${currentPage}, stopping pagination`);
+          break;
+        }
+        
+        allProducts.push(...pageProducts);
+        console.log(`Found ${pageProducts.length} products on page ${currentPage}, total: ${allProducts.length}`);
+        
+        // Check if there's a next page - look for rel="next" link or pagination elements
+        const hasNextPage = $('link[rel="next"], .pagination .next, .pagination a[rel="next"], .next-page, a[aria-label="Next"]').length > 0;
+        if (!hasNextPage) {
+          console.log('No next page found, stopping pagination');
+          break;
+        }
+        
+        currentPage++;
+        
+        // Add a small delay between requests to be respectful
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      console.log(`Extracted ${allProducts.length} total products from ${competitorName}`);
+
       return {
-        products: transformedProducts,
-        totalProducts: transformedProducts.length,
-        categoryName: result.categoryName,
-        competitorName: result.competitorName,
-        sourceUrl: result.sourceUrl,
-        extractedAt: result.extractedAt
+        products: allProducts,
+        totalProducts: allProducts.length,
+        categoryName,
+        competitorName: competitorName,
+        sourceUrl: url,
+        extractedAt: new Date().toISOString()
       };
 
     } catch (error) {
@@ -236,8 +257,6 @@ export class CompetitorScraper {
       if (productElements.length > 0) {
         console.log(`Found ${productElements.length} products with selector: ${selector}`);
         
-        // Collect raw product data first
-        const rawProducts: any[] = [];
         productElements.each((index: number, element: any) => {
           const $product = $(element);
           
@@ -303,54 +322,39 @@ export class CompetitorScraper {
             const brand = this.extractBrand(title);
             const basicModel = this.extractModel(title, brand);
             
-            rawProducts.push({
-              title,
-              price,
-              priceData,
-              image,
+            // Use OpenAI for better model extraction if available
+            let enhancedModel = basicModel;
+            try {
+              if (process.env.OPENAI_API_KEY) {
+                enhancedModel = await extractModelNumberWithAI(title);
+                if (enhancedModel === 'N/A' || !enhancedModel) {
+                  enhancedModel = basicModel; // Fallback to basic extraction
+                }
+              }
+            } catch (error) {
+              console.warn('AI model extraction failed, using basic extraction:', error);
+              enhancedModel = basicModel;
+            }
+
+            const priceData = this.extractSalePrice($product);
+            const finalPrice = priceData.salePrice || price || 0;
+
+            products.push({
+              title: title,
+              price: finalPrice,
+              regularPrice: priceData.regularPrice,
+              salePrice: priceData.salePrice,
+              image: image,
               url: productUrl,
-              brand,
-              basicModel,
-              categoryName,
-              competitorName
+              brand: brand,
+              model: enhancedModel,
+              category: categoryName,
+              sku: `${competitorName.toUpperCase()}-${String(startIndex + products.length + 1).padStart(3, '0')}`,
+              competitorName: competitorName
             });
             foundProducts = true;
           }
         });
-        
-        // Now process raw products asynchronously with AI model extraction
-        for (const rawProduct of rawProducts) {
-          let enhancedModel = rawProduct.basicModel;
-          
-          // Use OpenAI for better model extraction if available
-          try {
-            if (process.env.OPENAI_API_KEY) {
-              enhancedModel = await extractModelNumberWithAI(rawProduct.title);
-              if (enhancedModel === 'N/A' || !enhancedModel) {
-                enhancedModel = rawProduct.basicModel; // Fallback to basic extraction
-              }
-            }
-          } catch (error) {
-            console.warn('AI model extraction failed, using basic extraction:', error);
-            enhancedModel = rawProduct.basicModel;
-          }
-
-          const finalPrice = rawProduct.priceData.salePrice || rawProduct.price || 0;
-
-          products.push({
-            title: rawProduct.title,
-            price: finalPrice,
-            regularPrice: rawProduct.priceData.regularPrice,
-            salePrice: rawProduct.priceData.salePrice,
-            image: rawProduct.image,
-            url: rawProduct.url,
-            brand: rawProduct.brand,
-            model: enhancedModel,
-            category: rawProduct.categoryName,
-            sku: `${rawProduct.competitorName.toUpperCase()}-${String(startIndex + products.length + 1).padStart(3, '0')}`,
-            competitorName: rawProduct.competitorName
-          });
-        }
         
         if (foundProducts) break;
       }
