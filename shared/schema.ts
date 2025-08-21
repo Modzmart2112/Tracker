@@ -120,13 +120,15 @@ export const brands = pgTable("brands", {
 export const catalogProducts = pgTable("catalog_products", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
-  brandId: varchar("brand_id").references(() => brands.id).notNull(),
-  categoryId: varchar("category_id").references(() => categories.id).notNull(),
-  productTypeId: varchar("product_type_id").references(() => productTypes.id).notNull(),
-  ourSku: text("our_sku").notNull(),
-  quality: qualityTierEnum("quality").notNull(),
+  brandId: varchar("brand_id").references(() => brands.id),
+  categoryId: varchar("category_id").references(() => categories.id),
+  productTypeId: varchar("product_type_id").references(() => productTypes.id),
+  ourSku: text("our_sku"),
+  quality: qualityTierEnum("quality"),
   notes: text("notes"),
   targetPrice: decimal("target_price", { precision: 12, scale: 2 }),
+  price: decimal("price", { precision: 10, scale: 2 }),
+  imageUrl: text("image_url"),
   createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 
