@@ -126,37 +126,23 @@ export class PlaywrightScraper {
       
       console.log('Page loaded, extracting product data...');
       
-      // Take a screenshot for debugging
-      await page.screenshot({ path: 'debug-sydney-tools.png', fullPage: false });
-      console.log('Screenshot saved for debugging');
-      
-      // Log the page structure to understand how images are organized
-      const pageInfo = await page.evaluate(() => {
-        const images = Array.from(document.querySelectorAll('img'));
-        const productLinks = Array.from(document.querySelectorAll("a[href^='/product/']"));
-        
-        return {
-          totalImages: images.length,
-          totalProductLinks: productLinks.length,
-          imageClassNames: images.slice(0, 5).map(img => img.className),
-          imageSources: images.slice(0, 5).map(img => img.src),
-          sampleHTML: document.querySelector("a[href^='/product/']")?.parentElement?.innerHTML?.substring(0, 500)
-        };
-      });
-      
-      console.log('Page info:', pageInfo);
+
       
       // Extract products using improved approach
       await page.waitForSelector("a[href^='/product/'], img.img-fluid", { timeout: 30000 }).catch(() => {
         console.log('No product links found, will try alternative extraction');
       });
 
-      let products = await page.$$eval("a[href^='/product/']", (anchors) => {
+      // First, let's get all product containers instead of just anchors
+      let products = await page.evaluate(() => {
         const items: any[] = [];
         const seen = new Set<string>();
+        
+        // Find all product links first
+        const productLinks = Array.from(document.querySelectorAll("a[href^='/product/']")) as HTMLAnchorElement[];
 
-        for (let i = 0; i < anchors.length; i++) {
-          const a = anchors[i] as HTMLAnchorElement;
+        for (let i = 0; i < productLinks.length; i++) {
+          const a = productLinks[i];
           try {
             const href = new URL(a.getAttribute('href')!, location.origin).toString();
             if (seen.has(href)) continue;
@@ -185,13 +171,58 @@ export class PlaywrightScraper {
             
             if (!title) continue;
 
-            // Look for price in the parent container
-            const container = a.parentElement;
+            // Look for price in broader container hierarchy
             let price = null;
-            if (container) {
-              const text = container.textContent || '';
-              const priceMatch = text.match(/\$\s?\d[\d,]*\.?\d{0,2}/);
-              price = priceMatch ? priceMatch[0] : null;
+            let priceDebug = 'No price found';
+            
+            // Start with immediate parent and work outward
+            let searchContainer = a.parentElement;
+            let level = 1;
+            
+            while (searchContainer && !price && level <= 4) {
+              // Look for sale price in green first
+              const greenPriceEl = searchContainer.querySelector('.price[style*="green"]') || 
+                                   searchContainer.querySelector('[style*="color: green"]') ||
+                                   searchContainer.querySelector('[style*="color:green"]');
+              
+              if (greenPriceEl) {
+                const greenText = greenPriceEl.textContent || '';
+                const greenMatch = greenText.replace(/\s+/g, '').match(/(\d+\.?\d*)/);
+                if (greenMatch) {
+                  price = `$${greenMatch[1]}`;
+                  priceDebug = `Green price found at level ${level}: ${price}`;
+                  break;
+                }
+              }
+              
+              // Look for any price element
+              const priceEl = searchContainer.querySelector('.price');
+              if (priceEl) {
+                const priceText = priceEl.textContent || '';
+                const priceMatch = priceText.match(/\$?\s?(\d+\.?\d*)/);
+                if (priceMatch) {
+                  price = `$${priceMatch[1]}`;
+                  priceDebug = `Regular price found at level ${level}: ${price}`;
+                  break;
+                }
+              }
+              
+              // Look for any dollar amount in text
+              const allText = searchContainer.textContent || '';
+              const dollarMatches = allText.match(/\$\s?\d[\d,]*\.?\d{0,2}/g);
+              if (dollarMatches && dollarMatches.length > 0) {
+                price = dollarMatches[dollarMatches.length - 1];
+                priceDebug = `Text price found at level ${level}: ${price}`;
+                break;
+              }
+              
+              searchContainer = searchContainer.parentElement;
+              level++;
+            }
+            
+            // Debug first few items
+            if (i < 2) {
+              console.log(`Product ${i}: ${title.substring(0, 30)} - ${priceDebug}`);
             }
 
 
