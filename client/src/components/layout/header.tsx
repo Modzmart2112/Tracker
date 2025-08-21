@@ -79,18 +79,20 @@ export function Header({
             
             <div className="flex items-center space-x-6">
               {/* Status indicators */}
-              <div className="flex items-center space-x-8 mr-8 h-8">
-                <div className="flex items-center space-x-2 h-full">
+              <div className="flex items-center bg-black/30 backdrop-blur-sm border border-gray-800 rounded-lg px-4 py-2 space-x-6">
+                <div className="flex items-center space-x-2">
                   <div className="w-2 h-2 bg-[#CB0000] rounded-full animate-pulse" />
-                  <span className="text-xs text-gray-400 font-medium">System Online</span>
+                  <span className="text-xs text-gray-300 font-medium">Online</span>
                 </div>
-                <div className="flex items-center space-x-2 h-full">
+                <div className="h-4 w-px bg-gray-700" />
+                <div className="flex items-center space-x-2">
                   <Shield size={14} className="text-[#CB0000]" />
-                  <span className="text-xs text-gray-400 font-medium">Secure</span>
+                  <span className="text-xs text-gray-300 font-medium">Secure</span>
                 </div>
-                <div className="flex items-center space-x-2 h-full">
+                <div className="h-4 w-px bg-gray-700" />
+                <div className="flex items-center space-x-2">
                   <Globe2 size={14} className="text-gray-400" />
-                  <span className="text-xs text-gray-400 font-medium">Global Coverage</span>
+                  <span className="text-xs text-gray-300 font-medium">Global</span>
                 </div>
               </div>
               
