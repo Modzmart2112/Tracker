@@ -1389,7 +1389,7 @@ export default function ProductsPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-20 bg-white/90 border-gray-300 hover:border-red-500"
+                        className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity z-20 bg-white/90 border-gray-300 hover:border-red-500"
                         onClick={(e) => {
                           e.stopPropagation();
                           openCardEditor(brand, 'brand');
@@ -1458,7 +1458,7 @@ export default function ProductsPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-20 bg-white/90 border-gray-300 hover:border-red-500"
+                        className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity z-20 bg-white/90 border-gray-300 hover:border-red-500"
                         onClick={(e) => {
                           e.stopPropagation();
                           openCardEditor(category, 'category');
@@ -1529,7 +1529,7 @@ export default function ProductsPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-20 bg-white/90 border-gray-300 hover:border-red-500"
+                        className="absolute top-2 left-2 opacity-0 group-hover:opacity-100 transition-opacity z-20 bg-white/90 border-gray-300 hover:border-red-500"
                         onClick={(e) => {
                           e.stopPropagation();
                           openCardEditor(competitor, 'competitor');
