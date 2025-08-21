@@ -1385,6 +1385,19 @@ export default function ProductsPage() {
                         </Badge>
                       </div>
                       
+                      {/* Edit Button */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-20 bg-white/90 border-gray-300 hover:border-red-500"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openCardEditor(brand, 'brand');
+                        }}
+                      >
+                        <Settings className="h-3 w-3" />
+                      </Button>
+                      
                       <CardContent className="p-4 h-full flex flex-col items-center justify-center">
                         {customization.logoUrl ? (
                           <div className="w-full h-full flex items-center justify-center">
@@ -1605,9 +1618,12 @@ export default function ProductsPage() {
                     maxNumberOfFiles={1}
                     maxFileSize={5242880} // 5MB
                     onGetUploadParameters={async () => {
-                      const response = await apiRequest('/api/objects/upload', {
-                        method: 'POST'
-                      });
+                      const response = await fetch('/api/objects/upload', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json'
+                        }
+                      }).then(res => res.json());
                       return {
                         method: 'PUT' as const,
                         url: response.uploadURL
@@ -1616,10 +1632,13 @@ export default function ProductsPage() {
                     onComplete={async (result) => {
                       if (result.successful?.[0]) {
                         const uploadURL = result.successful[0].uploadURL;
-                        const response = await apiRequest('/api/card-images', {
+                        const response = await fetch('/api/card-images', {
                           method: 'PUT',
+                          headers: {
+                            'Content-Type': 'application/json'
+                          },
                           body: JSON.stringify({ imageURL: uploadURL })
-                        });
+                        }).then(res => res.json());
                         setEditingCard({ ...editingCard, logoUrl: response.objectPath });
                         toast({
                           title: "Image uploaded",
