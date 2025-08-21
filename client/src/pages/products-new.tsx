@@ -289,16 +289,24 @@ export default function ProductsPage() {
     mutationFn: (data: { url: string }) => 
       apiRequest("POST", "/api/import-competitor", data),
     onSuccess: (data: any) => {
-      if (data.success && data.products.length > 0) {
+      console.log("Competitor import response:", data);
+      if (data.success && data.products && data.products.length > 0) {
         setExtractedProducts(data.products);
         setShowBulkImportDialog(true);
         toast({ 
           title: "Competitor Import Successful",
-          description: `Found ${data.products.length} products from ${data.competitorName}. Review and import them.`
+          description: `Found ${data.products.length} products from ${data.competitorName || 'competitor'}. Review and import them.`
+        });
+      } else {
+        toast({ 
+          title: "No products found",
+          description: data.message || "Could not extract products from this competitor site",
+          variant: "destructive"
         });
       }
     },
     onError: (error: any) => {
+      console.error("Competitor import error:", error);
       toast({ 
         title: "Import failed",
         description: error.message || "Failed to import competitor products",
@@ -567,44 +575,50 @@ export default function ProductsPage() {
             </DialogTrigger>
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Import Products from Category Page</DialogTitle>
+                <DialogTitle>
+                  {extractedProducts.length > 0 ? "Review Extracted Products" : "Import Products from Category Page"}
+                </DialogTitle>
                 <DialogDescription>
-                  Enter a category page URL to extract all products with their titles, prices, and images.
-                  Supports pagination automatically.
+                  {extractedProducts.length > 0 
+                    ? "Review the extracted products below and import them to your catalog."
+                    : "Enter a category page URL to extract all products with their titles, prices, and images. Supports pagination automatically."
+                  }
                 </DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
-                <div>
-                  <Label htmlFor="categoryUrl">Category Page URL</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      id="categoryUrl"
-                      value={categoryUrl}
-                      onChange={(e) => setCategoryUrl(e.target.value)}
-                      placeholder="https://sydneytools.com.au/category/automotive/car-battery-chargers"
-                      className="flex-1"
-                    />
-                    <Button
-                      onClick={() => {
-                        setIsExtractingCategory(true);
-                        extractFromCategory.mutate(categoryUrl);
-                      }}
-                      disabled={!categoryUrl || isExtractingCategory}
-                    >
-                      {isExtractingCategory ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Extracting...
-                        </>
-                      ) : (
-                        <>
-                          <Search className="h-4 w-4 mr-2" />
-                          Extract
-                        </>
-                      )}
-                    </Button>
+                {extractedProducts.length === 0 && (
+                  <div>
+                    <Label htmlFor="categoryUrl">Category Page URL</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="categoryUrl"
+                        value={categoryUrl}
+                        onChange={(e) => setCategoryUrl(e.target.value)}
+                        placeholder="https://sydneytools.com.au/category/automotive/car-battery-chargers"
+                        className="flex-1"
+                      />
+                      <Button
+                        onClick={() => {
+                          setIsExtractingCategory(true);
+                          extractFromCategory.mutate(categoryUrl);
+                        }}
+                        disabled={!categoryUrl || isExtractingCategory}
+                      >
+                        {isExtractingCategory ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Extracting...
+                          </>
+                        ) : (
+                          <>
+                            <Search className="h-4 w-4 mr-2" />
+                            Extract
+                          </>
+                        )}
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {extractedProducts.length > 0 && (
                   <div className="space-y-4">
