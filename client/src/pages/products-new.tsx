@@ -919,22 +919,55 @@ export default function ProductsPage() {
 
         {/* Tabs for different views */}
         <Tabs defaultValue="all" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 bg-white dark:bg-slate-900 p-1 rounded-xl shadow-lg">
-            <TabsTrigger value="all" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
-              <Package2 className="h-4 w-4 mr-2" />
-              All Products
+          <TabsList className="grid w-full grid-cols-4 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 p-2 rounded-2xl shadow-2xl border border-slate-700 dark:border-slate-600 backdrop-blur-sm">
+            <TabsTrigger 
+              value="all" 
+              className="relative overflow-hidden rounded-xl px-6 py-4 transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-red-600 data-[state=active]:via-red-700 data-[state=active]:to-red-800 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-red-500/30 data-[state=inactive]:text-slate-300 data-[state=inactive]:hover:text-white data-[state=inactive]:hover:bg-slate-700/50 group"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-red-500/10 to-red-600/10 opacity-0 group-data-[state=active]:opacity-100 transition-opacity duration-300" />
+              <div className="relative flex items-center justify-center font-semibold text-sm">
+                <Package2 className="h-5 w-5 mr-2 group-data-[state=active]:animate-pulse" />
+                All Products
+              </div>
             </TabsTrigger>
-            <TabsTrigger value="brands" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
-              <Tag className="h-4 w-4 mr-2" />
-              Brands ({uniqueBrands.length})
+            <TabsTrigger 
+              value="brands" 
+              className="relative overflow-hidden rounded-xl px-6 py-4 transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:via-blue-700 data-[state=active]:to-blue-800 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-blue-500/30 data-[state=inactive]:text-slate-300 data-[state=inactive]:hover:text-white data-[state=inactive]:hover:bg-slate-700/50 group"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-blue-600/10 opacity-0 group-data-[state=active]:opacity-100 transition-opacity duration-300" />
+              <div className="relative flex items-center justify-center font-semibold text-sm">
+                <Tag className="h-5 w-5 mr-2 group-data-[state=active]:animate-pulse" />
+                <span>Brands</span>
+                <div className="ml-2 px-2 py-1 bg-white/20 rounded-full text-xs font-bold">
+                  {uniqueBrands.length}
+                </div>
+              </div>
             </TabsTrigger>
-            <TabsTrigger value="categories" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
-              <Grid className="h-4 w-4 mr-2" />
-              Categories ({uniqueCategories.length})
+            <TabsTrigger 
+              value="categories" 
+              className="relative overflow-hidden rounded-xl px-6 py-4 transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-600 data-[state=active]:via-emerald-700 data-[state=active]:to-emerald-800 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-emerald-500/30 data-[state=inactive]:text-slate-300 data-[state=inactive]:hover:text-white data-[state=inactive]:hover:bg-slate-700/50 group"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-emerald-600/10 opacity-0 group-data-[state=active]:opacity-100 transition-opacity duration-300" />
+              <div className="relative flex items-center justify-center font-semibold text-sm">
+                <Grid className="h-5 w-5 mr-2 group-data-[state=active]:animate-pulse" />
+                <span>Categories</span>
+                <div className="ml-2 px-2 py-1 bg-white/20 rounded-full text-xs font-bold">
+                  {uniqueCategories.length}
+                </div>
+              </div>
             </TabsTrigger>
-            <TabsTrigger value="competitors" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
-              <Store className="h-4 w-4 mr-2" />
-              Competitors ({competitors.length})
+            <TabsTrigger 
+              value="competitors" 
+              className="relative overflow-hidden rounded-xl px-6 py-4 transition-all duration-300 data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:via-purple-700 data-[state=active]:to-purple-800 data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-purple-500/30 data-[state=inactive]:text-slate-300 data-[state=inactive]:hover:text-white data-[state=inactive]:hover:bg-slate-700/50 group"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-500/10 to-purple-600/10 opacity-0 group-data-[state=active]:opacity-100 transition-opacity duration-300" />
+              <div className="relative flex items-center justify-center font-semibold text-sm">
+                <Store className="h-5 w-5 mr-2 group-data-[state=active]:animate-pulse" />
+                <span>Competitors</span>
+                <div className="ml-2 px-2 py-1 bg-white/20 rounded-full text-xs font-bold">
+                  {competitors.length}
+                </div>
+              </div>
             </TabsTrigger>
           </TabsList>
 
