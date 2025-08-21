@@ -995,15 +995,36 @@ export default function ProductsPage() {
                         {product.name}
                       </h3>
                       
+                      {/* Sale Badge */}
+                      {product.originalPrice && product.originalPrice > (product.price || product.ourPrice || 0) && (
+                        <div className="mb-2">
+                          <div 
+                            className="inline-block px-3 py-1 text-white text-sm font-bold rounded-sm"
+                            style={{ backgroundColor: '#008000' }}
+                          >
+                            {Math.round(((product.originalPrice - (product.price || product.ourPrice || 0)) / product.originalPrice) * 100)}% PRICE DROP
+                          </div>
+                        </div>
+                      )}
+
                       {/* Price and Expand Button */}
                       <div className="mt-3 flex items-center justify-between">
                         <div className="flex items-baseline gap-2">
-                          <span className="text-red-600 font-bold text-2xl">
-                            ${product.price || product.ourPrice || '0'}
-                          </span>
-                          {product.originalPrice && product.originalPrice > (product.price || product.ourPrice || 0) && (
-                            <span className="text-xs text-gray-500 line-through">
-                              ${product.originalPrice}
+                          {product.originalPrice && product.originalPrice > (product.price || product.ourPrice || 0) ? (
+                            <>
+                              {/* Sale Price in Green */}
+                              <span className="font-bold text-2xl" style={{ color: '#008000' }}>
+                                ${product.price || product.ourPrice || '0'}
+                              </span>
+                              {/* Original Price Strikethrough */}
+                              <span className="text-xs text-gray-500 line-through">
+                                ${product.originalPrice}
+                              </span>
+                            </>
+                          ) : (
+                            /* Regular Price in Red */
+                            <span className="text-red-600 font-bold text-2xl">
+                              ${product.price || product.ourPrice || '0'}
                             </span>
                           )}
                         </div>
