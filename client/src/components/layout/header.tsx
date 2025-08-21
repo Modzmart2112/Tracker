@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
-import { Download, RefreshCw, ChartLine, Zap, Shield, Globe2 } from "lucide-react";
+import { Download, RefreshCw, Zap, Shield, Globe2 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { api } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import logoImage from "@assets/logo_flat_1755739978297.png";
 
 interface HeaderProps {
   title: string;
@@ -68,21 +69,12 @@ export function Header({
         <div className="relative px-8 py-8">
           {/* Top row with branding and actions */}
           <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-[#CB0000] to-red-700 rounded-lg blur-md opacity-50 animate-pulse" />
-                <div className="relative w-12 h-12 bg-gradient-to-br from-[#CB0000] to-red-800 rounded-lg flex items-center justify-center shadow-lg">
-                  <ChartLine className="text-white" size={24} />
-                </div>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-300 bg-clip-text text-transparent">
-                  CompetitorScope
-                </h1>
-                <p className="text-xs text-[#CB0000] font-medium tracking-wider uppercase">
-                  Competitive Intelligence Platform
-                </p>
-              </div>
+            <div className="flex items-center">
+              <img 
+                src={logoImage} 
+                alt="Sydney Tools" 
+                className="h-12 w-auto filter drop-shadow-lg"
+              />
             </div>
             
             <div className="flex items-center space-x-6">
