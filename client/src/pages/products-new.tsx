@@ -786,14 +786,31 @@ export default function ProductsPage() {
                 >
                   <Card className="bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-xl hover:shadow-2xl transition-all duration-300 overflow-hidden group">
                     <div className="absolute inset-0 bg-gradient-to-br from-red-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    
+                    {/* Product Image */}
+                    {product.image && (
+                      <div className="h-48 w-full bg-gray-100 dark:bg-slate-800 overflow-hidden">
+                        <img 
+                          src={product.image} 
+                          alt={product.name}
+                          className="w-full h-full object-contain p-4 group-hover:scale-110 transition-transform duration-300"
+                        />
+                      </div>
+                    )}
+                    
                     <CardHeader className="relative">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
-                          <CardTitle className="text-xl font-bold text-slate-900 dark:text-white">{product.name}</CardTitle>
-                          <CardDescription className="mt-2">
+                          <CardTitle className="text-xl font-bold text-slate-900 dark:text-white line-clamp-2">{product.name}</CardTitle>
+                          <CardDescription className="mt-2 flex items-center gap-2">
                             <Badge variant="outline" className="text-xs border-slate-300 dark:border-slate-600">
                               SKU: {product.sku}
                             </Badge>
+                            {product.brand && product.brand !== 'Unknown' && (
+                              <Badge variant="secondary" className="text-xs">
+                                {product.brand}
+                              </Badge>
+                            )}
                           </CardDescription>
                         </div>
                         <div className="flex gap-1">
@@ -820,28 +837,30 @@ export default function ProductsPage() {
                       </div>
 
                       {/* Modern Price Comparison */}
-                      {product.ourPrice && (
-                        <div className="mt-4 p-4 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 rounded-xl border border-slate-200 dark:border-slate-600">
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Our Price</p>
-                              <p className="text-2xl font-bold text-slate-900 dark:text-white">${product.ourPrice}</p>
-                            </div>
-                            {lowestPrice && (
-                              <div className="text-right">
-                                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Lowest Competitor</p>
-                                <p className="text-2xl font-bold text-red-600 dark:text-red-400">${lowestPrice}</p>
-                              </div>
-                            )}
+                      <div className="mt-4 p-4 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-700 rounded-xl border border-slate-200 dark:border-slate-600">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                              {product.ourPrice ? 'Our Price' : 'Market Price'}
+                            </p>
+                            <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                              ${product.price || product.ourPrice || '0'}
+                            </p>
                           </div>
-                          {priceStatus && (
-                            <div className={`flex items-center gap-2 mt-3 px-3 py-2 rounded-lg ${priceStatus.color} bg-white/50 dark:bg-slate-900/50`}>
-                              <priceStatus.icon className="h-4 w-4" />
-                              <span className="text-sm font-semibold">{priceStatus.label}</span>
+                          {lowestPrice && (
+                            <div className="text-right">
+                              <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Lowest Competitor</p>
+                              <p className="text-2xl font-bold text-red-600 dark:text-red-400">${lowestPrice}</p>
                             </div>
                           )}
                         </div>
-                      )}
+                        {priceStatus && (
+                          <div className={`flex items-center gap-2 mt-3 px-3 py-2 rounded-lg ${priceStatus.color} bg-white/50 dark:bg-slate-900/50`}>
+                            <priceStatus.icon className="h-4 w-4" />
+                            <span className="text-sm font-semibold">{priceStatus.label}</span>
+                          </div>
+                        )}
+                      </div>
                     </CardHeader>
 
                     <CardContent className="relative">

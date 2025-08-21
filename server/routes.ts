@@ -801,6 +801,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               sku: product.sku,
               name: product.title,
               ourPrice: product.isOnSale ? product.originalPrice : product.price,
+              price: product.price,
+              image: product.image,
               brand: brand,
               category: category
             });

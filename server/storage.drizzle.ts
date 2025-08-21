@@ -465,7 +465,9 @@ export class DrizzleStorage implements IStorage {
           id: product.id,
           sku: product.ourSku || product.id.slice(0, 8).toUpperCase(),
           name: product.name || 'Unnamed Product',
-          ourPrice: product.targetPrice || 0,
+          ourPrice: product.targetPrice || product.price || 0,
+          price: product.price || 0,
+          image: product.imageUrl || null,
           brand: product.brandId || 'Unknown',
           category: product.categoryId || 'Uncategorized',
           competitorLinks,
@@ -517,17 +519,28 @@ export class DrizzleStorage implements IStorage {
     const productName = product.name || product.title || 'Unnamed Product';
     console.log('Product name resolved to:', productName);
     
-    const catalogProduct = await this.createCatalogProduct({
+    // Save the product with price and image
+    const result = await this.db.insert(catalogProducts).values({
       name: productName,
       brandId: null,
-      productTypeId: null
-    });
+      categoryId: null,
+      productTypeId: null,
+      ourSku: product.sku || null,
+      quality: null,
+      targetPrice: product.ourPrice ? product.ourPrice.toString() : null,
+      price: product.price ? product.price.toString() : null,
+      imageUrl: product.image || null
+    }).returning();
+    
+    const catalogProduct = result[0];
     
     return {
       id: catalogProduct.id,
       sku: product.sku || catalogProduct.id.slice(0, 8).toUpperCase(),
       name: catalogProduct.name || productName,
-      ourPrice: product.ourPrice || 0,
+      ourPrice: product.ourPrice || product.price || 0,
+      price: product.price || 0,
+      image: product.image || null,
       brand: product.brand || 'Unknown',
       category: product.category || 'Uncategorized',
       competitorLinks: [],
