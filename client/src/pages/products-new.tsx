@@ -975,7 +975,19 @@ export default function ProductsPage() {
                     </div>
                     
                     {/* Product Image */}
-                    <div className="h-48 w-full bg-white p-4 flex items-center justify-center">
+                    <div className="h-48 w-full bg-white p-4 flex items-center justify-center relative">
+                      {/* Floating Sale Badge on Image */}
+                      {product.originalPrice && product.originalPrice > (product.price || product.ourPrice || 0) && (
+                        <div className="absolute top-2 right-2 z-10">
+                          <div 
+                            className="px-2 py-1 text-white text-xs font-bold rounded-sm shadow-lg"
+                            style={{ backgroundColor: '#008000' }}
+                          >
+                            {Math.round(((product.originalPrice - (product.price || product.ourPrice || 0)) / product.originalPrice) * 100)}% PRICE DROP
+                          </div>
+                        </div>
+                      )}
+                      
                       {product.image ? (
                         <img 
                           src={product.image} 
@@ -995,18 +1007,6 @@ export default function ProductsPage() {
                         {product.name}
                       </h3>
                       
-                      {/* Sale Badge */}
-                      {product.originalPrice && product.originalPrice > (product.price || product.ourPrice || 0) && (
-                        <div className="mb-2">
-                          <div 
-                            className="inline-block px-3 py-1 text-white text-sm font-bold rounded-sm"
-                            style={{ backgroundColor: '#008000' }}
-                          >
-                            {Math.round(((product.originalPrice - (product.price || product.ourPrice || 0)) / product.originalPrice) * 100)}% PRICE DROP
-                          </div>
-                        </div>
-                      )}
-
                       {/* Price and Expand Button */}
                       <div className="mt-3 flex items-center justify-between">
                         <div className="flex items-baseline gap-2">
