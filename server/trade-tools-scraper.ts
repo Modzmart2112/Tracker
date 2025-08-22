@@ -183,15 +183,25 @@ export const tradeToolsScraper = {
       console.log(`Extracted ${products.length} products`);
       
       // Clean up and format the products
-      const formattedProducts = products.map(p => ({
-        title: p.title,
-        price: p.price,
-        originalPrice: p.originalPrice,
-        url: p.url,
-        image: p.image,
-        modelNumber: p.code,
-        inStock: true
-      })).filter(p => p.title && p.title.length > 0);
+      const formattedProducts = products.map(p => {
+        // Parse price to remove $ and convert to number
+        const parsePrice = (priceStr: string) => {
+          if (!priceStr) return null;
+          const cleaned = priceStr.replace(/[^0-9.]/g, '');
+          const num = parseFloat(cleaned);
+          return isNaN(num) ? null : num;
+        };
+        
+        return {
+          title: p.title,
+          price: parsePrice(p.price),
+          originalPrice: parsePrice(p.originalPrice),
+          url: p.url,
+          image: p.image,
+          modelNumber: p.code,
+          inStock: true
+        };
+      }).filter(p => p.title && p.title.length > 0);
       
       await browser.close();
       
