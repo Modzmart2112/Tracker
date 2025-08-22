@@ -85,6 +85,7 @@ export interface IStorage {
   createCatalogProduct(product: InsertCatalogProduct): Promise<CatalogProduct>;
   listCatalogProducts(): Promise<CatalogProduct[]>;
   getCatalogProductById(id: string): Promise<CatalogProduct | undefined>;
+  updateCatalogProductSuppliers(id: string, suppliers: string[]): Promise<void>;
 
   // Competitor Listings
   createCompetitorListing(listing: InsertCompetitorListing): Promise<CompetitorListing>;
@@ -546,6 +547,14 @@ export class MemStorage implements IStorage {
 
   async getCatalogProductById(id: string): Promise<CatalogProduct | undefined> {
     return this.catalogProducts.get(id);
+  }
+
+  async updateCatalogProductSuppliers(id: string, suppliers: string[]): Promise<void> {
+    const product = this.catalogProducts.get(id);
+    if (product) {
+      product.suppliers = suppliers;
+      this.catalogProducts.set(id, product);
+    }
   }
 
   // Competitor Listing methods

@@ -76,7 +76,9 @@ interface Product {
   brand?: string;
   category?: string;
   productPageUrl?: string;
+  suppliers?: string[];
   competitorLinks: CompetitorLink[];
+  competitorListings?: any[];
   createdAt: string;
   updatedAt: string;
 }
@@ -1677,10 +1679,9 @@ export default function ProductsPage() {
                 )).sort();
                 
                 // Check if Sydney Tools stocks this brand 
-                // Sydney Tools stocks a product if it has a productPageUrl (our product page) 
-                // OR has an ourPrice set (our pricing)
+                // Sydney Tools stocks a product if it has 'Sydney Tools' in its suppliers array
                 const sydneyToolsProducts = brandProducts.filter(p => 
-                  p.productPageUrl || (p.ourPrice !== null && p.ourPrice !== undefined)
+                  p.suppliers && p.suppliers.includes('Sydney Tools')
                 );
                 const sydneyToolsStocksIt = sydneyToolsProducts.length > 0;
                 

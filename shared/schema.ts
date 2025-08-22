@@ -131,6 +131,7 @@ export const catalogProducts = pgTable("catalog_products", {
   price: decimal("price", { precision: 10, scale: 2 }),
   imageUrl: text("image_url"),
   productPageUrl: text("product_page_url"),
+  suppliers: text("suppliers").array(), // Array of supplier names (e.g., ["Sydney Tools", "Total Tools"])
   createdAt: timestamp("created_at").notNull().default(sql`CURRENT_TIMESTAMP`),
 });
 

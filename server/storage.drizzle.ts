@@ -411,6 +411,15 @@ export class DrizzleStorage implements IStorage {
       .where(eq(catalogProducts.id, id));
   }
 
+  async updateCatalogProductSuppliers(id: string, suppliers: string[]): Promise<void> {
+    await this.db
+      .update(catalogProducts)
+      .set({
+        suppliers: suppliers
+      })
+      .where(eq(catalogProducts.id, id));
+  }
+
   // Competitor Listing methods
   async createCompetitorListing(listing: InsertCompetitorListing): Promise<CompetitorListing> {
     const result = await this.db.insert(competitorListings).values(listing).returning();
@@ -492,6 +501,7 @@ export class DrizzleStorage implements IStorage {
         productTargetPrice: catalogProducts.targetPrice,
         productImageUrl: catalogProducts.imageUrl,
         productPageUrl: catalogProducts.productPageUrl,
+        productSuppliers: catalogProducts.suppliers,
         productCreatedAt: catalogProducts.createdAt,
         brandName: brands.name,
         categoryName: categories.name,
@@ -559,6 +569,7 @@ export class DrizzleStorage implements IStorage {
           brand: row.brandName || 'Unknown',
           category: row.categoryName || 'Uncategorized',
           productPageUrl: row.productPageUrl || null,
+          suppliers: row.productSuppliers || [],
           competitorLinks: [],
           createdAt: row.productCreatedAt?.toISOString() || new Date().toISOString(),
           updatedAt: new Date().toISOString()
@@ -630,6 +641,7 @@ export class DrizzleStorage implements IStorage {
       brand: product.brandId || 'Unknown',
       category: product.categoryId || 'Uncategorized',
       productPageUrl: product.productPageUrl || null,
+      suppliers: product.suppliers || [],
       competitorLinks,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -656,7 +668,8 @@ export class DrizzleStorage implements IStorage {
       targetPrice: product.targetPrice ? product.targetPrice.toString() : null,
       price: product.price ? product.price.toString() : null,
       imageUrl: product.image || null,
-      productPageUrl: product.productPageUrl || null
+      productPageUrl: product.productPageUrl || null,
+      suppliers: product.suppliers || []
     }).returning();
     
     const catalogProduct = result[0];
@@ -672,6 +685,7 @@ export class DrizzleStorage implements IStorage {
       brand: product.brand || 'Unknown',
       category: product.category || 'Uncategorized',
       productPageUrl: product.productPageUrl || null,
+      suppliers: catalogProduct.suppliers || [],
       competitorLinks: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()

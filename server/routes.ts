@@ -720,9 +720,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
               productTypeId: productType.id,
               modelNumber: product.modelNumber || product.title.split(' ')[0],
               imageUrl: product.image,
-              price: (product.price || 0).toString()
+              price: (product.price || 0).toString(),
+              suppliers: [competitorName] // Set the initial supplier
             });
             console.log(`Created new catalog product: ${product.title}`);
+          } else {
+            // Product exists - update suppliers array to include this competitor
+            const currentSuppliers = catalogProduct.suppliers || [];
+            if (!currentSuppliers.includes(competitorName)) {
+              await storage.updateCatalogProductSuppliers(catalogProduct.id, [...currentSuppliers, competitorName]);
+              console.log(`Added ${competitorName} as supplier for existing product: ${catalogProduct.name}`);
+            }
           }
           
           // Create competitor listing linked to the catalog product
@@ -1684,6 +1692,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error bulk extracting model numbers:", error);
       res.status(500).json({ error: "Failed to bulk extract model numbers" });
+    }
+  });
+
+  // Migrate Sydney Tools products to have correct suppliers field
+  app.post("/api/migrate-suppliers", async (req, res) => {
+    try {
+      const allProducts = await storage.listCatalogProducts();
+      let updateCount = 0;
+      
+      for (const product of allProducts) {
+        // Check if this is a Sydney Tools product
+        // A product is Sydney Tools if it has productPageUrl (our product page) or ourSku
+        if (product.productPageUrl || product.ourSku) {
+          // Update suppliers to include Sydney Tools if not already present
+          const currentSuppliers = product.suppliers || [];
+          if (!currentSuppliers.includes('Sydney Tools')) {
+            const newSuppliers = [...currentSuppliers, 'Sydney Tools'];
+            await storage.updateCatalogProductSuppliers(product.id, newSuppliers);
+            updateCount++;
+          }
+        }
+      }
+      
+      res.json({ 
+        message: `Updated ${updateCount} products with Sydney Tools supplier`,
+        updated: updateCount,
+        total: allProducts.length
+      });
+    } catch (error) {
+      console.error("Error migrating suppliers:", error);
+      res.status(500).json({ error: "Failed to migrate suppliers" });
     }
   });
 
