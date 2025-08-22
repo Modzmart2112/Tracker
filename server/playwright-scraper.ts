@@ -8,6 +8,51 @@ async function whichChromium(): Promise<string | undefined> {
 }
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
+// Extract category and product type from URL path
+function extractCategoryFromUrl(url: string): { category: string, productType: string } {
+  try {
+    const urlObj = new URL(url);
+    const pathSegments = urlObj.pathname.split('/').filter(s => s.length > 0);
+    
+    // Common URL patterns:
+    // /automotive/diagnostic-tools/
+    // /electrical/battery-chargers/
+    // /automotive/jump-starters/
+    
+    if (pathSegments.length >= 2) {
+      const category = pathSegments[0].replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      const productType = pathSegments[1].replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+      
+      // Map URL segments to proper names
+      const categoryMap: Record<string, string> = {
+        'Automotive': 'Automotive',
+        'Electrical': 'Electrical',
+        'Power Tools': 'Power Tools',
+        'Hand Tools': 'Hand Tools'
+      };
+      
+      const productTypeMap: Record<string, string> = {
+        'Diagnostic Tools': 'Diagnostic Tools',
+        'Battery Chargers': 'Battery Chargers',
+        'Jump Starters': 'Jump Starters',
+        'Test Equipment': 'Test Equipment',
+        'Scan Tools': 'Diagnostic Tools',
+        'Code Readers': 'Diagnostic Tools'
+      };
+      
+      return {
+        category: categoryMap[category] || category,
+        productType: productTypeMap[productType] || productType
+      };
+    }
+    
+    // Default fallback
+    return { category: 'Automotive', productType: 'General' };
+  } catch {
+    return { category: 'Automotive', productType: 'General' };
+  }
+}
+
 export const playwrightScraper = {
   async scrapeTotalTools(url: string) {
     const execPath = await whichChromium();
@@ -116,6 +161,9 @@ export const playwrightScraper = {
 
     await browser.close();
 
+    // Extract category from URL
+    const { category, productType } = extractCategoryFromUrl(url);
+
     return {
       products: products.map(p => ({
         title: p.title,
@@ -125,13 +173,13 @@ export const playwrightScraper = {
         url: p.url,
         brand: p.brand || "",
         model: p.model || "",
-        category: "Battery Chargers",
+        category: productType,
         sku: "",
         competitorName: "Total Tools",
         hasPromotion: false
       })),
       totalProducts: products.length,
-      categoryName: "Battery Chargers",
+      categoryName: productType,
       competitorName: "Total Tools",
       sourceUrl: url,
       extractedAt: new Date().toISOString(),
@@ -241,6 +289,9 @@ export const playwrightScraper = {
 
     await browser.close();
 
+    // Extract category from URL
+    const { category, productType } = extractCategoryFromUrl(url);
+
     return {
       products: products.map(p => ({
         title: p.title,
@@ -250,13 +301,13 @@ export const playwrightScraper = {
         url: p.url,
         brand: "",
         model: "",
-        category: "",
+        category: productType,
         sku: "",
         competitorName: "Sydney Tools",
         promotion: { hasPromotion: false }
       })),
       totalProducts: products.length,
-      categoryName: "",
+      categoryName: productType,
       competitorName: "Sydney Tools",
       sourceUrl: url,
       extractedAt: new Date().toISOString()

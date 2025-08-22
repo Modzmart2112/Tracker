@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   AlertCircle, 
   CheckCircle2, 
@@ -13,10 +14,11 @@ import {
   X,
   Loader2,
   ShoppingCart,
-  DollarSign
+  DollarSign,
+  Tag
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
 interface Product {
@@ -26,6 +28,7 @@ interface Product {
   url?: string;
   brand?: string;
   modelNumber?: string;
+  category?: string;
   isNew: boolean;
   matchedProduct?: {
     id: string;
@@ -52,6 +55,24 @@ export function ImportReviewDialog({ isOpen, onClose, previewData }: ImportRevie
   const { toast } = useToast();
   const [selectedProducts, setSelectedProducts] = useState<Set<number>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
+  const [productCategories, setProductCategories] = useState<Record<number, string>>({});
+
+  // Fetch available product types
+  const { data: metaData } = useQuery({
+    queryKey: ["/api/meta"],
+    enabled: isOpen
+  });
+
+  // Initialize categories when preview data changes
+  useEffect(() => {
+    if (previewData) {
+      const categories: Record<number, string> = {};
+      previewData.products.forEach((product, index) => {
+        categories[index] = product.category || 'General';
+      });
+      setProductCategories(categories);
+    }
+  }, [previewData]);
 
   // Confirm import mutation
   const confirmImport = useMutation({
@@ -104,7 +125,15 @@ export function ImportReviewDialog({ isOpen, onClose, previewData }: ImportRevie
   };
 
   const handleConfirmImport = () => {
-    const productsToImport = previewData.products.filter((_, index) => selectedProducts.has(index));
+    const productsToImport = previewData.products
+      .filter((_, index) => selectedProducts.has(index))
+      .map((product, originalIndex) => {
+        const selectedIndex = Array.from(selectedProducts).indexOf(originalIndex);
+        return {
+          ...product,
+          category: productCategories[originalIndex] || product.category || 'General'
+        };
+      });
     
     if (productsToImport.length === 0) {
       toast({ 
@@ -120,6 +149,13 @@ export function ImportReviewDialog({ isOpen, onClose, previewData }: ImportRevie
       competitorName: previewData.competitorName,
       sourceUrl: previewData.sourceUrl
     });
+  };
+
+  const handleCategoryChange = (index: number, category: string) => {
+    setProductCategories(prev => ({
+      ...prev,
+      [index]: category
+    }));
   };
 
   return (
@@ -226,6 +262,31 @@ export function ImportReviewDialog({ isOpen, onClose, previewData }: ImportRevie
                               <span className="font-semibold">{product.price?.toFixed(2) || 'N/A'}</span>
                             </div>
                           </div>
+                        </div>
+
+                        {/* Category Selector */}
+                        <div className="mt-2 flex items-center gap-2">
+                          <Tag className="h-3 w-3 text-slate-500" />
+                          <Select
+                            value={productCategories[index] || product.category || 'General'}
+                            onValueChange={(value) => handleCategoryChange(index, value)}
+                          >
+                            <SelectTrigger className="h-7 text-xs w-48" onClick={(e) => e.stopPropagation()}>
+                              <SelectValue placeholder="Select category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="General">General</SelectItem>
+                              <SelectItem value="Battery Chargers">Battery Chargers</SelectItem>
+                              <SelectItem value="Jump Starters">Jump Starters</SelectItem>
+                              <SelectItem value="Diagnostic Tools">Diagnostic Tools</SelectItem>
+                              <SelectItem value="Test Equipment">Test Equipment</SelectItem>
+                              <SelectItem value="Power Tools">Power Tools</SelectItem>
+                              <SelectItem value="Hand Tools">Hand Tools</SelectItem>
+                              <SelectItem value="Safety Equipment">Safety Equipment</SelectItem>
+                              <SelectItem value="Automotive">Automotive</SelectItem>
+                              <SelectItem value="Electrical">Electrical</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
 
                         {/* Match Status */}

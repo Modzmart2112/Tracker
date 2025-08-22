@@ -748,6 +748,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return {
           ...product,
           modelNumber,
+          category: product.category || result.categoryName || 'General',
           isNew: !matchedProduct,
           matchedProduct: matchedProduct ? {
             id: matchedProduct.id,
@@ -828,34 +829,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Using existing competitor: ${competitor.name} (${competitor.siteDomain})`);
       }
       
-      // Find or create category and product type
-      const existingCategories = await storage.getCategories();
-      let category = existingCategories.find(c => c.slug === 'battery-chargers');
-      
-      if (!category) {
-        category = await storage.createCategory({
-          name: 'Battery Chargers',
-          slug: 'battery-chargers'
-        });
-      }
-      
-      const existingProductTypes = await storage.getProductTypes();
-      let productType = existingProductTypes.find(pt => pt.slug === 'battery-chargers');
-      
-      if (!productType) {
-        productType = await storage.createProductType({
-          categoryId: category.id,
-          name: 'Battery Chargers',
-          slug: 'battery-chargers'
-        });
-      }
-      
-      // Find or create brand for each product
+      // Create maps to cache categories and product types
+      const categoryMap = new Map<string, any>();
+      const productTypeMap = new Map<string, any>();
       const brandMap = new Map<string, any>();
       
       // Import selected products
       for (const product of products) {
         try {
+          // Get or create category and product type based on the product's category
+          const categoryName = product.category || 'General';
+          const categorySlug = categoryName.toLowerCase().replace(/\s+/g, '-');
+          
+          // Check cache first, then database
+          let category = categoryMap.get(categorySlug);
+          if (!category) {
+            const existingCategories = await storage.getCategories();
+            category = existingCategories.find(c => c.slug === categorySlug);
+            
+            if (!category) {
+              category = await storage.createCategory({
+                name: categoryName,
+                slug: categorySlug
+              });
+              console.log(`Created new category: ${categoryName}`);
+            }
+            categoryMap.set(categorySlug, category);
+          }
+          
+          let productType = productTypeMap.get(categorySlug);
+          if (!productType) {
+            const existingProductTypes = await storage.getProductTypes();
+            productType = existingProductTypes.find(pt => pt.slug === categorySlug);
+            
+            if (!productType) {
+              productType = await storage.createProductType({
+                categoryId: category.id,
+                name: categoryName,
+                slug: categorySlug
+              });
+              console.log(`Created new product type: ${categoryName}`);
+            }
+            productTypeMap.set(categorySlug, productType);
+          }
           // Find or create brand
           const brandName = product.brand || 'Unknown';
           let brand = brandMap.get(brandName);
