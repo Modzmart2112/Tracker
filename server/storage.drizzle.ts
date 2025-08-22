@@ -679,13 +679,34 @@ export class DrizzleStorage implements IStorage {
   }
 
   async deleteUnifiedProduct(id: string): Promise<void> {
-    // Delete associated listings first
-    await this.db.delete(competitorListings)
-      .where(eq(competitorListings.productId, id));
-    
-    // Then delete the product
-    await this.db.delete(catalogProducts)
-      .where(eq(catalogProducts.id, id));
+    try {
+      // First get all listing IDs for this product
+      const listings = await this.db.select({ id: competitorListings.id })
+        .from(competitorListings)
+        .where(eq(competitorListings.productId, id));
+      
+      // Delete listing snapshots and images for each listing
+      for (const listing of listings) {
+        await this.db.delete(listingSnapshots)
+          .where(eq(listingSnapshots.listingId, listing.id));
+        
+        await this.db.delete(listingImages)
+          .where(eq(listingImages.listingId, listing.id));
+      }
+      
+      // Delete associated listings
+      await this.db.delete(competitorListings)
+        .where(eq(competitorListings.productId, id));
+      
+      // Finally delete the product
+      const result = await this.db.delete(catalogProducts)
+        .where(eq(catalogProducts.id, id));
+      
+      console.log(`Deleted product ${id} and all associated data`);
+    } catch (error) {
+      console.error(`Error deleting product ${id}:`, error);
+      throw error;
+    }
   }
 
   async addCompetitorLink(productId: string, url: string): Promise<any> {
