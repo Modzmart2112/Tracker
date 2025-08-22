@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { ObjectUploader } from "@/components/ObjectUploader";
+import { ImportReviewDialog } from "@/components/ImportReviewDialog";
 import { 
   Plus, 
   Package2, 
@@ -155,6 +156,8 @@ export default function ProductsPage() {
   const [competitorUrl, setCompetitorUrl] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(16); // 4 cards per row × 4 rows = 16 per page
+  const [showImportReviewDialog, setShowImportReviewDialog] = useState(false);
+  const [importPreviewData, setImportPreviewData] = useState<any>(null);
   const [newProduct, setNewProduct] = useState({
     sku: "",
     name: "",
@@ -284,21 +287,27 @@ export default function ProductsPage() {
     }
   });
 
-  // Import competitor products
+  // Import competitor products - Preview
   const importCompetitor = useMutation({
     mutationFn: async (data: { url: string }) => {
-      const response = await apiRequest("POST", "/api/import-competitor", data);
+      const response = await apiRequest("POST", "/api/preview-competitor", data);
       return await response.json();
     },
     onSuccess: (data: any) => {
-      console.log("Competitor import response:", data);
+      console.log("Competitor preview response:", data);
       if (data.success && data.products && data.products.length > 0) {
-        setExtractedProducts(data.products);
-        setShowBulkImportDialog(true);
-        toast({ 
-          title: "Competitor Import Successful",
-          description: `Found ${data.products.length} products from ${data.competitorName || 'competitor'}. Review and import them.`
+        setImportPreviewData({
+          competitorName: data.competitorName,
+          sourceUrl: competitorUrl,
+          totalProducts: data.products.length,
+          newProducts: data.newProducts || data.products.filter((p: any) => p.isNew).length,
+          matchedProducts: data.matchedProducts || data.products.filter((p: any) => !p.isNew).length,
+          products: data.products,
+          scraperUsed: data.scraperUsed
         });
+        setShowImportReviewDialog(true);
+        setShowCompetitorImportDialog(false);
+        setCompetitorUrl("");
       } else {
         toast({ 
           title: "No products found",
@@ -2092,6 +2101,16 @@ export default function ProductsPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Import Review Dialog */}
+      <ImportReviewDialog
+        isOpen={showImportReviewDialog}
+        onClose={() => {
+          setShowImportReviewDialog(false);
+          setImportPreviewData(null);
+        }}
+        previewData={importPreviewData}
+      />
 
       {/* Bulk Delete Confirmation Dialog */}
       <Dialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>

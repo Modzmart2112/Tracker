@@ -479,7 +479,281 @@ export async function registerRoutes(app: Express): Promise<Server> {
     ? await import("./ai-service")
     : null;
 
-  // Import competitor products from any site
+  // Preview competitor products before importing
+  app.post("/api/preview-competitor", async (req, res) => {
+    try {
+      const { url } = req.body;
+      
+      if (!url) {
+        return res.status(400).json({ error: "URL is required" });
+      }
+
+      console.log(`Previewing competitor products from: ${url}`);
+      
+      // Detect if we need special scrapers for JavaScript-heavy sites
+      const hostname = new URL(url).hostname.toLowerCase();
+      let result;
+      
+      // Use appropriate scraper based on the site
+      if (hostname.includes('sydneytools')) {
+        console.log('Using Playwright scraper for Sydney Tools SPA...');
+        const { playwrightScraper } = await import('./playwright-scraper');
+        result = await playwrightScraper.scrapeSydneyTools(url);
+      } 
+      else if (hostname.includes('tradetools')) {
+        console.log('Using specialized Trade Tools scraper...');
+        const { tradeToolsScraper } = await import('./trade-tools-scraper');
+        result = await tradeToolsScraper.scrapeTradeTools(url);
+      }
+      else if (hostname.includes('bunnings') || hostname.includes('repco')) {
+        console.log('Using rendered DOM scraper for JavaScript site...');
+        const { renderedGet } = await import('./rendered-get');
+        const html = await renderedGet(url);
+        const { multiSiteScraper } = await import('./multi-site-scraper');
+        const cheerio = await import('cheerio');
+        const $ = cheerio.load(html);
+        result = await multiSiteScraper.scrapeCompetitor(url);
+      }
+      else {
+        console.log('Using standard scraper...');
+        const { multiSiteScraper } = await import('./multi-site-scraper');
+        result = await multiSiteScraper.scrapeCompetitor(url);
+      }
+      
+      if (result.products.length === 0) {
+        return res.status(400).json({ 
+          error: "No products found on this competitor page",
+          details: `Attempted to scrape ${result.competitorName} but found no products.`,
+          suggestion: "Please verify the URL is a product listing page."
+        });
+      }
+
+      // Check for existing products and competitors
+      const siteDomain = new URL(url).hostname;
+      const existingCompetitors = await storage.getCompetitors();
+      const existingProducts = await storage.listCatalogProducts();
+      
+      // Check if competitor exists
+      const existingCompetitor = existingCompetitors.find(c => 
+        c.siteDomain === siteDomain || 
+        (c.name.toLowerCase().replace(/\s+/g, '') === result.competitorName.toLowerCase().replace(/\s+/g, ''))
+      );
+
+      // Check for matching products
+      const productsWithMatches = result.products.map((product: any) => {
+        // Extract model number
+        let modelNumber = product.model || product.modelNumber || '';
+        if (!modelNumber || modelNumber === 'Unknown') {
+          const modelPatterns = [
+            /\b([A-Z]{2,}\d{4,})\b/i,
+            /\b([A-Z]+\d+[A-Z]*\d*)\b/i,
+            /\b(GENIUS\d+[A-Z]*)\b/i,
+            /\b([A-Z]+[\d]+[A-Z]*)\b/i
+          ];
+          
+          for (const pattern of modelPatterns) {
+            const match = product.title.match(pattern);
+            if (match) {
+              modelNumber = match[1].toUpperCase();
+              break;
+            }
+          }
+        }
+
+        // Check for existing match
+        let matchedProduct = null;
+        if (modelNumber && modelNumber !== 'Unknown' && modelNumber !== 'N/A') {
+          matchedProduct = existingProducts.find(p => 
+            p.modelNumber === modelNumber
+          );
+        }
+
+        return {
+          ...product,
+          modelNumber,
+          isNew: !matchedProduct,
+          matchedProduct: matchedProduct ? {
+            id: matchedProduct.id,
+            name: matchedProduct.name,
+            modelNumber: matchedProduct.modelNumber
+          } : null
+        };
+      });
+
+      // Count stats
+      const newProducts = productsWithMatches.filter((p: any) => p.isNew);
+      const matchedProducts = productsWithMatches.filter((p: any) => !p.isNew);
+
+      res.json({
+        success: true,
+        competitorName: result.competitorName,
+        competitorExists: !!existingCompetitor,
+        sourceUrl: url,
+        totalProducts: result.products.length,
+        newProducts: newProducts.length,
+        matchedProducts: matchedProducts.length,
+        products: productsWithMatches,
+        scraperUsed: result.scraperUsed || 'Standard'
+      });
+
+    } catch (error: any) {
+      console.error("Error previewing competitor:", error);
+      res.status(500).json({ 
+        error: "Failed to preview competitor products",
+        details: error.message
+      });
+    }
+  });
+
+  // Confirm and import reviewed products
+  app.post("/api/confirm-import", async (req, res) => {
+    try {
+      const { products, competitorName, sourceUrl } = req.body;
+      
+      if (!products || !Array.isArray(products)) {
+        return res.status(400).json({ error: "Products array is required" });
+      }
+
+      let savedCount = 0;
+      let matchedCount = 0;
+      const errors: string[] = [];
+      
+      // Find or create competitor
+      const siteDomain = new URL(sourceUrl).hostname;
+      const existingCompetitors = await storage.getCompetitors();
+      
+      let competitor = existingCompetitors.find(c => 
+        c.siteDomain === siteDomain || 
+        (c.name.toLowerCase().replace(/\s+/g, '') === competitorName.toLowerCase().replace(/\s+/g, ''))
+      );
+      
+      if (!competitor) {
+        competitor = await storage.createCompetitor({
+          name: competitorName,
+          siteDomain,
+          status: 'active',
+          isUs: false
+        });
+        console.log(`Created new competitor: ${competitorName} (${siteDomain})`);
+      } else {
+        console.log(`Using existing competitor: ${competitor.name} (${competitor.siteDomain})`);
+      }
+      
+      // Find or create category and product type
+      const existingCategories = await storage.getCategories();
+      let category = existingCategories.find(c => c.slug === 'battery-chargers');
+      
+      if (!category) {
+        category = await storage.createCategory({
+          name: 'Battery Chargers',
+          slug: 'battery-chargers'
+        });
+      }
+      
+      const existingProductTypes = await storage.getProductTypes();
+      let productType = existingProductTypes.find(pt => pt.slug === 'battery-chargers');
+      
+      if (!productType) {
+        productType = await storage.createProductType({
+          categoryId: category.id,
+          name: 'Battery Chargers',
+          slug: 'battery-chargers'
+        });
+      }
+      
+      // Find or create brand for each product
+      const brandMap = new Map<string, any>();
+      
+      // Import selected products
+      for (const product of products) {
+        try {
+          // Find or create brand
+          const brandName = product.brand || 'Unknown';
+          let brand = brandMap.get(brandName);
+          if (!brand) {
+            const existingBrands = await storage.getBrands();
+            brand = existingBrands.find(b => b.name.toLowerCase() === brandName.toLowerCase());
+            
+            if (!brand) {
+              brand = await storage.createBrand({
+                name: brandName,
+                slug: brandName.toLowerCase().replace(/[^a-z0-9]/g, '-')
+              });
+            }
+            brandMap.set(brandName, brand);
+          }
+          
+          let catalogProduct;
+          
+          // If product has a match, use the existing catalog product
+          if (product.matchedProduct && product.matchedProduct.id) {
+            catalogProduct = await storage.getCatalogProductById(product.matchedProduct.id);
+            if (catalogProduct) {
+              matchedCount++;
+              console.log(`Using existing product: ${catalogProduct.name} (${product.modelNumber})`);
+            }
+          }
+          
+          // If no match or product not found, create new catalog product
+          if (!catalogProduct) {
+            catalogProduct = await storage.createCatalogProduct({
+              name: product.title,
+              brandId: brand.id,
+              categoryId: category.id,
+              productTypeId: productType.id,
+              modelNumber: product.modelNumber || product.title.split(' ')[0],
+              imageUrl: product.image,
+              price: (product.price || 0).toString()
+            });
+            console.log(`Created new catalog product: ${product.title}`);
+          }
+          
+          // Create competitor listing linked to the catalog product
+          const competitorListing = await storage.createCompetitorListing({
+            productId: catalogProduct.id,
+            competitorId: competitor.id,
+            url: product.url || sourceUrl,
+            mainImageUrl: product.image
+          });
+          
+          // Create listing snapshot with pricing
+          if (product.price && product.price > 0) {
+            await storage.createListingSnapshot({
+              listingId: competitorListing.id,
+              price: (product.price || 0).toString(),
+              currency: 'AUD',
+              inStock: true
+            });
+          }
+          
+          savedCount++;
+        } catch (error: any) {
+          console.error(`Error saving product ${product.title}:`, error);
+          errors.push(`Product "${product.title}": ${error.message}`);
+        }
+      }
+      
+      res.json({
+        success: true,
+        message: `Successfully imported ${savedCount}/${products.length} products from ${competitorName}`,
+        savedProducts: savedCount,
+        matchedProducts: matchedCount,
+        totalProducts: products.length,
+        competitorName,
+        sourceUrl,
+        errors
+      });
+      
+    } catch (error: any) {
+      console.error("Error confirming import:", error);
+      res.status(500).json({ 
+        error: "Failed to import products",
+        details: error.message
+      });
+    }
+  });
+
+  // Import competitor products from any site (DEPRECATED - use preview + confirm instead)
   app.post("/api/import-competitor", async (req, res) => {
     try {
       const { url } = req.body;
