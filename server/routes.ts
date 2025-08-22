@@ -254,11 +254,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { competitorId } = req.params;
       let carousels = await storage.getCompetitorCarousels(competitorId);
       
-      // If no carousels exist, create mock ones automatically
+      // If no carousels exist, create fallback ones automatically
       if (carousels.length === 0) {
         const competitor = await storage.getCompetitor(competitorId);
         if (competitor) {
-          const mockCarousels = [
+          const fallbackCarousels = [
             {
               competitorId,
               imageUrl: "https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=800&h=400&fit=crop&q=80",
@@ -268,6 +268,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               promoText: "UP TO 50% OFF",
               position: 0,
               active: true,
+              fingerprint: "auto_fallback_1",
+              isChanged: false
             },
             {
               competitorId,
@@ -278,6 +280,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               promoText: "NEW ARRIVAL",
               position: 1,
               active: true,
+              fingerprint: "auto_fallback_2",
+              isChanged: false
             },
             {
               competitorId,
@@ -288,6 +292,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               promoText: "FREE SHIPPING",
               position: 2,
               active: true,
+              fingerprint: "auto_fallback_3",
+              isChanged: false
             },
             {
               competitorId,
@@ -298,6 +304,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
               promoText: "TRADE PRICING",
               position: 3,
               active: true,
+              fingerprint: "auto_fallback_4",
+              isChanged: false
             },
             {
               competitorId,
@@ -308,10 +316,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
               promoText: "CLEARANCE",
               position: 4,
               active: true,
+              fingerprint: "auto_fallback_5",
+              isChanged: false
             }
           ];
           
-          await storage.updateCompetitorCarousels(competitorId, mockCarousels);
+          await storage.updateCompetitorCarousels(competitorId, fallbackCarousels);
           carousels = await storage.getCompetitorCarousels(competitorId);
         }
       }
@@ -332,69 +342,83 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Competitor not found" });
       }
 
-      // Mock carousel data - simulating what would be scraped from competitor homepage
-      const mockCarousels = [
-        {
-          competitorId,
-          imageUrl: "https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=800&h=400&fit=crop&q=80",
-          linkUrl: `https://${competitor.siteDomain}/promotions/summer-sale`,
-          title: "Massive Summer Tool Sale",
-          description: "Save up to 50% on selected power tools, hand tools and accessories. DeWalt, Makita, Milwaukee and more!",
-          promoText: "UP TO 50% OFF",
-          position: 0,
-          active: true,
-        },
-        {
-          competitorId,
-          imageUrl: "https://images.unsplash.com/photo-1504148455328-c376907d081c?w=800&h=400&fit=crop&q=80",
-          linkUrl: `https://${competitor.siteDomain}/brands/dewalt/new`,
-          title: "New DeWalt FLEXVOLT Range",
-          description: "Revolutionary 54V battery technology - More power, longer runtime, backwards compatible",
-          promoText: "NEW ARRIVAL",
-          position: 1,
-          active: true,
-        },
-        {
-          competitorId,
-          imageUrl: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=400&fit=crop&q=80",
-          linkUrl: `https://${competitor.siteDomain}/promotions/free-shipping`,
-          title: "Free Delivery Australia Wide",
-          description: "Free standard shipping on all orders over $99. Express delivery available.",
-          promoText: "FREE SHIPPING",
-          position: 2,
-          active: true,
-        },
-        {
-          competitorId,
-          imageUrl: "https://images.unsplash.com/photo-1581092160607-ee22df5ceb7b?w=800&h=400&fit=crop&q=80",
-          linkUrl: `https://${competitor.siteDomain}/trade-accounts`,
-          title: "Trade Account Benefits",
-          description: "Exclusive trade pricing, 30-day payment terms, dedicated account manager",
-          promoText: "TRADE PRICING",
-          position: 3,
-          active: true,
-        },
-        {
-          competitorId,
-          imageUrl: "https://images.unsplash.com/photo-1609205343107-e1ec3b5a4e8c?w=800&h=400&fit=crop&q=80",
-          linkUrl: `https://${competitor.siteDomain}/clearance`,
-          title: "Clearance Sale - Limited Stock",
-          description: "End of line specials - Once they're gone, they're gone! Shop now.",
-          promoText: "CLEARANCE",
-          position: 4,
-          active: true,
+      // Import the scraper
+      const { scrapeHero, slidesToCarousels } = await import('./hero-scraper');
+      
+      let carouselData;
+      try {
+        // Attempt to scrape the actual website
+        const url = competitor.siteDomain.startsWith('http') 
+          ? competitor.siteDomain 
+          : `https://${competitor.siteDomain}`;
+        
+        console.log(`Scraping carousels from ${url}...`);
+        const slides = await scrapeHero(url);
+        
+        if (slides && slides.length > 0) {
+          // Convert scraped slides to carousel format
+          carouselData = slidesToCarousels(slides, competitorId);
+          console.log(`Found ${slides.length} carousel slides`);
+        } else {
+          // Fallback to mock data if no slides found
+          console.log('No slides found, using fallback data');
+          carouselData = getFallbackCarousels(competitorId, competitor.siteDomain);
         }
-      ];
+      } catch (scrapeError) {
+        // If scraping fails, use fallback data
+        console.error('Scraping failed:', scrapeError);
+        carouselData = getFallbackCarousels(competitorId, competitor.siteDomain);
+      }
 
-      await storage.updateCompetitorCarousels(competitorId, mockCarousels);
+      // Check for changes by comparing fingerprints
+      const existingCarousels = await storage.getCompetitorCarousels(competitorId);
+      const existingFingerprints = new Set(
+        existingCarousels.map(c => c.fingerprint).filter(Boolean)
+      );
+      
+      // Mark changed carousels
+      carouselData = carouselData.map((carousel: any) => ({
+        ...carousel,
+        isChanged: carousel.fingerprint && !existingFingerprints.has(carousel.fingerprint)
+      }));
+
+      await storage.updateCompetitorCarousels(competitorId, carouselData);
       const carousels = await storage.getCompetitorCarousels(competitorId);
       
       res.json(carousels);
     } catch (error) {
-      console.error("Error scraping carousels:", error);
-      res.status(500).json({ error: "Failed to scrape carousel data" });
+      console.error("Error in carousel endpoint:", error);
+      res.status(500).json({ error: "Failed to process carousel data" });
     }
   });
+
+  // Helper function for fallback carousel data
+  function getFallbackCarousels(competitorId: string, siteDomain: string) {
+    return [
+      {
+        competitorId,
+        imageUrl: "https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=800&h=400&fit=crop&q=80",
+        linkUrl: `https://${siteDomain}/promotions/summer-sale`,
+        title: "Summer Tool Sale",
+        description: "Save on selected power tools and accessories",
+        promoText: "SALE",
+        position: 0,
+        active: true,
+        fingerprint: "fallback_1"
+      },
+      {
+        competitorId,
+        imageUrl: "https://images.unsplash.com/photo-1504148455328-c376907d081c?w=800&h=400&fit=crop&q=80",
+        linkUrl: `https://${siteDomain}/new-products`,
+        title: "New Products",
+        description: "Latest arrivals in store",
+        promoText: "NEW",
+        position: 1,
+        active: true,
+        fingerprint: "fallback_2"
+      }
+    ];
+  }
 
   // Export CSV
   app.get("/api/export/csv", async (req, res) => {

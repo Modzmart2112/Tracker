@@ -213,6 +213,8 @@ export const competitorCarousels = pgTable("competitor_carousels", {
   promoText: text("promo_text"),
   position: integer("position").notNull().default(0),
   active: boolean("active").notNull().default(true),
+  fingerprint: text("fingerprint"),
+  isChanged: boolean("is_changed").notNull().default(false),
   firstSeenAt: timestamp("first_seen_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   lastSeenAt: timestamp("last_seen_at").notNull().default(sql`CURRENT_TIMESTAMP`),
   scrapedAt: timestamp("scraped_at").notNull().default(sql`CURRENT_TIMESTAMP`),

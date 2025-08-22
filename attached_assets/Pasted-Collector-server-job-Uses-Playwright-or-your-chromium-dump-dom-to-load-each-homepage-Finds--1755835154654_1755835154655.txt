@@ -1,0 +1,224 @@
+Collector (server job)
+
+Uses Playwright (or your chromium --dump-dom) to load each homepage.
+
+Finds the hero/carousel, extracts slide image, href, alt/text, and computes a fingerprint.
+
+Optionally screenshots just the hero block for visual auditing.
+
+Stores results in a DB table (or JSON file) with competitor, slide_index, image_url, link_url, label, fingerprint, first_seen, last_seen.
+
+Change detector
+
+On each run, compare fingerprints with the last run.
+
+If a slide is new/changed/removed → mark a change and (optionally) ping Slack/Email.
+
+Dashboard
+
+A simple grid: one card per competitor showing current slides (thumbnail), last-change timestamp, and a link to their live page.
+
+Drop-in code (TypeScript, Playwright, Replit-safe)
+
+Create src/hero-scraper.ts:
+
+import { chromium, Browser, Page } from "playwright";
+import * as crypto from "crypto";
+
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+function abs(base: string, maybe: string | undefined | null): string {
+  try {
+    if (!maybe) return "";
+    return new URL(maybe, base).toString();
+  } catch { return maybe || ""; }
+}
+function bestSrc(img: HTMLImageElement): string | null {
+  const srcset = img.getAttribute("srcset") || img.getAttribute("data-srcset");
+  if (srcset) {
+    const last = srcset.split(",").map(s => s.trim()).pop();
+    if (last) return last.split(" ")[0];
+  }
+  return img.getAttribute("src") || img.getAttribute("data-src") || img.getAttribute("data-lazy");
+}
+function hash(...parts: string[]) {
+  return crypto.createHash("sha256").update(parts.join("|")).digest("hex").slice(0, 16);
+}
+
+type Slide = {
+  image: string;
+  link: string;
+  label: string;
+  fingerprint: string;
+};
+
+const CONTAINER_SELECTOR = [
+  // common hero/carousel containers
+  ".heroCarousel",
+  ".swiper, .swiper-container",
+  ".slick-slider",
+  ".owl-carousel",
+  ".flickity-enabled",
+  "[data-section-type='slideshow']",
+  ".slideshow, .slideshow-wrapper",
+  "[data-nosto-ref]", // Nosto widgets often wrap carousels
+  ".glide, .glide__track"
+].join(", ");
+
+const SLIDE_SELECTOR = [
+  ".swiper-slide",
+  ".slick-slide",
+  ".owl-item",
+  ".glide__slide",
+  ".slideshow__slide",
+  ".carousel-item",
+  "li",
+  "div"
+].join(", ");
+
+export async function scrapeHero(url: string, screenshotPath?: string): Promise<Slide[]> {
+  // Prefer system chromium on Replit; fall back to PW chromium
+  let execPath: string | undefined;
+  try {
+    const { execSync } = await import("node:child_process");
+    execPath = execSync("which chromium").toString().trim();
+  } catch {}
+
+  const browser: Browser = await chromium.launch({
+    headless: true,
+    executablePath: execPath, // ok if undefined
+    args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"]
+  });
+  const ctx = await browser.newContext({
+    userAgent:
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115 Safari/537.36",
+    viewport: { width: 1366, height: 900 }
+  });
+  const page: Page = await ctx.newPage();
+
+  await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
+  // allow carousels (Swiper/Slick) to init
+  await page.waitForLoadState("networkidle").catch(() => {});
+  for (let i = 0; i < 10; i++) { await page.mouse.wheel(0, 200); await sleep(100); }
+
+  // find a plausible hero container near the top with multiple images
+  const containers = await page.$$(CONTAINER_SELECTOR);
+  let containerHandle = null;
+  for (const c of containers) {
+    const box = await c.boundingBox().catch(() => null);
+    if (!box) continue;
+    // prefer elements in the top ~1200px area that have multiple images inside
+    const imgCount = await c.evaluate((el) => el.querySelectorAll("img").length);
+    if (box.y < 1200 && imgCount >= 1) { containerHandle = c; break; }
+  }
+
+  // Fallback: whole page if no container found
+  const scope = containerHandle || page;
+
+  // optional targeted screenshot
+  if (screenshotPath && containerHandle) {
+    await containerHandle.screenshot({ path: screenshotPath }).catch(() => {});
+  }
+
+  // Collect slides
+  const slides = await scope.$$eval(SLIDE_SELECTOR, (nodes, base) => {
+    const seen = new Set<string>();
+    const out: any[] = [];
+    function pickImg(el: Element): HTMLImageElement | null {
+      const imgs = el.querySelectorAll("img");
+      return (imgs[0] as HTMLImageElement) || null;
+    }
+    for (const n of nodes) {
+      // filter to nodes that actually contain a banner-like image
+      const img = pickImg(n); if (!img) continue;
+      const a = n.querySelector("a") || img.closest("a");
+      const imgUrl = (() => {
+        const srcset = img.getAttribute("srcset") || img.getAttribute("data-srcset");
+        if (srcset) {
+          const last = srcset.split(",").map(s => s.trim()).pop();
+          if (last) return new URL(last.split(" ")[0], base as string).toString();
+        }
+        const src = img.getAttribute("src") || img.getAttribute("data-src") || img.getAttribute("data-lazy") || "";
+        try { return new URL(src, base as string).toString(); } catch { return src; }
+      })();
+      const href = a ? (() => { try { return new URL(a.getAttribute("href") || "", base as string).toString(); } catch { return a.getAttribute("href") || ""; } })() : "";
+      const label = (img.getAttribute("alt") || (a?.textContent || "") || "").trim();
+      const key = [imgUrl, href].join("|");
+      if (!imgUrl || seen.has(key)) continue;
+      seen.add(key);
+      out.push({ image: imgUrl, link: href, label });
+    }
+    return out;
+  }, url);
+
+  // fingerprints
+  const withHash: Slide[] = slides.map(s => ({
+    ...s,
+    fingerprint: hash(s.image, s.link, s.label)
+  }));
+
+  await browser.close();
+  return withHash;
+}
+
+
+Example usage (e.g., inside an Express route or a cron task):
+
+import { scrapeHero } from "./hero-scraper";
+
+(async () => {
+  const targets = [
+    { name: "Toolkit Depot", url: "https://toolkitdepot.com.au/" },
+    { name: "Sydney Tools", url: "https://www.sydneytools.com.au/" },
+    { name: "Total Tools", url: "https://www.totaltools.com.au/" }
+  ];
+
+  for (const t of targets) {
+    const slides = await scrapeHero(t.url, `./shots/${t.name.replace(/\s+/g, "_")}_hero.png`);
+    console.log(t.name, slides);
+    // TODO: persist slides to DB and compare fingerprints to detect changes
+  }
+})();
+
+Minimal schema for change tracking
+
+Use SQLite/Postgres—keep it tiny:
+
+CREATE TABLE IF NOT EXISTS hero_slides (
+  id SERIAL PRIMARY KEY,
+  competitor TEXT NOT NULL,
+  run_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  slide_index INT NOT NULL,
+  image_url TEXT NOT NULL,
+  link_url TEXT NOT NULL,
+  label TEXT,
+  fingerprint TEXT NOT NULL
+);
+
+-- Latest state per competitor
+CREATE VIEW hero_latest AS
+SELECT DISTINCT ON (competitor, slide_index)
+  competitor, slide_index, image_url, link_url, label, fingerprint, run_at
+FROM hero_slides
+ORDER BY competitor, slide_index, run_at DESC;
+
+
+Change detection idea:
+
+After each run, compare new (competitor, slide_index, fingerprint) with previous.
+
+If different → record change_event and notify Slack.
+
+Notes & gotchas (so it stays robust)
+
+Respect robots.txt/ToS. This is internal monitoring of public homepages; avoid aggressive polling (e.g., 15–60 min cadence).
+
+Hotlinking: Display thumbnails you cache; keep a link to the original.
+
+Selectors: The snippet you posted (TKD on BigCommerce with Swiper/Nosto) is covered by the generic selectors above (.heroCarousel, .swiper-slide, [data-nosto-ref]).
+
+Fallback path: If a site blocks automation, capture the top-of-page screenshot as a stopgap so your “live feed” still shows what visitors see.
+
+AU egress (optional): Add a residential AU proxy in newContext({ proxy }) if you need region-matched promos.
+
+If you want, I can bolt this into your existing project (add an API route + a tiny dashboard page) so you can see all competitors’ current hero slides at a glance with “changed X minutes ago” badges.

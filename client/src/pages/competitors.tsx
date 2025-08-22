@@ -42,6 +42,9 @@ interface CarouselItem {
   promoText?: string;
   position: number;
   active: boolean;
+  fingerprint?: string;
+  isChanged?: boolean;
+  firstSeenAt: string;
   lastSeenAt: string;
   scrapedAt: string;
 }
@@ -596,19 +599,34 @@ export default function Competitors() {
                       transition={{ delay: index * 0.1 }}
                       className="border rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
                     >
-                      <div className="flex flex-col md:flex-row">
+                      <div className="flex flex-col md:flex-row relative">
+                        {carousel.isChanged && (
+                          <div className="absolute top-2 left-2 z-10">
+                            <Badge className="bg-yellow-500 text-white animate-pulse">
+                              NEW/CHANGED
+                            </Badge>
+                          </div>
+                        )}
                         <div className="md:w-1/3">
                           <img 
                             src={carousel.imageUrl}
                             alt={carousel.title || "Promotional banner"}
                             className="w-full h-48 md:h-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.src = "https://images.unsplash.com/photo-1572981779307-38b8cabb2407?w=800&h=400&fit=crop&q=80";
+                            }}
                           />
                         </div>
                         <div className="flex-1 p-4">
                           <div className="flex items-start justify-between mb-2">
                             <div>
-                              <h4 className="font-semibold text-lg">
+                              <h4 className="font-semibold text-lg flex items-center gap-2">
                                 {carousel.title || "Untitled Promotion"}
+                                {carousel.isChanged && (
+                                  <span className="text-xs text-yellow-600 font-normal">
+                                    (Updated)
+                                  </span>
+                                )}
                               </h4>
                               {carousel.promoText && (
                                 <Badge className="mt-1 bg-red-100 text-red-700">
@@ -631,7 +649,7 @@ export default function Competitors() {
                             <div className="flex items-center gap-4 text-xs text-gray-500">
                               <span className="flex items-center gap-1">
                                 <Calendar className="h-3 w-3" />
-                                First seen: {format(new Date(carousel.lastSeenAt), "MMM d, yyyy")}
+                                First seen: {format(new Date(carousel.firstSeenAt || carousel.lastSeenAt), "MMM d, yyyy")}
                               </span>
                               <span className="flex items-center gap-1">
                                 <RefreshCw className="h-3 w-3" />
