@@ -750,6 +750,70 @@ export class DrizzleStorage implements IStorage {
     }
   }
 
+  async updateUnifiedProduct(id: string, updates: Partial<{
+    sku: string;
+    name: string;
+    ourPrice?: number;
+    brand?: string;
+    category?: string;
+  }>): Promise<any> {
+    try {
+      // Prepare update data
+      const updateData: any = {};
+      
+      if (updates.sku !== undefined) updateData.sku = updates.sku;
+      if (updates.name !== undefined) updateData.name = updates.name;
+      if (updates.ourPrice !== undefined) updateData.targetPrice = updates.ourPrice.toString();
+      if (updates.brand !== undefined) updateData.brand = updates.brand;
+      if (updates.category !== undefined) updateData.category = updates.category;
+      
+      updateData.updatedAt = new Date();
+      
+      // Update the product
+      const result = await this.db.update(catalogProducts)
+        .set(updateData)
+        .where(eq(catalogProducts.id, id))
+        .returning();
+      
+      if (result.length === 0) {
+        return undefined;
+      }
+      
+      const updatedProduct = result[0];
+      
+      // Get competitor links
+      const listings = await this.listListingsByProduct(id);
+      
+      return {
+        id: updatedProduct.id,
+        sku: updatedProduct.sku || updatedProduct.id.slice(0, 8).toUpperCase(),
+        modelNumber: updatedProduct.modelNumber || 'N/A',
+        name: updatedProduct.name,
+        ourPrice: updatedProduct.targetPrice ? parseFloat(updatedProduct.targetPrice) : 0,
+        price: updatedProduct.price ? parseFloat(updatedProduct.price) : 0,
+        image: updatedProduct.imageUrl || null,
+        brand: updatedProduct.brand || 'Unknown',
+        category: updatedProduct.category || 'Uncategorized',
+        productPageUrl: updatedProduct.productPageUrl || null,
+        suppliers: updatedProduct.suppliers || [],
+        competitorLinks: listings.map(l => ({
+          id: l.id,
+          productId: l.productId,
+          url: l.url,
+          competitorName: l.competitorId,
+          status: l.active ? "active" : "inactive",
+          createdAt: l.createdAt?.toISOString() || new Date().toISOString(),
+          updatedAt: l.updatedAt?.toISOString() || new Date().toISOString()
+        })),
+        createdAt: updatedProduct.createdAt?.toISOString() || new Date().toISOString(),
+        updatedAt: updatedProduct.updatedAt?.toISOString() || new Date().toISOString()
+      };
+    } catch (error) {
+      console.error(`Error updating product ${id}:`, error);
+      throw error;
+    }
+  }
+
   async addCompetitorLink(productId: string, url: string): Promise<any> {
     const competitorName = new URL(url).hostname.replace("www.", "").split(".")[0];
     

@@ -112,6 +112,13 @@ export interface IStorage {
     category?: string;
   }): Promise<any>;
   deleteUnifiedProduct(id: string): Promise<void>;
+  updateUnifiedProduct(id: string, updates: Partial<{
+    sku: string;
+    name: string;
+    ourPrice?: number;
+    brand?: string;
+    category?: string;
+  }>): Promise<any>;
   addCompetitorLink(productId: string, url: string): Promise<any>;
 
   // Additional methods needed for price monitoring
@@ -696,6 +703,27 @@ export class MemStorage implements IStorage {
   async deleteUnifiedProduct(id: string): Promise<void> {
     this.unifiedProducts.delete(id);
     this.unifiedCompetitorLinks.delete(id);
+  }
+
+  async updateUnifiedProduct(id: string, updates: Partial<{
+    sku: string;
+    name: string;
+    ourPrice?: number;
+    brand?: string;
+    category?: string;
+  }>): Promise<any> {
+    const product = this.unifiedProducts.get(id);
+    if (!product) return undefined;
+    
+    const updatedProduct = {
+      ...product,
+      ...updates,
+      updatedAt: new Date().toISOString()
+    };
+    
+    this.unifiedProducts.set(id, updatedProduct);
+    const links = this.unifiedCompetitorLinks.get(id) || [];
+    return { ...updatedProduct, competitorLinks: links };
   }
 
   async addCompetitorLink(productId: string, url: string): Promise<any> {

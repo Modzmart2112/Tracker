@@ -590,29 +590,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { id } = req.params;
       const { name, sku, ourPrice, brand, category } = req.body;
       
-      // Get existing product
-      const product = await storage.getUnifiedProduct(id);
-      if (!product) {
+      // Log the update request
+      console.log(`Updating product ${id} with:`, { name, sku, ourPrice, brand, category });
+      
+      // Update the product using the new method
+      const updatedProduct = await storage.updateUnifiedProduct(id, {
+        name,
+        sku,
+        ourPrice,
+        brand,
+        category
+      });
+      
+      if (!updatedProduct) {
         return res.status(404).json({ error: "Product not found" });
       }
       
-      // Update product by recreating it (for memory storage)
-      await storage.deleteUnifiedProduct(id);
-      const updatedProduct = await storage.createUnifiedProduct({
-        name: name || product.name,
-        sku: sku || product.sku,
-        ourPrice: ourPrice !== undefined ? ourPrice : product.ourPrice
-      });
-      
-      // Re-add competitor links
-      if (product.competitorLinks) {
-        for (const link of product.competitorLinks) {
-          await storage.addCompetitorLink(updatedProduct.id, link.url);
-        }
-      }
-      
-      const finalProduct = await storage.getUnifiedProduct(updatedProduct.id);
-      res.json(finalProduct);
+      console.log(`Successfully updated product ${id}`);
+      res.json(updatedProduct);
     } catch (error) {
       console.error("Error updating product:", error);
       res.status(500).json({ error: "Failed to update product" });
