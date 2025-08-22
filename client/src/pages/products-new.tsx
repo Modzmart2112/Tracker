@@ -1676,8 +1676,17 @@ export default function ProductsPage() {
                   )
                 )).sort();
                 
-                // Check if Sydney Tools stocks this brand (products without competitor links are Sydney Tools only)
-                const sydneyToolsStocksIt = brandProducts.length > 0;
+                // Check if Sydney Tools stocks this brand 
+                // A product is from Sydney Tools if it has a Sydney Tools competitor link
+                // OR if it has no competitor links at all (meaning it's our own product)
+                const sydneyToolsProducts = brandProducts.filter(p => 
+                  p.competitorLinks.some(link => link.competitorName === 'Sydney Tools') ||
+                  p.competitorLinks.length === 0
+                );
+                const sydneyToolsStocksIt = sydneyToolsProducts.length > 0;
+                
+                // Remove Sydney Tools from the competitor list if present (we show it separately)
+                const otherCompetitors = stockingCompetitors.filter(comp => comp !== 'Sydney Tools');
                 
                 return (
                   <TooltipProvider key={brand}>
@@ -1743,7 +1752,7 @@ export default function ProductsPage() {
                       <TooltipContent className="max-w-sm">
                         <div className="space-y-1">
                           <p className="font-semibold text-sm">{brand}</p>
-                          {(sydneyToolsStocksIt || stockingCompetitors.length > 0) ? (
+                          {(sydneyToolsStocksIt || otherCompetitors.length > 0) ? (
                             <div>
                               <p className="text-xs text-gray-600 mb-1">Stocked by:</p>
                               <div className="flex flex-wrap gap-1">
@@ -1752,13 +1761,13 @@ export default function ProductsPage() {
                                     Sydney Tools (Us)
                                   </Badge>
                                 )}
-                                {stockingCompetitors.map(comp => (
+                                {otherCompetitors.map(comp => (
                                   <Badge key={comp} variant="secondary" className="text-xs">
                                     {comp}
                                   </Badge>
                                 ))}
                               </div>
-                              {sydneyToolsStocksIt && stockingCompetitors.length === 0 && (
+                              {sydneyToolsStocksIt && otherCompetitors.length === 0 && (
                                 <p className="text-xs text-gray-500 mt-1">Exclusively stocked by Sydney Tools</p>
                               )}
                             </div>
