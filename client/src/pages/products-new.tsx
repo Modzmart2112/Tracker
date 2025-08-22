@@ -1676,6 +1676,9 @@ export default function ProductsPage() {
                   )
                 )).sort();
                 
+                // Check if Sydney Tools stocks this brand (products without competitor links are Sydney Tools only)
+                const sydneyToolsStocksIt = brandProducts.length > 0;
+                
                 return (
                   <TooltipProvider key={brand}>
                     <Tooltip>
@@ -1740,19 +1743,27 @@ export default function ProductsPage() {
                       <TooltipContent className="max-w-sm">
                         <div className="space-y-1">
                           <p className="font-semibold text-sm">{brand}</p>
-                          {stockingCompetitors.length > 0 ? (
+                          {(sydneyToolsStocksIt || stockingCompetitors.length > 0) ? (
                             <div>
                               <p className="text-xs text-gray-600 mb-1">Stocked by:</p>
                               <div className="flex flex-wrap gap-1">
+                                {sydneyToolsStocksIt && (
+                                  <Badge variant="default" className="text-xs bg-red-600 hover:bg-red-700">
+                                    Sydney Tools (Us)
+                                  </Badge>
+                                )}
                                 {stockingCompetitors.map(comp => (
                                   <Badge key={comp} variant="secondary" className="text-xs">
                                     {comp}
                                   </Badge>
                                 ))}
                               </div>
+                              {sydneyToolsStocksIt && stockingCompetitors.length === 0 && (
+                                <p className="text-xs text-gray-500 mt-1">Exclusively stocked by Sydney Tools</p>
+                              )}
                             </div>
                           ) : (
-                            <p className="text-xs text-gray-500">No competitors stock this brand</p>
+                            <p className="text-xs text-gray-500">Brand not currently in stock</p>
                           )}
                         </div>
                       </TooltipContent>
