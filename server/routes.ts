@@ -490,11 +490,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`Importing competitor products from: ${url}`);
       
-      // Import the competitor scraper
-      const { competitorScraper } = await import('./competitor-scraper');
+      // Import the multi-site scraper
+      const { multiSiteScraper } = await import('./multi-site-scraper');
       
       // Scrape the competitor site
-      const result = await competitorScraper.scrapeCompetitor(url);
+      const result = await multiSiteScraper.scrapeCompetitor(url);
       
       if (result.products.length === 0) {
         return res.status(400).json({ 
