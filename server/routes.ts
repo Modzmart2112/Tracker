@@ -500,6 +500,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const { playwrightScraper } = await import('./playwright-scraper');
         result = await playwrightScraper.scrapeSydneyTools(url);
       } 
+      // Use Playwright for Trade Tools (JavaScript SPA)
+      else if (hostname.includes('tradetools')) {
+        console.log('Using Playwright scraper for Trade Tools SPA...');
+        const { playwrightScraper } = await import('./playwright-scraper');
+        // Temporarily use Sydney Tools scraper logic for Trade Tools
+        result = await playwrightScraper.scrapeSydneyTools(url);
+        // Update competitor name
+        result.competitorName = 'Trade Tools';
+      }
       // Use rendered-get for sites that need DOM rendering but not scrolling
       else if (hostname.includes('bunnings') || hostname.includes('repco')) {
         console.log('Using rendered DOM scraper for JavaScript site...');

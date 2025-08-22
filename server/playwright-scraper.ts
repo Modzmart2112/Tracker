@@ -28,37 +28,83 @@ export const playwrightScraper = {
     await page.waitForLoadState("networkidle").catch(() => {});
     for (let i = 0; i < 25; i++) { await page.mouse.wheel(0, 2000); await sleep(250); }
 
-    const products = await page.$$eval("a[href^='/product/']", (anchors) => {
+    // For Trade Tools, use more generic selectors
+    const isTradeTools = url.includes('tradetools');
+    const productSelector = isTradeTools 
+      ? "a[href*='/p/'], article[class*='product'], div[class*='product-card'], div[class*='ProductCard']"
+      : "a[href^='/product/']";
+
+    const products = await page.$$eval(productSelector, (elements) => {
       const items: any[] = [];
       const seen = new Set<string>();
-      for (const a of anchors as HTMLAnchorElement[]) {
-        const href = new URL(a.getAttribute("href")!, location.origin).toString();
-        if (seen.has(href)) continue;
+      
+      for (const el of elements) {
+        try {
+          // Get the product URL - either from an anchor or a data attribute
+          let href = "";
+          if (el.tagName === 'A') {
+            href = (el as HTMLAnchorElement).href;
+          } else {
+            const linkEl = el.querySelector('a');
+            if (linkEl) {
+              href = linkEl.href;
+            }
+          }
+          
+          if (!href || seen.has(href)) continue;
 
-        const card = (a.closest("article, li, div") ?? a) as HTMLElement;
-        let title = (a.textContent || "").trim();
-        if (!title) {
-          const h = card.querySelector(".ant-card-meta-title,.product-title,h2,h3");
-          title = (h?.textContent || "").trim();
+          // Use the element as the card container
+          const card = el as HTMLElement;
+          
+          // Extract title from various possible locations
+          let title = "";
+          const titleSelectors = [
+            '.product-title', '.product-name', '[class*="ProductName"]', 
+            'h2', 'h3', 'h4', '.title', '[class*="title"]'
+          ];
+          for (const selector of titleSelectors) {
+            const titleEl = card.querySelector(selector);
+            if (titleEl?.textContent) {
+              title = titleEl.textContent.trim();
+              break;
+            }
+          }
+          if (!title) continue;
+
+          // Extract price
+          let price = "";
+          const priceSelectors = [
+            '.price', '[class*="price"]', '[data-testid*="price"]',
+            '.amount', '[class*="Price"]'
+          ];
+          for (const selector of priceSelectors) {
+            const priceEl = card.querySelector(selector);
+            if (priceEl?.textContent && /\d/.test(priceEl.textContent)) {
+              price = priceEl.textContent.replace(/\s+/g, " ").trim();
+              break;
+            }
+          }
+          
+          // Fallback price extraction
+          if (!price) {
+            const m = (card.textContent || "").match(/\$\s?\d[\d,]*\.?\d{0,2}/);
+            price = m ? m[0] : "";
+          }
+
+          // Extract image
+          const img = card.querySelector("img");
+          const image = img?.getAttribute("src")
+            || img?.getAttribute("data-src")
+            || img?.getAttribute("data-lazy")
+            || (img?.getAttribute("srcset")||"").split(",").pop()?.trim().split(" ")[0]
+            || null;
+
+          items.push({ title, price, url: href, image });
+          seen.add(href);
+        } catch (err) {
+          // Skip this element if there's an error
+          continue;
         }
-        if (!title) continue;
-
-        let price = (card.querySelector("[data-testid*='price'], .price, [class*='price']")?.textContent || "")
-                      .replace(/\s+/g," ").trim();
-        if (!/\d/.test(price)) {
-          const m = (card.textContent || "").match(/\$\s?\d[\d,]*\.?\d{0,2}/);
-          price = m ? m[0] : "";
-        }
-
-        const img = card.querySelector("img");
-        const image = img?.getAttribute("src")
-          || img?.getAttribute("data-src")
-          || img?.getAttribute("data-lazy")
-          || (img?.getAttribute("srcset")||"").split(",").pop()?.trim().split(" ")[0]
-          || null;
-
-        items.push({ title, price, url: href, image });
-        seen.add(href);
       }
       return items;
     });
