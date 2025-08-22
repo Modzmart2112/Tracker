@@ -257,7 +257,9 @@ export class CompetitorScraper {
       if (productElements.length > 0) {
         console.log(`Found ${productElements.length} products with selector: ${selector}`);
         
-        productElements.each((index: number, element: any) => {
+        const productArray = productElements.toArray();
+        for (let i = 0; i < productArray.length; i++) {
+          const element = productArray[i];
           const $product = $(element);
           
           // Extract title
@@ -354,7 +356,7 @@ export class CompetitorScraper {
             });
             foundProducts = true;
           }
-        });
+        }
         
         if (foundProducts) break;
       }
