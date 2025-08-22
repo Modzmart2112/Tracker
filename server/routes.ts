@@ -500,6 +500,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const { playwrightScraper } = await import('./playwright-scraper');
         result = await playwrightScraper.scrapeSydneyTools(url);
       } 
+      else if (hostname.includes('totaltools')) {
+        console.log('Using Playwright scraper for Total Tools (lazy-loaded images)...');
+        const { playwrightScraper } = await import('./playwright-scraper');
+        result = await playwrightScraper.scrapeTotalTools(url);
+      }
       else if (hostname.includes('tradetools')) {
         console.log('Using specialized Trade Tools scraper...');
         const { tradeToolsScraper } = await import('./trade-tools-scraper');

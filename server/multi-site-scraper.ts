@@ -356,21 +356,41 @@ export class MultiSiteScraper {
         const title = $product.find('.product-item-name, .product-name, h3').first().text().trim();
         const priceData = await this.extractSalePrice($product);
         
-        // Improved image extraction for Total Tools - check multiple attributes for lazy-loaded images
-        const $img = $product.find('img').first();
-        let imageUrl = $img.attr('src') || 
-                       $img.attr('data-src') || 
-                       $img.attr('data-lazy') || 
-                       $img.attr('data-original') ||
-                       $img.attr('data-image') || '';
+        // Improved image extraction for Total Tools - avoid placeholder images
+        let imageUrl = '';
         
-        // If still no image, try to find it in a picture element or background image
-        if (!imageUrl) {
-          const bgImage = $product.find('[style*="background-image"]').first().attr('style');
-          if (bgImage) {
-            const match = bgImage.match(/url\(['"]?(.*?)['"]?\)/);
-            if (match) imageUrl = match[1];
+        // First try to find the actual product image (not placeholder)
+        const $productImage = $product.find('img.product-image-photo, img[alt*="' + title.substring(0, 20) + '"]').first();
+        if ($productImage.length) {
+          imageUrl = $productImage.attr('src') || '';
+          // Check if it's a placeholder (base64 1x1 pixel)
+          if (imageUrl && imageUrl.includes('data:image') && imageUrl.includes('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGP6zwAAAgcBApocMXEAAAAASUVORK5CYII=')) {
+            // It's a placeholder, try data attributes
+            imageUrl = $productImage.attr('data-src') || 
+                      $productImage.attr('data-lazy') || 
+                      $productImage.attr('data-original') ||
+                      $productImage.attr('data-image') || '';
           }
+        }
+        
+        // If still no valid image, try all img elements and find one with a real URL
+        if (!imageUrl || imageUrl.includes('data:image')) {
+          $product.find('img').each((i, img) => {
+            const src = $(img).attr('src') || '';
+            if (src && !src.includes('data:image') && src.includes('totaltools.com.au/media')) {
+              imageUrl = src;
+              return false; // break the loop
+            }
+          });
+        }
+        
+        // As last resort, check lazy load attributes on any img
+        if (!imageUrl || imageUrl.includes('data:image')) {
+          const $img = $product.find('img').first();
+          imageUrl = $img.attr('data-src') || 
+                    $img.attr('data-lazy') || 
+                    $img.attr('data-original') ||
+                    $img.attr('data-image') || '';
         }
         
         const image = this.normalizeImageUrl(imageUrl, url);
