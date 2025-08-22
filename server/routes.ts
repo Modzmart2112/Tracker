@@ -252,7 +252,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/competitor-carousels/:competitorId", async (req, res) => {
     try {
       const { competitorId } = req.params;
-      const carousels = await storage.getCompetitorCarousels(competitorId);
+      let carousels = await storage.getCompetitorCarousels(competitorId);
+      
+      // If no carousels exist, create mock ones automatically
+      if (carousels.length === 0) {
+        const competitor = await storage.getCompetitor(competitorId);
+        if (competitor) {
+          const mockCarousels = [
+            {
+              competitorId,
+              imageUrl: "https://via.placeholder.com/800x400/CB0000/ffffff?text=Summer+Tool+Sale",
+              linkUrl: `https://${competitor.siteDomain}/sale`,
+              title: "Summer Tool Sale - Up to 50% Off",
+              description: "Massive discounts on power tools, hand tools, and accessories. Limited time only!",
+              promoText: "50% OFF",
+              position: 0,
+              active: true,
+            },
+            {
+              competitorId,
+              imageUrl: "https://via.placeholder.com/800x400/1a1a1a/ffffff?text=New+DeWalt+Range",
+              linkUrl: `https://${competitor.siteDomain}/new/dewalt`,
+              title: "New DeWalt 20V Max Range",
+              description: "Latest cordless tools with improved battery life and performance",
+              promoText: "NEW ARRIVAL",
+              position: 1,
+              active: true,
+            },
+            {
+              competitorId,
+              imageUrl: "https://via.placeholder.com/800x400/FF6B00/ffffff?text=Free+Delivery",
+              linkUrl: `https://${competitor.siteDomain}/delivery`,
+              title: "Free Delivery on Orders Over $99",
+              description: "Shop online and get free standard delivery Australia-wide",
+              promoText: "FREE SHIPPING",
+              position: 2,
+              active: true,
+            },
+            {
+              competitorId,
+              imageUrl: "https://via.placeholder.com/800x400/2563EB/ffffff?text=Trade+Accounts",
+              linkUrl: `https://${competitor.siteDomain}/trade`,
+              title: "Trade Account Benefits",
+              description: "Exclusive pricing and payment terms for trade professionals",
+              promoText: "TRADE ONLY",
+              position: 3,
+              active: false,
+            }
+          ];
+          
+          await storage.updateCompetitorCarousels(competitorId, mockCarousels);
+          carousels = await storage.getCompetitorCarousels(competitorId);
+        }
+      }
+      
       res.json(carousels);
     } catch (error) {
       console.error("Error fetching carousels:", error);

@@ -59,7 +59,7 @@ export default function Competitors() {
     queryFn: api.getCompetitors,
   });
 
-  const { data: carousels = [], isLoading: loadingCarousels } = useQuery({
+  const { data: carousels = [], isLoading: loadingCarousels, refetch: refetchCarousels } = useQuery({
     queryKey: ["/api/competitor-carousels", selectedCompetitor],
     queryFn: () => selectedCompetitor ? apiRequest("GET", `/api/competitor-carousels/${selectedCompetitor}`) : Promise.resolve([]),
     enabled: !!selectedCompetitor,
