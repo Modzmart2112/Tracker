@@ -4,6 +4,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -1436,7 +1437,7 @@ export default function ProductsPage() {
                                     {/* Show competitorListings if available (for matched products) */}
                                     {product.competitorListings?.map((listing: any) => {
                                       const competitorPrice = listing.latestSnapshot?.price ? parseFloat(listing.latestSnapshot.price) : null;
-                                      const ourPrice = parseFloat(product.price) || parseFloat(product.ourPrice) || 0;
+                                      const ourPrice = parseFloat(product.price?.toString() || product.ourPrice?.toString() || "0") || 0;
                                       const priceDiff = competitorPrice && ourPrice ? competitorPrice - ourPrice : 0;
                                       const percentDiff = ourPrice > 0 && competitorPrice ? ((priceDiff / ourPrice) * 100) : 0;
                                       
@@ -1668,18 +1669,27 @@ export default function ProductsPage() {
                 const brandProducts = products.filter(p => (p.brand || 'Unknown') === brand);
                 const customization = getCardCustomization(brand, 'brand');
                 
+                // Get unique competitors that stock this brand
+                const stockingCompetitors = Array.from(new Set(
+                  brandProducts.flatMap(p => 
+                    p.competitorLinks.map(link => link.competitorName || 'Unknown')
+                  )
+                )).sort();
+                
                 return (
-                  <motion.div
-                    key={brand}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="cursor-pointer"
-                    onClick={() => {
-                      // Navigate to brand page - you'll need to implement this route
-                      window.location.href = `/brands/${encodeURIComponent(brand)}`;
-                    }}
-                  >
-                    <Card className="aspect-square bg-white hover:shadow-lg transition-all duration-300 border border-gray-200 hover:border-red-300 relative group">
+                  <TooltipProvider key={brand}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <motion.div
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          className="cursor-pointer"
+                          onClick={() => {
+                            // Navigate to brand page - you'll need to implement this route
+                            window.location.href = `/brands/${encodeURIComponent(brand)}`;
+                          }}
+                        >
+                          <Card className="aspect-square bg-white hover:shadow-lg transition-all duration-300 border border-gray-200 hover:border-red-300 relative group">
                       {/* Product count badge */}
                       <div className="absolute -top-2 -right-2 z-10">
                         <Badge className="bg-red-600 text-white text-xs font-bold shadow-lg">
@@ -1724,8 +1734,30 @@ export default function ProductsPage() {
                           {brand}
                         </div>
                       </CardContent>
-                    </Card>
-                  </motion.div>
+                          </Card>
+                        </motion.div>
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-sm">
+                        <div className="space-y-1">
+                          <p className="font-semibold text-sm">{brand}</p>
+                          {stockingCompetitors.length > 0 ? (
+                            <div>
+                              <p className="text-xs text-gray-600 mb-1">Stocked by:</p>
+                              <div className="flex flex-wrap gap-1">
+                                {stockingCompetitors.map(comp => (
+                                  <Badge key={comp} variant="secondary" className="text-xs">
+                                    {comp}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            <p className="text-xs text-gray-500">No competitors stock this brand</p>
+                          )}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 );
               })}
             </div>
