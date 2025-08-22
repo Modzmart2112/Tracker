@@ -538,10 +538,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const errors: string[] = [];
       
       try {
-        // Find or create competitor
+        // Find or create competitor - check both name and domain to avoid duplicates
         const siteDomain = new URL(url).hostname;
         const existingCompetitors = await storage.getCompetitors();
-        let competitor = existingCompetitors.find(c => c.name.toLowerCase() === result.competitorName.toLowerCase());
+        
+        // Check by domain first (more reliable), then by normalized name
+        let competitor = existingCompetitors.find(c => 
+          c.siteDomain === siteDomain || 
+          (c.name.toLowerCase().replace(/\s+/g, '') === result.competitorName.toLowerCase().replace(/\s+/g, ''))
+        );
         
         if (!competitor) {
           competitor = await storage.createCompetitor({
@@ -550,6 +555,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
             status: 'active',
             isUs: false
           });
+          console.log(`Created new competitor: ${result.competitorName} (${siteDomain})`);
+        } else {
+          console.log(`Using existing competitor: ${competitor.name} (${competitor.siteDomain})`);
         }
         
         // Find or create category and product type

@@ -355,10 +355,25 @@ export class MultiSiteScraper {
         
         const title = $product.find('.product-item-name, .product-name, h3').first().text().trim();
         const priceData = await this.extractSalePrice($product);
-        const image = this.normalizeImageUrl(
-          $product.find('img').first().attr('src') || '',
-          url
-        );
+        
+        // Improved image extraction for Total Tools - check multiple attributes for lazy-loaded images
+        const $img = $product.find('img').first();
+        let imageUrl = $img.attr('src') || 
+                       $img.attr('data-src') || 
+                       $img.attr('data-lazy') || 
+                       $img.attr('data-original') ||
+                       $img.attr('data-image') || '';
+        
+        // If still no image, try to find it in a picture element or background image
+        if (!imageUrl) {
+          const bgImage = $product.find('[style*="background-image"]').first().attr('style');
+          if (bgImage) {
+            const match = bgImage.match(/url\(['"]?(.*?)['"]?\)/);
+            if (match) imageUrl = match[1];
+          }
+        }
+        
+        const image = this.normalizeImageUrl(imageUrl, url);
         const productUrl = this.normalizeImageUrl(
           $product.find('a').first().attr('href') || '',
           url
