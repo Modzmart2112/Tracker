@@ -119,7 +119,10 @@ export interface IStorage {
   updateCatalogProduct(id: string, updates: Partial<CatalogProduct>): Promise<CatalogProduct | undefined>;
   getListingSnapshots(listingId: string): Promise<ListingSnapshot[]>;
 
-
+  // Carousel monitoring
+  getCompetitorCarousels(competitorId: string): Promise<any[]>;
+  createCompetitorCarousel(carousel: any): Promise<any>;
+  updateCompetitorCarousels(competitorId: string, carousels: any[]): Promise<void>;
 }
 
 export class MemStorage implements IStorage {
@@ -145,6 +148,9 @@ export class MemStorage implements IStorage {
   // Unified products
   private unifiedProducts: Map<string, any> = new Map();
   private unifiedCompetitorLinks: Map<string, any[]> = new Map();
+  
+  // Carousel monitoring
+  private competitorCarousels: Map<string, any> = new Map();
 
   constructor() {
     // No seed data - clean start
@@ -727,6 +733,43 @@ export class MemStorage implements IStorage {
     return Array.from(this.listingSnapshots.values())
       .filter(s => s.listingId === listingId)
       .sort((a, b) => b.scrapedAt.getTime() - a.scrapedAt.getTime());
+  }
+
+  // Carousel monitoring implementation
+  async getCompetitorCarousels(competitorId: string): Promise<any[]> {
+    return Array.from(this.competitorCarousels.values())
+      .filter(c => c.competitorId === competitorId)
+      .sort((a, b) => a.position - b.position);
+  }
+
+  async createCompetitorCarousel(carousel: any): Promise<any> {
+    const id = randomUUID();
+    const now = new Date();
+    const newCarousel = {
+      ...carousel,
+      id,
+      firstSeenAt: carousel.firstSeenAt || now,
+      lastSeenAt: carousel.lastSeenAt || now,
+      scrapedAt: carousel.scrapedAt || now,
+    };
+    this.competitorCarousels.set(id, newCarousel);
+    return newCarousel;
+  }
+
+  async updateCompetitorCarousels(competitorId: string, carousels: any[]): Promise<void> {
+    // Remove existing carousels for this competitor
+    const existing = Array.from(this.competitorCarousels.keys())
+      .filter(key => {
+        const carousel = this.competitorCarousels.get(key);
+        return carousel?.competitorId === competitorId;
+      });
+    
+    existing.forEach(key => this.competitorCarousels.delete(key));
+
+    // Add new carousels
+    for (const carousel of carousels) {
+      await this.createCompetitorCarousel(carousel);
+    }
   }
 }
 

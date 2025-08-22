@@ -1,0 +1,38 @@
+<div class="home-top-banner"><div id="homepage-boxes-9748" class="homepage-boxes homepage-slideshow layout-d">
+    <div id="homepage-boxes-list-9748" class="homepage-boxes-list slick-initialized slick-slider slick-dotted"><button class="slick-prev slick-arrow slick-disabled" aria-label="Previous" type="button" aria-disabled="true" style="">Previous</button><div class="slick-list draggable"><div class="slick-track" style="opacity: 1; width: 2700px;"><div class="slick-slide slick-current slick-active" data-slick-index="0" aria-hidden="false" style="width: 1350px; position: relative; left: 0px; top: 0px; z-index: 999; opacity: 1;" role="tabpanel" id="slick-slide00" aria-describedby="slick-slide-control00"><div><div class="homepage-box " style="width: 100%; display: inline-block;">
+                        <a href="/milwaukee-tool-rush" class="homepage-box-link" tabindex="0">
+                            <picture class="homepage-box-image">
+                                        <source media="(max-width: 768px)" srcset="https://www.totaltools.com.au/media/balance/box/image//2/0/2025_08_milwaukeetoolrush_hp-banner_mobile_750x650px.jpg">
+                                                            <source srcset="https://www.totaltools.com.au/media/balance/box/image//2/0/2025_08_milwaukeetoolrush_hp-banner_desktop_2545x517px.jpg">
+                    <img src="https://www.totaltools.com.au/media/balance/box/image//2/0/2025_08_milwaukeetoolrush_hp-banner_desktop_2545x517px.jpg" alt="milwaukee-tool-rush-hp-banner" style="">
+                                    </picture>
+            </a>        </div></div></div><div class="slick-slide" data-slick-index="1" aria-hidden="true" style="width: 1350px; position: relative; left: -1350px; top: 0px; z-index: 998; opacity: 0; transition: opacity 500ms linear;" role="tabpanel" id="slick-slide01" aria-describedby="slick-slide-control01" tabindex="-1"><div><div class="homepage-box " style="width: 100%; display: inline-block;">
+                        <a href="https://help.totaltools.com.au/hc/en-au/articles/6933979612687-Uber-Delivery?_gl=1*9f607n*_gcl_au*MTU3MDM4NTU0MC4xNzU0OTUyNjM1*_ga*OTgwODg0MjMuMTc1NDk1MjYzNg..*_ga_XK9YEEK36C*czE3NTU4MzEzNzYkbzEyJGcxJHQxNzU1ODMyMTg1JGo1OSRsMCRoMjc4NzE2MzM4" class="homepage-box-link" tabindex="-1">
+                            <picture class="homepage-box-image">
+                                        <source media="(max-width: 768px)" srcset="https://www.totaltools.com.au/media/balance/box/image//2/0/2025_07_uberdelivery_hp-banner_mobile_750x76.jpg">
+                                                            <source srcset="https://www.totaltools.com.au/media/balance/box/image//2/0/2025_07_uberdelivery_hp-banner_desktop_2545x.jpg">
+                    <img src="https://www.totaltools.com.au/media/balance/box/image//2/0/2025_07_uberdelivery_hp-banner_desktop_2545x.jpg" alt="uber-delivery-hp-banner" style="">
+                                    </picture>
+            </a>        </div></div></div></div></div><button class="slick-next slick-arrow" aria-label="Next" type="button" style="" aria-disabled="false">Next</button><ul class="slick-dots" style="display: block;" role="tablist"><li class="slick-active" role="presentation"><button type="button" role="tab" id="slick-slide-control00" aria-controls="slick-slide00" aria-label="1 of 2" tabindex="0" aria-selected="true">1</button></li><li role="presentation" class=""><button type="button" role="tab" id="slick-slide-control01" aria-controls="slick-slide01" aria-label="2 of 2" tabindex="-1">2</button></li></ul></div>
+</div>
+<script>
+    require(['jquery', 'slick'], function($) {
+        'use strict';
+
+        var opts = {
+            infinite: false,
+            dots: true,
+            arrow: true,
+            slidesToShow: 1,
+            slidesToScroll: 1,
+            fade: true,
+            cssEase: 'linear',
+            autoplay: true,
+            autoplaySpeed: 6000,
+            pauseOnHover: false
+        };
+
+        $('#homepage-boxes-list-9748').slick(opts);
+    });
+</script>
+</div>

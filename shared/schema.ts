@@ -20,6 +20,9 @@ export const competitors = pgTable("competitors", {
   siteDomain: text("site_domain").notNull(),
   status: text("status").notNull().default("active"),
   isUs: boolean("is_us").notNull().default(false),
+  logoUrl: text("logo_url"),
+  primaryColor: text("primary_color"),
+  description: text("description"),
 });
 
 export const categories = pgTable("categories", {
@@ -199,6 +202,22 @@ export const listingImages = pgTable("listing_images", {
   position: integer("position").notNull().default(0),
 });
 
+// Competitor carousel/banner monitoring
+export const competitorCarousels = pgTable("competitor_carousels", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  competitorId: varchar("competitor_id").references(() => competitors.id).notNull(),
+  imageUrl: text("image_url").notNull(),
+  linkUrl: text("link_url"),
+  title: text("title"),
+  description: text("description"),
+  promoText: text("promo_text"),
+  position: integer("position").notNull().default(0),
+  active: boolean("active").notNull().default(true),
+  firstSeenAt: timestamp("first_seen_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  lastSeenAt: timestamp("last_seen_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+  scrapedAt: timestamp("scraped_at").notNull().default(sql`CURRENT_TIMESTAMP`),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true });
 export const insertCompetitorSchema = createInsertSchema(competitors).omit({ id: true });
@@ -218,6 +237,7 @@ export const insertCatalogProductSchema = createInsertSchema(catalogProducts).om
 export const insertCompetitorListingSchema = createInsertSchema(competitorListings).omit({ id: true, firstSeenAt: true, lastSeenAt: true });
 export const insertListingSnapshotSchema = createInsertSchema(listingSnapshots).omit({ id: true, scrapedAt: true });
 export const insertListingImageSchema = createInsertSchema(listingImages).omit({ id: true });
+export const insertCompetitorCarouselSchema = createInsertSchema(competitorCarousels).omit({ id: true });
 
 // Types
 export type User = typeof users.$inferSelect;
@@ -254,6 +274,8 @@ export type ListingSnapshot = typeof listingSnapshots.$inferSelect;
 export type InsertListingSnapshot = z.infer<typeof insertListingSnapshotSchema>;
 export type ListingImage = typeof listingImages.$inferSelect;
 export type InsertListingImage = z.infer<typeof insertListingImageSchema>;
+export type CompetitorCarousel = typeof competitorCarousels.$inferSelect;
+export type InsertCompetitorCarousel = z.infer<typeof insertCompetitorCarouselSchema>;
 
 // Frontend unified product interface
 export interface UnifiedProduct {

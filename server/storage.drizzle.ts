@@ -312,6 +312,33 @@ export class DrizzleStorage implements IStorage {
       .orderBy(desc(listingSnapshots.scrapedAt));
   }
 
+  // Carousel monitoring
+  async getCompetitorCarousels(competitorId: string): Promise<any[]> {
+    const { competitorCarousels } = await import("@shared/schema");
+    return await this.db.select().from(competitorCarousels)
+      .where(eq(competitorCarousels.competitorId, competitorId))
+      .orderBy(competitorCarousels.position);
+  }
+
+  async createCompetitorCarousel(carousel: any): Promise<any> {
+    const { competitorCarousels } = await import("@shared/schema");
+    const [result] = await this.db.insert(competitorCarousels).values(carousel).returning();
+    return result;
+  }
+
+  async updateCompetitorCarousels(competitorId: string, carousels: any[]): Promise<void> {
+    const { competitorCarousels } = await import("@shared/schema");
+    
+    // Delete existing carousels for this competitor
+    await this.db.delete(competitorCarousels)
+      .where(eq(competitorCarousels.competitorId, competitorId));
+    
+    // Insert new carousels
+    if (carousels.length > 0) {
+      await this.db.insert(competitorCarousels).values(carousels);
+    }
+  }
+
   // Analytics
   async getBrandCoverageMatrix(productTypeId: string): Promise<any> {
     const productsData = await this.db

@@ -1,0 +1,355 @@
+<div class="heroCarousel">
+        <div data-content-region="home_custom_carousel"><div data-layout-id="a9dab7be-b366-483e-a502-5f05865ce2f9"><div data-sub-layout-container="c9f0d401-e2bb-4213-a6ac-df81d8760d70" data-layout-name="Layout">
+  <style data-container-styling="c9f0d401-e2bb-4213-a6ac-df81d8760d70">
+    [data-sub-layout-container="c9f0d401-e2bb-4213-a6ac-df81d8760d70"] {
+      box-sizing: border-box;
+      display: flex;
+      flex-wrap: wrap;
+      z-index: 0;
+      position: relative;
+    }
+    [data-sub-layout-container="c9f0d401-e2bb-4213-a6ac-df81d8760d70"]:after {
+      background-position: center center;
+      background-size: cover;
+      z-index: auto;
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+    }
+  </style>
+  <div data-sub-layout="8af907ef-dd50-4fb6-9104-21ce75df243a">
+    <style data-column-styling="8af907ef-dd50-4fb6-9104-21ce75df243a">
+      [data-sub-layout="8af907ef-dd50-4fb6-9104-21ce75df243a"] {
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+        flex-basis: 100%;
+        max-width: 100%;
+        z-index: 0;
+        justify-content: center;
+        position: relative;
+      }
+      [data-sub-layout="8af907ef-dd50-4fb6-9104-21ce75df243a"]:after {
+        background-position: center center;
+        background-size: cover;
+        z-index: auto;
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+      }
+      @media only screen and (max-width: 700px) {
+        [data-sub-layout="8af907ef-dd50-4fb6-9104-21ce75df243a"] {
+          flex-basis: 100%;
+          max-width: 100%;
+        }
+      }
+    </style>
+    <div data-widget-id="81f88efa-350e-491d-bb00-8d57a6d40af2" data-placement-id="12517f76-163b-4d46-9a58-7e557cc19ba6" data-placement-status="ACTIVE"><div class="nosto_element" id="homepage_banner" data-nosto-ref="{&quot;ref&quot;:&quot;68350b8ba1f4e24110272760&quot;}"><style nested="">
+    #homepage_banner{
+        width: 100%;
+        /* max-width: 1660px; */
+                padding: 0;
+                margin: 0 auto;
+        box-sizing: border-box;
+        p{
+            margin-bottom: 0;
+            min-height: unset !important;
+        }
+        #rotator1adLink, #rotator2adLink{
+          display:block;
+        }
+        #rotator1_div{
+            display: block;
+        }
+        #rotator2_div{
+            display: none;
+        }
+        .swiper-button-prev, .swiper-button-next{
+              width: 32px;
+              height: 32px;
+              border-radius: 32px;
+              display: flex;
+              -webkit-box-align: center;
+              align-items: center;
+              -webkit-box-pack: center;
+              justify-content: center;
+              z-index: 3;
+              /* position: relative; */
+              transition: background-color 0.3s;
+              background-color: rgba(255, 255, 255, 0.5);
+        }
+        .swiper-button-prev > svg, .swiper-button-next > svg{
+          all:unset;
+          opacity: 0.9;
+          transition: opacity 0.3s;
+        }
+
+        .swiper-button-prev:hover > svg, .swiper-button-next:hover > svg{
+          opacity: 1;
+        }
+
+        .swiper-button-prev{
+          left: 15px;
+        }
+        .swiper-button-next{
+          right: 15px;
+        }
+        
+        .swiper-button-prev > svg{
+            transform: rotate(180deg);
+        }
+        .swiper-button-prev:after, .swiper-button-next:after{
+            display: none;
+        }
+    }
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+    @media(max-width: 600px){
+        #homepage_banner{
+            #rotator1_div{
+                display: none;
+            }
+            #rotator2_div{
+                display: block;
+            }
+        }
+    }                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       
+
+
+    @media(min-width: 1261px){
+        #homepage_banner{
+          .swiper-button-prev{
+              left: 20px;
+            }
+            .swiper-button-next{
+              right: 20px;
+            }
+        }
+    }
+</style>    
+
+<div class="swiper nosto-carousel swiper-initialized swiper-horizontal swiper-backface-hidden">
+    <div class="swiper-wrapper" id="swiper-wrapper-1dc31556c2297bc4" aria-live="off" style="transition-duration: 0ms; transform: translate3d(-1350px, 0px, 0px); transition-delay: 0ms;">
+                
+                
+            <div class="swiper-slide swiper-slide-next swiper-slide-prev" role="group" aria-label="1 / 2" data-swiper-slide-index="0" style="width: 1350px;">
+            <p id="rotator1_div" class="responsive-img desktop-banner ns-desktop-banner"><a href="https://toolkitdepot.com.au/milwaukee-tool-rush-sale/" id="rotator1adLink"><img src="https://cdn11.bigcommerce.com/s-a579g2rqqa/images/stencil/original/image-manager/desktop-banner-milwaukeetoolrush-180825.jpg" alt="Desktop Banner" id="rotator1"></a></p>
+            <p id="rotator2_div" class="responsive-img mobile-banner ns-mobile-banner"><a href="https://toolkitdepot.com.au/milwaukee-tool-rush-sale/" id="rotator2adLink"><img src="https://cdn11.bigcommerce.com/s-a579g2rqqa/images/stencil/original/image-manager/mobile-banner-milwaukeetoolrush-180825.jpg" alt="Mobile Banner" id="rotator2"></a></p>
+        </div><div class="swiper-slide swiper-slide-active" role="group" aria-label="2 / 2" data-swiper-slide-index="1" style="width: 1350px;">
+            <p id="rotator1_div" class="responsive-img desktop-banner ns-desktop-banner"><a href="https://toolkitdepot.com.au/tool-deals-for-dad/" id="rotator1adLink"><img src="https://cdn11.bigcommerce.com/s-a579g2rqqa/images/stencil/original/image-manager/desktop-banner-dad-010825.jpg" alt="Desktop Banner" id="rotator1"></a></p>
+            <p id="rotator2_div" class="responsive-img mobile-banner ns-mobile-banner"><a href="https://toolkitdepot.com.au/tool-deals-for-dad/" id="rotator2adLink"><img src="https://cdn11.bigcommerce.com/s-a579g2rqqa/images/stencil/original/image-manager/mobile-banner-dad-010825.jpg" alt="Mobile Banner" id="rotator2"></a></p>
+        </div></div>
+    <div class="swiper-button-prev" tabindex="0" role="button" aria-label="Previous slide" aria-controls="swiper-wrapper-1dc31556c2297bc4">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="rgb(29, 33, 41)" class="ns-arrow-icon" xmlns="http://www.w3.org/2000/svg">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M7.0404 1.95955C6.64988 1.56903 6.01671 1.56903 5.62619 1.95955C5.2657 2.32003 5.23797 2.88726 5.543 3.27956L5.62619 3.37376L10.253 7.99999L5.62619 12.6262C5.2657 12.9867 5.23797 13.5539 5.543 13.9462L5.62619 14.0404C5.98667 14.4009 6.5539 14.4286 6.94619 14.1236L7.0404 14.0404L12.3737 8.7071C12.7342 8.34661 12.7619 7.77938 12.4569 7.38709L12.3737 7.29288L7.0404 1.95955Z">
+            </path>
+        </svg>
+    </div>
+    <div class="swiper-button-next" tabindex="0" role="button" aria-label="Next slide" aria-controls="swiper-wrapper-1dc31556c2297bc4">
+        
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="rgb(29, 33, 41)" class="ns-arrow-icon" xmlns="http://www.w3.org/2000/svg">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M7.0404 1.95955C6.64988 1.56903 6.01671 1.56903 5.62619 1.95955C5.2657 2.32003 5.23797 2.88726 
+            5.543 3.27956L5.62619 3.37376L10.253 7.99999L5.62619 12.6262C5.2657 12.9867 5.23797 13.5539 5.543 
+            13.9462L5.62619 14.0404C5.98667 14.4009 6.5539 14.4286 6.94619 14.1236L7.0404 14.0404L12.3737 
+            8.7071C12.7342 8.34661 12.7619 7.77938 12.4569 7.38709L12.3737 7.29288L7.0404 1.95955Z">
+            </path>
+        </svg>
+    </div>
+<span class="swiper-notification" aria-live="assertive" aria-atomic="true"></span><span class="swiper-notification" aria-live="assertive" aria-atomic="true"></span></div>
+
+</div>
+</div>
+  </div>
+</div></div></div>
+        <div class="custom-block">
+            <div class="container">
+                <div data-content-region="home_custom_block"></div>
+            </div>
+        </div>
+        <div class="brands-block">
+            <div data-content-region="home_brands"><div data-layout-id="06b93ffd-b6d4-4225-89fc-60cdf106217a"><div data-sub-layout-container="6612ac88-0dfd-4fac-bef1-eccf0f2d72ad" data-layout-name="Layout Button Multi Colums">
+  <style data-container-styling="6612ac88-0dfd-4fac-bef1-eccf0f2d72ad">
+    [data-sub-layout-container="6612ac88-0dfd-4fac-bef1-eccf0f2d72ad"] {
+      box-sizing: border-box;
+      display: flex;
+      flex-wrap: wrap;
+      z-index: 0;
+      position: relative;
+    }
+    [data-sub-layout-container="6612ac88-0dfd-4fac-bef1-eccf0f2d72ad"]:after {
+      background-position: center center;
+      background-size: cover;
+      z-index: auto;
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      right: 0;
+    }
+  </style>
+  <div data-sub-layout="743c4f4b-4f2e-40c6-a893-c06f05e52c37">
+    <style data-column-styling="743c4f4b-4f2e-40c6-a893-c06f05e52c37">
+      [data-sub-layout="743c4f4b-4f2e-40c6-a893-c06f05e52c37"] {
+        display: flex;
+        flex-direction: column;
+        box-sizing: border-box;
+        flex-basis: 100%;
+        max-width: 100%;
+        z-index: 0;
+        justify-content: center;
+        position: relative;
+      }
+      [data-sub-layout="743c4f4b-4f2e-40c6-a893-c06f05e52c37"]:after {
+        background-position: center center;
+        background-size: cover;
+        z-index: auto;
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        right: 0;
+      }
+      @media only screen and (max-width: 700px) {
+        [data-sub-layout="743c4f4b-4f2e-40c6-a893-c06f05e52c37"] {
+          flex-basis: 100%;
+          max-width: 100%;
+        }
+      }
+    </style>
+    <div data-widget-id="8fdadd55-4913-40d4-a1a7-fc43900e51fb" data-placement-id="4609555d-b346-4747-b1de-f0965a1d10ae" data-placement-status="ACTIVE"><style>
+  .sd-spacer-8fdadd55-4913-40d4-a1a7-fc43900e51fb {
+    height: 20px;
+  }
+</style>
+
+<div class="sd-spacer-8fdadd55-4913-40d4-a1a7-fc43900e51fb">
+</div>
+</div><div data-widget-id="155832d5-8903-437b-a0ae-8cb7809ae1d9" data-placement-id="755e22c1-4c96-47e0-b847-2cd7a50b421e" data-placement-status="ACTIVE">
+    <style>
+        #main-content {margin-top: 0}
+        #homepage_banner .swiper-wrapper {
+            margin-top: 2.5rem;
+        }
+        .desktop-table,
+        .mobile-table {
+            border-collapse: collapse;
+            width: 100%;
+            max-width: 1510px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .desktop-table td,
+        .mobile-table td {
+            border: 1px hidden;
+            padding: 6px;
+            vertical-align: middle;
+        }
+
+        .desktop-table img,
+        .mobile-table img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .mobile-table {
+            display: none;
+        }
+
+        @media (max-width: 600px) {
+            .desktop-table {
+                display: none;
+            }
+
+            .mobile-table {
+                display: table;
+            }
+          #homepage_banner .swiper-wrapper {
+              margin-top: 20px;
+          }
+        }
+    </style>
+
+    <table class="desktop-table" style="display: table;">
+        <tbody>
+            <tr>
+                <td><a href="https://toolkitdepot.com.au/makita"><img src="https://cdn11.bigcommerce.com/s-a579g2rqqa/images/stencil/original/image-manager/hb-01-makita.jpg" alt="Makita" width="364" height="130"></a></td>
+                <td><a href="https://toolkitdepot.com.au/milwaukee"><img src="https://cdn11.bigcommerce.com/s-a579g2rqqa/images/stencil/original/image-manager/hb-02-milwaukee.jpg" alt="Milwaukee" width="364" height="130"></a></td>
+                <td><a href="https://toolkitdepot.com.au/aeg"><img src="https://cdn11.bigcommerce.com/s-a579g2rqqa/images/stencil/original/image-manager/hb-03-aeg2.jpg" alt="Aeg" width="364" height="130"></a></td>
+                <td><a href="https://toolkitdepot.com.au/bosch"><img src="https://cdn11.bigcommerce.com/s-a579g2rqqa/images/stencil/original/image-manager/hb-04-bosch.jpg" alt="Bosch" width="364" height="130"></a></td>
+            </tr>
+            <tr>
+                <td><a href="https://toolkitdepot.com.au/dewalt"><img src="https://cdn11.bigcommerce.com/s-a579g2rqqa/images/stencil/original/image-manager/hb-05-dewalt.jpg" alt="Dewalt" width="364" height="130"></a></td>
+                <td><a href="https://toolkitdepot.com.au/hikoki"><img src="https://cdn11.bigcommerce.com/s-a579g2rqqa/images/stencil/original/image-manager/hb-06-hikoki.jpg" alt="Hikoki" width="364" height="130"></a></td>
+                <td><a href="https://toolkitdepot.com.au/metabo"><img src="https://cdn11.bigcommerce.com/s-a579g2rqqa/images/stencil/original/image-manager/hb-07-metabo.jpg" alt="Metabo" width="364" height="130"></a></td>
+                <td><a href="https://toolkitdepot.com.au/festool"><img src="https://cdn11.bigcommerce.com/s-a579g2rqqa/images/stencil/original/image-manager/hb-08-festool.jpg" alt="Festool" width="364" height="130"></a></td>
+            </tr>
+            <tr>
+                <td><a href="https://toolkitdepot.com.au/outdoor-power-equipment"><img src="https://cdn11.bigcommerce.com/s-a579g2rqqa/images/stencil/original/image-manager/hb-09-ope-130225.jpg" alt="Outdoor Power Equipment" width="366" height="200"></a></td>
+                <td><a href="https://toolkitdepot.com.au/welding"><img src="https://cdn11.bigcommerce.com/s-a579g2rqqa/images/stencil/original/image-manager/hb-10-weldv2.jpg" alt="Welding" width="366" height="200"></a></td>
+                <td><a href="https://toolkitdepot.com.au/handtools/"><img src="https://cdn11.bigcommerce.com/s-a579g2rqqa/images/stencil/original/image-manager/hb-11-hand.jpg" alt="Hand Tools" width="366" height="200"></a></td>
+                <td><a href="https://toolkitdepot.com.au/workwear/"><img src="https://cdn11.bigcommerce.com/s-a579g2rqqa/images/stencil/original/image-manager/hb-12-workw-170325.jpg" alt="Workwear" width="366" height="200"></a></td>
+            </tr>
+
+          
+        </tbody>
+    </table>
+
+    <table class="mobile-table" style="display: none;">
+        <tbody>
+            <tr>
+                <td><a href="https://toolkitdepot.com.au/makita"><img src="https://cdn11.bigcommerce.com/s-a579g2rqqa/images/stencil/original/image-manager/hb-01-makita.jpg" alt="Makita" width="364" height="130"></a></td>
+                <td><a href="https://toolkitdepot.com.au/milwaukee"><img src="https://cdn11.bigcommerce.com/s-a579g2rqqa/images/stencil/original/image-manager/hb-02-milwaukee.jpg" alt="Milwaukee" width="364" height="130"></a></td>
+            </tr>
+            <tr>
+                <td><a href="https://toolkitdepot.com.au/aeg"><img src="https://cdn11.bigcommerce.com/s-a579g2rqqa/images/stencil/original/image-manager/hb-03-aeg2.jpg" alt="Aeg" width="364" height="130"></a></td>
+                <td><a href="https://toolkitdepot.com.au/bosch"><img src="https://cdn11.bigcommerce.com/s-a579g2rqqa/images/stencil/original/image-manager/hb-04-bosch.jpg" alt="Bosch" width="364" height="130"></a></td>
+            </tr>
+            <tr>
+                <td><a href="https://toolkitdepot.com.au/dewalt"><img src="https://cdn11.bigcommerce.com/s-a579g2rqqa/images/stencil/original/image-manager/hb-05-dewalt.jpg" alt="Dewalt" width="364" height="130"></a></td>
+                <td><a href="https://toolkitdepot.com.au/hikoki"><img src="https://cdn11.bigcommerce.com/s-a579g2rqqa/images/stencil/original/image-manager/hb-06-hikoki.jpg" alt="Hikoki" width="364" height="130"></a></td>
+            </tr>
+            <tr>
+                <td><a href="https://toolkitdepot.com.au/metabo"><img src="https://cdn11.bigcommerce.com/s-a579g2rqqa/images/stencil/original/image-manager/hb-07-metabo.jpg" alt="Metabo" width="364" height="130"></a></td>
+                <td><a href="https://toolkitdepot.com.au/festool"><img src="https://cdn11.bigcommerce.com/s-a579g2rqqa/images/stencil/original/image-manager/hb-08-festool.jpg" alt="Festool" width="364" height="130"></a></td>
+            </tr>
+            <tr>
+                <td><a href="https://toolkitdepot.com.au/outdoor-power-equipment"><img src="https://cdn11.bigcommerce.com/s-a579g2rqqa/images/stencil/original/image-manager/hb-09-ope-130225.jpg" alt="Outdoor Power Equipment" width="366" height="200"></a></td>
+                <td><a href="https://toolkitdepot.com.au/welding"><img src="https://cdn11.bigcommerce.com/s-a579g2rqqa/images/stencil/original/image-manager/hb-10-weldv2.jpg" alt="Welding" width="366" height="200"></a></td>
+            </tr>
+            <tr>
+                <td><a href="https://toolkitdepot.com.au/handtools/"><img src="https://cdn11.bigcommerce.com/s-a579g2rqqa/images/stencil/original/image-manager/hb-11-hand.jpg" alt="Hand Tools" width="366" height="200"></a></td>
+                <td><a href="https://toolkitdepot.com.au/workwear/"><img src="https://cdn11.bigcommerce.com/s-a579g2rqqa/images/stencil/original/image-manager/hb-12-workw-170325.jpg" alt="Workwear" width="366" height="200"></a></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script>
+        window.addEventListener('resize', function() {
+            var desktopTable = document.querySelector('.desktop-table');
+            var mobileTable = document.querySelector('.mobile-table');
+
+            if (window.innerWidth <= 600) {
+                desktopTable.style.display = 'none';
+                mobileTable.style.display = 'table';
+            } else {
+                desktopTable.style.display = 'table';
+                mobileTable.style.display = 'none';
+            }
+        });
+        window.dispatchEvent(new Event('resize'));
+    </script>
+</div>
+  </div>
+</div></div></div>
+        </div>
+    </div>

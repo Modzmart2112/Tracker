@@ -248,6 +248,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(tasks);
   });
 
+  // Carousel monitoring endpoints
+  app.get("/api/competitor-carousels/:competitorId", async (req, res) => {
+    try {
+      const { competitorId } = req.params;
+      const carousels = await storage.getCompetitorCarousels(competitorId);
+      res.json(carousels);
+    } catch (error) {
+      console.error("Error fetching carousels:", error);
+      res.status(500).json({ error: "Failed to fetch carousel data" });
+    }
+  });
+
+  app.post("/api/competitor-carousels/:competitorId/scrape", async (req, res) => {
+    try {
+      const { competitorId } = req.params;
+      const competitor = await storage.getCompetitor(competitorId);
+      
+      if (!competitor) {
+        return res.status(404).json({ error: "Competitor not found" });
+      }
+
+      // Mock carousel data for now - this would normally scrape the competitor's homepage
+      const mockCarousels = [
+        {
+          competitorId,
+          imageUrl: "https://via.placeholder.com/800x400/CB0000/ffffff?text=Summer+Sale",
+          linkUrl: `https://${competitor.siteDomain}/sale`,
+          title: "Summer Tool Sale",
+          description: "Up to 50% off selected power tools",
+          promoText: "50% OFF",
+          position: 0,
+          active: true,
+        },
+        {
+          competitorId,
+          imageUrl: "https://via.placeholder.com/800x400/1a1a1a/ffffff?text=New+Arrivals",
+          linkUrl: `https://${competitor.siteDomain}/new`,
+          title: "New Product Launch",
+          description: "Check out our latest professional tools",
+          promoText: "NEW",
+          position: 1,
+          active: true,
+        }
+      ];
+
+      await storage.updateCompetitorCarousels(competitorId, mockCarousels);
+      const carousels = await storage.getCompetitorCarousels(competitorId);
+      
+      res.json(carousels);
+    } catch (error) {
+      console.error("Error scraping carousels:", error);
+      res.status(500).json({ error: "Failed to scrape carousel data" });
+    }
+  });
+
   // Export CSV
   app.get("/api/export/csv", async (req, res) => {
     const { productTypeId } = req.query;
