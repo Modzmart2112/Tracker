@@ -298,7 +298,7 @@ export default function ProductsPage() {
       if (data.success && data.products && data.products.length > 0) {
         setImportPreviewData({
           competitorName: data.competitorName,
-          sourceUrl: competitorUrl,
+          sourceUrl: data.sourceUrl || competitorUrl,  // Use sourceUrl from response first
           totalProducts: data.products.length,
           newProducts: data.newProducts || data.products.filter((p: any) => p.isNew).length,
           matchedProducts: data.matchedProducts || data.products.filter((p: any) => !p.isNew).length,

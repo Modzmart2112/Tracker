@@ -623,8 +623,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let matchedCount = 0;
       const errors: string[] = [];
       
-      // Find or create competitor
-      const siteDomain = new URL(sourceUrl).hostname;
+      // Find or create competitor - handle missing sourceUrl gracefully
+      let siteDomain = '';
+      if (sourceUrl) {
+        try {
+          siteDomain = new URL(sourceUrl).hostname;
+        } catch (e) {
+          console.warn('Invalid or missing sourceUrl, falling back to competitorName');
+        }
+      }
+      
+      // If no siteDomain from URL, derive it from competitorName
+      if (!siteDomain && competitorName) {
+        siteDomain = competitorName.toLowerCase().replace(/\s+/g, '') + '.com.au';
+      }
       const existingCompetitors = await storage.getCompetitors();
       
       let competitor = existingCompetitors.find(c => 
