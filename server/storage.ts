@@ -480,7 +480,7 @@ export class MemStorage implements IStorage {
     const competitors = await this.getCompetitors();
     const products = await this.getProducts({ productTypeId });
     
-    const brands = [...new Set(products.map(p => p.brand))];
+    const brands = Array.from(new Set(products.map(p => p.brand)));
     const matrix = brands.map(brand => {
       const row: any = { brand };
       competitors.forEach(competitor => {

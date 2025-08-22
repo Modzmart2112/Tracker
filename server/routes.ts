@@ -229,7 +229,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Get recent price monitoring tasks
       const tasks = await storage.getTasks();
-      const priceTasks = tasks.filter(t => t.runReason === "scheduled").slice(0, 5);
+      const priceTasks = tasks.filter(t => t.runReason === "schedule").slice(0, 5);
       
       res.json({
         isRunning,
@@ -581,7 +581,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         for (const product of result.products) {
           try {
             // Find or create brand
-            const brandName = product.brand || 'Unknown';
+            const brandName = (product as any).brand || 'Unknown';
             let brand = brandMap.get(brandName);
             if (!brand) {
               const existingBrands = await storage.getBrands();
@@ -597,7 +597,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
             
             // Extract model number using AI if available
-            let modelNumber = product.model || '';
+            let modelNumber = (product as any).model || (product as any).modelNumber || '';
             if (!modelNumber || modelNumber === 'Unknown') {
               // Try basic extraction from title
               const modelPatterns = [
@@ -638,8 +638,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 categoryId: category.id,
                 productTypeId: productType.id,
                 modelNumber: modelNumber || product.title.split(' ')[0],
-                imageUrl: product.image,
-                price: product.price.toString()
+                imageUrl: (product as any).image,
+                price: (product.price || 0).toString()
               });
               console.log(`Created new catalog product: ${product.title}`);
             }
@@ -648,15 +648,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const competitorListing = await storage.createCompetitorListing({
               productId: catalogProduct.id,
               competitorId: competitor.id,
-              url: product.url || url,
-              mainImageUrl: product.image
+              url: (product as any).url || url,
+              mainImageUrl: (product as any).image
             });
             
             // Create listing snapshot with pricing
-            if (product.price > 0) {
+            if (product.price && product.price > 0) {
               await storage.createListingSnapshot({
                 listingId: competitorListing.id,
-                price: product.price.toString(),
+                price: (product.price || 0).toString(),
                 currency: 'AUD',
                 inStock: true
               });
@@ -677,11 +677,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         success: true,
         message: `Successfully imported ${savedCount}/${result.products.length} products from ${result.competitorName}`,
         savedProducts: savedCount,
-        totalProducts: result.totalProducts,
-        categoryName: result.categoryName,
+        totalProducts: (result as any).totalProducts || result.products.length,
+        categoryName: (result as any).categoryName || 'Products',
         competitorName: result.competitorName,
-        sourceUrl: result.sourceUrl,
-        extractedAt: result.extractedAt,
+        sourceUrl: (result as any).sourceUrl || url,
+        extractedAt: (result as any).extractedAt || new Date().toISOString(),
         scraperUsed: hostname.includes('sydneytools') ? 'Playwright' : hostname.includes('bunnings') || hostname.includes('repco') ? 'RenderedDOM' : 'Standard',
         errors: errors.length > 0 ? errors : undefined
       };
