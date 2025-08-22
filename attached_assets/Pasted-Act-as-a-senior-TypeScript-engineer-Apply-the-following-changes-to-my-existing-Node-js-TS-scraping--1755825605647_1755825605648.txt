@@ -1,0 +1,395 @@
+Act as a senior TypeScript engineer. Apply the following changes to my existing Node.js/TS scraping project running on Replit (Nix). The goal is to make our scraper reliable on JavaScript-rendered (React/SPA) sites, fix async bugs, and work within Replit constraints. Make all edits exactly as specified.
+
+0) Constraints & Principles
+
+Environment: Replit (Nix), Node.js/TypeScript.
+
+Use system Chromium (which chromium) with --no-sandbox.
+
+Prefer fast paths: JSON-first (if available) → Rendered DOM via chromium --dump-dom → Playwright if we need scrolling/buttons.
+
+Never put await inside cheerio.each(...). Replace with synchronous loops.
+
+1) Add Nix dependencies so headless Chromium and Playwright launch
+
+Create/overwrite replit.nix in repo root:
+
+{ pkgs }:
+{
+  deps = [
+    pkgs.nodejs_20
+    pkgs.chromium
+
+    # Chromium runtime deps
+    pkgs.glib pkgs.nspr pkgs.nss pkgs.dbus pkgs.atk pkgs.cairo pkgs.pango pkgs.gdk-pixbuf
+    pkgs.freetype pkgs.fontconfig pkgs.alsa-lib pkgs.libdrm pkgs.libxkbcommon pkgs.wayland pkgs.cups
+
+    # X11 libs
+    pkgs.xorg.libX11 pkgs.xorg.libXcomposite pkgs.xorg.libXdamage pkgs.xorg.libXext
+    pkgs.xorg.libXfixes pkgs.xorg.libXrandr pkgs.xorg.libXrender pkgs.xorg.libXcursor
+    pkgs.xorg.libXinerama pkgs.xorg.libXi pkgs.xorg.libXss
+
+    # Fonts (avoid missing glyphs)
+    pkgs.noto-fonts pkgs.noto-fonts-cjk pkgs.noto-fonts-emoji
+  ];
+}
+
+
+Update package.json (merge carefully):
+
+Ensure these scripts exist:
+
+{
+  "scripts": {
+    "postinstall": "npx playwright install chromium",
+    "scrape": "tsx src/scrape.ts"
+  }
+}
+
+
+Ensure dependencies include:
+
+{
+  "dependencies": {
+    "playwright": "^1.46.0",
+    "tsx": "^4.16.0",
+    "cheerio": "^1.0.0"
+  }
+}
+
+2) Add a “rendered DOM” fetcher using system Chromium (no Playwright)
+
+Create src/rendered-get.ts:
+
+import { execFile } from "node:child_process";
+
+export async function renderedGet(url: string, timeoutMs = 45000): Promise<string> {
+  const args = [
+    "--headless=new",
+    "--disable-gpu",
+    "--no-sandbox",
+    "--disable-setuid-sandbox",
+    "--disable-dev-shm-usage",
+    "--virtual-time-budget=15000",
+    "--timeout=40000",
+    "--dump-dom",
+    url
+  ];
+
+  return new Promise((resolve, reject) => {
+    execFile("chromium", args, { timeout: timeoutMs, maxBuffer: 50 * 1024 * 1024 }, (err, stdout) => {
+      if (err) return reject(err);
+      resolve(stdout.toString("utf8"));
+    });
+  });
+}
+
+3) Add a minimal Playwright scraper (for pages that need scrolling / “Load more”)
+
+Create src/playwright-scraper.ts:
+
+import { chromium } from "playwright";
+
+async function whichChromium(): Promise<string | undefined> {
+  try {
+    const { execSync } = await import("node:child_process");
+    return execSync("which chromium").toString().trim();
+  } catch { return undefined; }
+}
+const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
+
+export const playwrightScraper = {
+  async scrapeSydneyTools(url: string) {
+    const execPath = await whichChromium();
+    const browser = await chromium.launch({
+      headless: true,
+      executablePath: execPath,
+      args: ["--no-sandbox","--disable-setuid-sandbox","--disable-dev-shm-usage"]
+    });
+
+    const ctx = await browser.newContext({
+      userAgent:
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115 Safari/537.36",
+      viewport: { width: 1366, height: 900 }
+    });
+
+    const page = await ctx.newPage();
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
+    await page.waitForLoadState("networkidle").catch(() => {});
+    for (let i = 0; i < 25; i++) { await page.mouse.wheel(0, 2000); await sleep(250); }
+
+    const products = await page.$$eval("a[href^='/product/']", (anchors) => {
+      const items: any[] = [];
+      const seen = new Set<string>();
+      for (const a of anchors as HTMLAnchorElement[]) {
+        const href = new URL(a.getAttribute("href")!, location.origin).toString();
+        if (seen.has(href)) continue;
+
+        const card = (a.closest("article, li, div") ?? a) as HTMLElement;
+        let title = (a.textContent || "").trim();
+        if (!title) {
+          const h = card.querySelector(".ant-card-meta-title,.product-title,h2,h3");
+          title = (h?.textContent || "").trim();
+        }
+        if (!title) continue;
+
+        let price = (card.querySelector("[data-testid*='price'], .price, [class*='price']")?.textContent || "")
+                      .replace(/\s+/g," ").trim();
+        if (!/\d/.test(price)) {
+          const m = (card.textContent || "").match(/\$\s?\d[\d,]*\.?\d{0,2}/);
+          price = m ? m[0] : "";
+        }
+
+        const img = card.querySelector("img");
+        const image = img?.getAttribute("src")
+          || img?.getAttribute("data-src")
+          || img?.getAttribute("data-lazy")
+          || (img?.getAttribute("srcset")||"").split(",").pop()?.trim().split(" ")[0]
+          || null;
+
+        items.push({ title, price, url: href, image });
+        seen.add(href);
+      }
+      return items;
+    });
+
+    await browser.close();
+
+    return {
+      products: products.map(p => ({
+        title: p.title,
+        priceRaw: p.price,
+        price: Number((p.price||"").replace(/[^0-9.]/g,"")) || 0,
+        image: p.image,
+        url: p.url,
+        brand: "",
+        model: "",
+        category: "",
+        sku: "",
+        competitorName: "Sydney Tools",
+        promotion: { hasPromotion: false }
+      })),
+      totalProducts: products.length,
+      categoryName: "",
+      competitorName: "Sydney Tools",
+      sourceUrl: url,
+      extractedAt: new Date().toISOString()
+    };
+  }
+};
+
+4) Fix async-in-cheerio bugs and upgrade selectors in multi-site-scraper.ts
+
+Open multi-site-scraper.ts and make these changes:
+
+4.1 Replace every $('.something').each(async (i, el) => { ... }) pattern
+
+Do not use async inside each. Convert to a synchronous loop:
+
+const nodes = $('.product-card, .ant-card, a[href^="/product/"]').toArray();
+for (let i = 0; i < nodes.length && products.length < 60; i++) {
+  const $el = $(nodes[i] as any);
+  // extract title/price/image/url synchronously
+}
+
+
+4.2 Add these helpers (near other utilities):
+
+function pickBestSrcset(srcset?: string) {
+  if (!srcset) return null;
+  const items = srcset.split(",").map(s => s.trim());
+  return items.length ? items[items.length - 1].split(" ")[0] : null;
+}
+
+function priceToNumber(raw?: string | null): number | null {
+  if (!raw) return null;
+  const m = raw.match(/\d[\d,]*\.?\d{0,2}/);
+  if (!m) return null;
+  return Number(m[0].replace(/,/g, ""));
+}
+
+
+4.3 Update your image extraction wherever you use img:
+
+const img = card.find("img").first();
+const image =
+  img.attr("src") ||
+  img.attr("data-src") ||
+  img.attr("data-lazy") ||
+  pickBestSrcset(img.attr("srcset") || img.attr("data-srcset") || "") ||
+  null;
+
+
+4.4 Add a seen Set to dedupe by URL in every site scraper:
+
+const seen = new Set<string>();
+// when you compute absolute URL:
+if (seen.has(absUrl)) continue;
+seen.add(absUrl);
+
+
+4.5 Sydney Tools: switch from axios/static HTML to rendered DOM
+
+Replace the current Sydney Tools category scraper with this version that uses renderedGet (keep your types and helpers as-is):
+
+import * as cheerio from "cheerio";
+import { renderedGet } from "./rendered-get"; // adjust path if needed
+
+async scrapeSydneyTools(url: string): Promise<ScrapingResult> {
+  try {
+    const html = await renderedGet(url);
+    const $ = cheerio.load(html);
+    const products: ScrapedProduct[] = [];
+    const seen = new Set<string>();
+
+    // anchor-based discovery is resilient on SPAs
+    const tiles = $("a[href^='/product/']").toArray();
+
+    for (let i = 0; i < tiles.length && products.length < 60; i++) {
+      const a = $(tiles[i]);
+      const card = $(a.closest("article, li, div") ?? a);
+      const href = new URL(a.attr("href")!, "https://sydneytools.com.au").toString();
+      if (seen.has(href)) continue;
+      seen.add(href);
+
+      const title =
+        a.text().trim() ||
+        card.find(".ant-card-meta-title,.product-title,h2,h3").first().text().trim();
+      if (!title) continue;
+
+      const priceText =
+        card.find("[data-testid*='price'], .price, [class*='price']").first()
+            .text().replace(/\s+/g, " ").trim() ||
+        (card.text().match(/\$\s?\d[\d,]*\.?\d{0,2}/)?.[0] ?? "");
+
+      const img = card.find("img").first();
+      const image =
+        img.attr("src") ||
+        img.attr("data-src") ||
+        img.attr("data-lazy") ||
+        pickBestSrcset(img.attr("srcset") || img.attr("data-srcset") || "") ||
+        null;
+
+      const brand = this.extractBrand(title);
+      const model = this.extractModel(title, brand);
+
+      products.push({
+        title,
+        priceRaw: priceText,
+        price: priceToNumber(priceText),
+        regularPrice: undefined,
+        salePrice: undefined,
+        image: this.normalizeImageUrl(image ?? "", href),
+        url: href,
+        brand,
+        model,
+        category: this.extractCategoryFromUrl(url),
+        sku: "",
+        competitorName: "Sydney Tools",
+        promotion: this.detectPromotion(card),
+      });
+    }
+
+    return {
+      products,
+      totalProducts: products.length,
+      categoryName: this.extractCategoryFromUrl(url),
+      competitorName: "Sydney Tools",
+      sourceUrl: url,
+      extractedAt: new Date().toISOString()
+    };
+  } catch (e) {
+    console.error("Sydney Tools render scrape failed:", e);
+    return this.emptyResult(url, "Sydney Tools");
+  }
+}
+
+
+4.6 Don’t call any AI/OpenAI enrichment inside the crawl loop. Keep extraction synchronous and fast; enrich later in a separate job.
+
+5) Route SPA categories through rendered DOM (or Playwright) in routes.ts
+
+Open routes.ts and modify the category extraction endpoint:
+
+Import the new utilities at top:
+
+import * as cheerio from "cheerio";
+import { renderedGet } from "./rendered-get";           // adjust path
+import { playwrightScraper } from "./playwright-scraper"; // adjust path
+
+
+Inside your /api/extract-category (or equivalent) handler:
+
+If the URL host is a known SPA (Sydney Tools, Total Tools, Tools Warehouse, etc.), prefer renderedGet.
+
+If the page needs interaction/infinite scroll, call playwrightScraper.scrapeSydneyTools(url) instead.
+
+Avoid regex parsing of static HTML for SPAs.
+
+Sample handler body (pseudo-Express):
+
+app.get("/api/extract-category", async (req, res) => {
+  const url = String(req.query.url || "");
+  if (!url) return res.status(400).json({ error: "url required" });
+
+  try {
+    const host = new URL(url).host;
+
+    // Known SPA domains: route to rendered DOM path
+    const spaHosts = ["sydneytools.com.au", "totaltools.com.au", "toolswarehouse.com.au", "bunnings.com.au"];
+    if (spaHosts.some(h => host.endsWith(h))) {
+      // Try fast path: rendered DOM
+      try {
+        const html = await renderedGet(url);
+        const $ = cheerio.load(html);
+        const anchors = $("a[href^='/product/']");
+        if (anchors.length > 0) {
+          // (Option A) call your MultiSiteScraper function that expects pre-rendered HTML
+          // or (Option B) inline simple extraction as above
+          // For now, just return the raw rendered HTML presence as a success indicator:
+        }
+        // If it looks like infinite scroll/load-more, fall back to Playwright
+        const result = await playwrightScraper.scrapeSydneyTools(url);
+        return res.json(result);
+      } catch {
+        // Fallback to Playwright on any render failure
+        const result = await playwrightScraper.scrapeSydneyTools(url);
+        return res.json(result);
+      }
+    }
+
+    // Non-SPA fallback: your existing static-cheerio flow here…
+    // const html = (await axios.get(url)).data;
+    // const $ = cheerio.load(html);
+    // …extract and return
+
+  } catch (err: any) {
+    console.error(err);
+    return res.status(500).json({ error: String(err?.message || err) });
+  }
+});
+
+6) Reliability tweaks (apply project-wide)
+
+Add seen-Set dedupe on URL per site.
+
+Keep both priceRaw and numeric price.
+
+Add Accept-Language and realistic User-Agent to HTTP/Playwright contexts.
+
+Use modest rate limiting when crawling many categories (e.g., 600–1000ms between requests).
+
+7) Quick test plan (after install)
+
+Rebuild the Repl (so replit.nix applies).
+
+Run npm i (this triggers postinstall Playwright browser download).
+
+Hit the endpoint for:
+
+https://sydneytools.com.au/category/automotive/car-battery-chargers
+
+
+Expect ~30–35 products with title, priceRaw/price, image, url populated.
+
+End of prompt. Make all these changes now.

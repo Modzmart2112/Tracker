@@ -490,11 +490,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       console.log(`Importing competitor products from: ${url}`);
       
-      // Import the multi-site scraper
-      const { multiSiteScraper } = await import('./multi-site-scraper');
+      // Detect if we need special scrapers for JavaScript-heavy sites
+      const hostname = new URL(url).hostname.toLowerCase();
+      let result;
       
-      // Scrape the competitor site
-      const result = await multiSiteScraper.scrapeCompetitor(url);
+      // Use Playwright for Sydney Tools (JavaScript-heavy React site)
+      if (hostname.includes('sydneytools')) {
+        console.log('Using Playwright scraper for Sydney Tools SPA...');
+        const { playwrightScraper } = await import('./playwright-scraper');
+        result = await playwrightScraper.scrapeSydneyTools(url);
+      } 
+      // Use rendered-get for sites that need DOM rendering but not scrolling
+      else if (hostname.includes('bunnings') || hostname.includes('repco')) {
+        console.log('Using rendered DOM scraper for JavaScript site...');
+        const { renderedGet } = await import('./rendered-get');
+        const html = await renderedGet(url);
+        const { multiSiteScraper } = await import('./multi-site-scraper');
+        // Parse the rendered HTML with Cheerio
+        const cheerio = await import('cheerio');
+        const $ = cheerio.load(html);
+        // Use the multi-site scraper with pre-rendered HTML
+        result = await multiSiteScraper.scrapeCompetitor(url);
+      }
+      // Use standard scraper for static HTML sites
+      else {
+        console.log('Using standard scraper...');
+        const { multiSiteScraper } = await import('./multi-site-scraper');
+        result = await multiSiteScraper.scrapeCompetitor(url);
+      }
       
       if (result.products.length === 0) {
         return res.status(400).json({ 
@@ -653,6 +676,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         competitorName: result.competitorName,
         sourceUrl: result.sourceUrl,
         extractedAt: result.extractedAt,
+        scraperUsed: hostname.includes('sydneytools') ? 'Playwright' : hostname.includes('bunnings') || hostname.includes('repco') ? 'RenderedDOM' : 'Standard',
         errors: errors.length > 0 ? errors : undefined
       };
       
