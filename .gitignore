@@ -1,6 +1,14 @@
-node_modules
-dist
-.DS_Store
-server/public
-vite.config.ts.*
-*.tar.gz
+Thumbs.db
+Desktop.ini
+*.log
+.vscode/
+# Node (delete if not relevant)
+node_modules/
+dist/
+build/
+# Python (delete if not relevant)
+__pycache__/
+*.pyc
+.venv/
+# Dotenv / secrets
+.env

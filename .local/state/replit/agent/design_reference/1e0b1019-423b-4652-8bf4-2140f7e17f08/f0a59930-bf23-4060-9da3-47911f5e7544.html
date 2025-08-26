@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CompetitorScope - Automotive Jump Starters Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#eff6ff',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        },
+                        slate: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            500: '#64748b',
+                            600: '#475569',
+                            700: '#334155',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                        }
+                    }
+                }
+            }
+        };
+    </script>
+</head>
+<body class="bg-slate-50 font-sans">
+    <!-- @COMPONENT: App [main application container] -->
+    <div class="min-h-screen flex bg-slate-50">
+        <!-- @COMPONENT: Sidebar [navigation menu] -->
+        <aside class="w-64 bg-white border-r border-slate-200 flex flex-col">
+            <div class="p-6 border-b border-slate-200">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-chart-line text-white text-sm"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-lg font-semibold text-slate-900">CompetitorScope</h1>
+                        <p class="text-xs text-slate-500">Competitive Intelligence</p>
+                    </div>
+                </div>
+            </div>
+            
+            <nav class="flex-1 p-4">
+                <ul class="space-y-2">
+                    <li>
+                        <a href="#dashboard" class="flex items-center space-x-3 px-3 py-2 rounded-lg bg-primary-50 text-primary-700 font-medium">
+                            <i class="fas fa-tachometer-alt w-4"></i>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#categories" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors">
+                            <i class="fas fa-folder w-4"></i>
+                            <span>Categories</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#products" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors">
+                            <i class="fas fa-box w-4"></i>
+                            <span>Products</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#competitors" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors">
+                            <i class="fas fa-users w-4"></i>
+                            <span>Competitors</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#pages" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors">
+                            <i class="fas fa-globe w-4"></i>
+                            <span>Pages & Scraping</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#changes" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors">
+                            <i class="fas fa-history w-4"></i>
+                            <span>Recent Changes</span>
+                        </a>
+                    </li>
+                    <li>
+                        <a href="#admin" class="flex items-center space-x-3 px-3 py-2 rounded-lg text-slate-600 hover:bg-slate-100 transition-colors">
+                            <i class="fas fa-cog w-4"></i>
+                            <span>Admin</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+            
+            <div class="p-4 border-t border-slate-200">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-slate-300 rounded-full flex items-center justify-center">
+                        <i class="fas fa-user text-slate-600 text-sm"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-slate-900" data-bind="user.name">John Smith</p>
+                        <p class="text-xs text-slate-500" data-bind="user.role">Administrator</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        <!-- @END_COMPONENT: Sidebar -->
+
+        <!-- @COMPONENT: MainContent [main application content area] -->
+        <main class="flex-1 overflow-auto">
+            <!-- @COMPONENT: Header [page header with breadcrumbs] -->
+            <header class="bg-white border-b border-slate-200 px-8 py-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <nav class="flex items-center space-x-2 text-sm text-slate-500 mb-2">
+                            <span>Automotive</span>
+                            <i class="fas fa-chevron-right text-xs"></i>
+                            <span class="text-slate-900 font-medium">Jump Starters</span>
+                        </nav>
+                        <h1 class="text-2xl font-semibold text-slate-900">Competitor Analysis Dashboard</h1>
+                        <p class="text-slate-600 mt-1">Track pricing, coverage, and market insights across automotive jump starters</p>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button class="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
+                            <i class="fas fa-download mr-2"></i>Export CSV
+                        </button>
+                        <button class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 transition-colors" data-event="click:handleScrapeAll">
+                            <i class="fas fa-sync mr-2"></i>Run Scrape
+                        </button>
+                    </div>
+                </div>
+            </header>
+            <!-- @END_COMPONENT: Header -->
+
+            <!-- @COMPONENT: DashboardContent [main dashboard content] -->
+            <div class="p-8">
+                <!-- @COMPONENT: KPISection [key performance indicators] -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-slate-600 text-sm font-medium">Brand Coverage</p>
+                                <p class="text-2xl font-bold text-slate-900 mt-1" data-bind="kpi.brandCoverage">8/12</p>
+                                <p class="text-xs text-slate-500 mt-1">vs Sydney Tools</p>
+                            </div>
+                            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-trademark text-blue-600"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center">
+                            <span class="text-xs font-medium text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full">66.7% match</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-slate-600 text-sm font-medium">Price Undercuts</p>
+                                <p class="text-2xl font-bold text-slate-900 mt-1" data-bind="kpi.priceUndercuts">23</p>
+                                <p class="text-xs text-slate-500 mt-1">products cheaper elsewhere</p>
+                            </div>
+                            <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-arrow-trend-down text-red-600"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center">
+                            <span class="text-xs font-medium text-red-600 bg-red-100 px-2 py-1 rounded-full">15.3% of catalog</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-slate-600 text-sm font-medium">Price Changes (24h)</p>
+                                <p class="text-2xl font-bold text-slate-900 mt-1" data-bind="kpi.priceChanges">16</p>
+                                <p class="text-xs text-slate-500 mt-1">across all competitors</p>
+                            </div>
+                            <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-clock text-yellow-600"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center">
+                            <span class="text-xs font-medium text-slate-600 bg-slate-100 px-2 py-1 rounded-full">8 drops, 8 increases</span>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-slate-600 text-sm font-medium">Stock Changes</p>
+                                <p class="text-2xl font-bold text-slate-900 mt-1" data-bind="kpi.stockChanges">7</p>
+                                <p class="text-xs text-slate-500 mt-1">out of stock changes</p>
+                            </div>
+                            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-boxes text-purple-600"></i>
+                            </div>
+                        </div>
+                        <div class="mt-4 flex items-center">
+                            <span class="text-xs font-medium text-emerald-600 bg-emerald-100 px-2 py-1 rounded-full">3 back in stock</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: KPISection -->
+
+                <!-- @COMPONENT: BrandCoverageMatrix [brand coverage comparison matrix] -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm mb-8">
+                    <div class="p-6 border-b border-slate-200">
+                        <h2 class="text-lg font-semibold text-slate-900">Brand Coverage Matrix</h2>
+                        <p class="text-slate-600 text-sm mt-1">Compare which jump starter brands each competitor carries</p>
+                    </div>
+                    <div class="p-6">
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="border-b border-slate-200">
+                                        <th class="text-left py-3 px-4 font-medium text-slate-700">Brand</th>
+                                        <th class="text-center py-3 px-4 font-medium text-slate-700">Sydney Tools</th>
+                                        <th class="text-center py-3 px-4 font-medium text-slate-700">Bunnings</th>
+                                        <th class="text-center py-3 px-4 font-medium text-slate-700">Total Tools</th>
+                                        <th class="text-center py-3 px-4 font-medium text-slate-700">Tool Kit Depot</th>
+                                        <th class="text-center py-3 px-4 font-medium text-slate-700">TradeTools</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <!-- @MAP: brands.map(brand => ( -->
+                                    <tr class="hover:bg-slate-50" data-mock="true">
+                                        <td class="py-3 px-4 font-medium text-slate-900">NOCO</td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">8</span>
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">6</span>
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">12</span>
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-slate-100 text-slate-400 rounded-full text-sm">0</span>
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">4</span>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50" data-mock="true">
+                                        <td class="py-3 px-4 font-medium text-slate-900">DEWALT</td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">5</span>
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">3</span>
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">7</span>
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">2</span>
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">4</span>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50" data-mock="true">
+                                        <td class="py-3 px-4 font-medium text-slate-900">Projecta</td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">3</span>
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-slate-100 text-slate-400 rounded-full text-sm">0</span>
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">5</span>
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">8</span>
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">6</span>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50" data-mock="true">
+                                        <td class="py-3 px-4 font-medium text-slate-900">Milwaukee</td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">4</span>
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-slate-100 text-slate-400 rounded-full text-sm">0</span>
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">3</span>
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-slate-100 text-slate-400 rounded-full text-sm">0</span>
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">2</span>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50" data-mock="true">
+                                        <td class="py-3 px-4 font-medium text-slate-900">Sealey</td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-slate-100 text-slate-400 rounded-full text-sm">0</span>
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-slate-100 text-slate-400 rounded-full text-sm">0</span>
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">9</span>
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">11</span>
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">7</span>
+                                        </td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50 bg-red-50" data-mock="true">
+                                        <td class="py-3 px-4 font-medium text-slate-900 flex items-center">
+                                            Antigravity Batteries
+                                            <span class="ml-2 text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">Gap Opportunity</span>
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-slate-100 text-slate-400 rounded-full text-sm">0</span>
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-slate-100 text-slate-400 rounded-full text-sm">0</span>
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">6</span>
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">4</span>
+                                        </td>
+                                        <td class="py-3 px-4 text-center">
+                                            <span class="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">5</span>
+                                        </td>
+                                    </tr>
+                                    <!-- @END_MAP )) -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: BrandCoverageMatrix -->
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+                    <!-- @COMPONENT: PriceBandsSection [price band analysis] -->
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm">
+                        <div class="p-6 border-b border-slate-200">
+                            <h2 class="text-lg font-semibold text-slate-900">Price Bands Analysis</h2>
+                            <p class="text-slate-600 text-sm mt-1">Entry vs Professional tier pricing by brand</p>
+                        </div>
+                        <div class="p-6">
+                            <div class="space-y-4">
+                                <!-- @MAP: priceBands.map(band => ( -->
+                                <div class="border-b border-slate-100 pb-4 last:border-b-0" data-mock="true">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h3 class="font-medium text-slate-900">NOCO</h3>
+                                        <span class="text-xs text-slate-500">8 products tracked</span>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div class="text-center p-3 bg-blue-50 rounded-lg">
+                                            <p class="text-xs text-blue-600 font-medium">Entry Tier (25%)</p>
+                                            <p class="text-lg font-bold text-blue-900 mt-1">$89</p>
+                                            <p class="text-xs text-blue-600">Lowest: Total Tools</p>
+                                        </div>
+                                        <div class="text-center p-3 bg-purple-50 rounded-lg">
+                                            <p class="text-xs text-purple-600 font-medium">Pro Tier (75%)</p>
+                                            <p class="text-lg font-bold text-purple-900 mt-1">$259</p>
+                                            <p class="text-xs text-purple-600">Lowest: TradeTools</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="border-b border-slate-100 pb-4 last:border-b-0" data-mock="true">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h3 class="font-medium text-slate-900">DEWALT</h3>
+                                        <span class="text-xs text-slate-500">5 products tracked</span>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div class="text-center p-3 bg-blue-50 rounded-lg">
+                                            <p class="text-xs text-blue-600 font-medium">Entry Tier (25%)</p>
+                                            <p class="text-lg font-bold text-blue-900 mt-1">$129</p>
+                                            <p class="text-xs text-blue-600">Lowest: Sydney Tools</p>
+                                        </div>
+                                        <div class="text-center p-3 bg-purple-50 rounded-lg">
+                                            <p class="text-xs text-purple-600 font-medium">Pro Tier (75%)</p>
+                                            <p class="text-lg font-bold text-purple-900 mt-1">$349</p>
+                                            <p class="text-xs text-purple-600">Lowest: Bunnings</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="border-b border-slate-100 pb-4 last:border-b-0" data-mock="true">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <h3 class="font-medium text-slate-900">Projecta</h3>
+                                        <span class="text-xs text-slate-500">6 products tracked</span>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-4">
+                                        <div class="text-center p-3 bg-blue-50 rounded-lg">
+                                            <p class="text-xs text-blue-600 font-medium">Entry Tier (25%)</p>
+                                            <p class="text-lg font-bold text-blue-900 mt-1">$69</p>
+                                            <p class="text-xs text-blue-600">Lowest: Tool Kit Depot</p>
+                                        </div>
+                                        <div class="text-center p-3 bg-purple-50 rounded-lg">
+                                            <p class="text-xs text-purple-600 font-medium">Pro Tier (75%)</p>
+                                            <p class="text-lg font-bold text-purple-900 mt-1">$199</p>
+                                            <p class="text-xs text-purple-600">Lowest: TradeTools</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- @END_MAP )) -->
+                            </div>
+                        </div>
+                    </div>
+                    <!-- @END_COMPONENT: PriceBandsSection -->
+
+                    <!-- @COMPONENT: RecentChangesSection [recent price and stock changes] -->
+                    <div class="bg-white rounded-xl border border-slate-200 shadow-sm">
+                        <div class="p-6 border-b border-slate-200">
+                            <h2 class="text-lg font-semibold text-slate-900">Recent Changes (24h)</h2>
+                            <p class="text-slate-600 text-sm mt-1">Price and stock updates across competitors</p>
+                        </div>
+                        <div class="p-6">
+                            <div class="space-y-4 max-h-96 overflow-y-auto">
+                                <!-- @MAP: recentChanges.map(change => ( -->
+                                <div class="flex items-start space-x-3 p-3 bg-slate-50 rounded-lg" data-mock="true">
+                                    <div class="flex-shrink-0 w-2 h-2 bg-red-500 rounded-full mt-2"></div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-slate-900">NOCO GB40 1000A Jump Starter</p>
+                                        <p class="text-sm text-slate-600">Total Tools</p>
+                                        <div class="flex items-center space-x-2 mt-1">
+                                            <span class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded">Price Drop</span>
+                                            <span class="text-xs font-mono text-slate-500">$149 → $139</span>
+                                        </div>
+                                        <p class="text-xs text-slate-400 mt-1">2 hours ago</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3 p-3 bg-slate-50 rounded-lg" data-mock="true">
+                                    <div class="flex-shrink-0 w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-slate-900">DEWALT DXAEJ14 Jump Starter</p>
+                                        <p class="text-sm text-slate-600">Bunnings</p>
+                                        <div class="flex items-center space-x-2 mt-1">
+                                            <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Back in Stock</span>
+                                        </div>
+                                        <p class="text-xs text-slate-400 mt-1">4 hours ago</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3 p-3 bg-slate-50 rounded-lg" data-mock="true">
+                                    <div class="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-slate-900">Projecta IS2500 Intelli-Start</p>
+                                        <p class="text-sm text-slate-600">Tool Kit Depot</p>
+                                        <div class="flex items-center space-x-2 mt-1">
+                                            <span class="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Price Increase</span>
+                                            <span class="text-xs font-mono text-slate-500">$199 → $219</span>
+                                        </div>
+                                        <p class="text-xs text-slate-400 mt-1">6 hours ago</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3 p-3 bg-slate-50 rounded-lg" data-mock="true">
+                                    <div class="flex-shrink-0 w-2 h-2 bg-yellow-500 rounded-full mt-2"></div>
+                                    <div class="flex-1 min-w-0">
+                                        <p class="text-sm font-medium text-slate-900">Milwaukee M18 FUEL Jump Starter</p>
+                                        <p class="text-sm text-slate-600">TradeTools</p>
+                                        <div class="flex items-center space-x-2 mt-1">
+                                            <span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">Promo Added</span>
+                                            <span class="text-xs text-slate-500">"15% Off This Week"</span>
+                                        </div>
+                                        <p class="text-xs text-slate-400 mt-1">8 hours ago</p>
+                                    </div>
+                                </div>
+                                <!-- @END_MAP )) -->
+                            </div>
+                        </div>
+                    </div>
+                    <!-- @END_COMPONENT: RecentChangesSection -->
+                </div>
+
+                <!-- @COMPONENT: ProductCatalogSection [detailed product listing with filters] -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm">
+                    <div class="p-6 border-b border-slate-200">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h2 class="text-lg font-semibold text-slate-900">Product Catalog</h2>
+                                <p class="text-slate-600 text-sm mt-1">Complete jump starter inventory across all competitors</p>
+                            </div>
+                            <div class="flex items-center space-x-3">
+                                <div class="flex items-center space-x-2">
+                                    <label for="brand-filter" class="text-sm font-medium text-slate-700">Brand:</label>
+                                    <select id="brand-filter" class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                                        <option value="">All Brands</option>
+                                        <option value="noco">NOCO</option>
+                                        <option value="dewalt">DEWALT</option>
+                                        <option value="projecta">Projecta</option>
+                                        <option value="milwaukee">Milwaukee</option>
+                                    </select>
+                                </div>
+                                <div class="flex items-center space-x-2">
+                                    <label for="competitor-filter" class="text-sm font-medium text-slate-700">Competitor:</label>
+                                    <select id="competitor-filter" class="border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
+                                        <option value="">All Competitors</option>
+                                        <option value="sydney">Sydney Tools</option>
+                                        <option value="bunnings">Bunnings</option>
+                                        <option value="total">Total Tools</option>
+                                        <option value="toolkit">Tool Kit Depot</option>
+                                        <option value="trade">TradeTools</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead class="bg-slate-50 border-b border-slate-200">
+                                <tr>
+                                    <th class="text-left py-3 px-4 font-medium text-slate-700">Product</th>
+                                    <th class="text-left py-3 px-4 font-medium text-slate-700">Brand</th>
+                                    <th class="text-left py-3 px-4 font-medium text-slate-700">Competitor</th>
+                                    <th class="text-right py-3 px-4 font-medium text-slate-700">Current Price</th>
+                                    <th class="text-right py-3 px-4 font-medium text-slate-700">Min/Max</th>
+                                    <th class="text-center py-3 px-4 font-medium text-slate-700">Stock</th>
+                                    <th class="text-center py-3 px-4 font-medium text-slate-700">Last Change</th>
+                                    <th class="text-center py-3 px-4 font-medium text-slate-700">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <!-- @MAP: products.map(product => ( -->
+                                <tr class="hover:bg-slate-50 cursor-pointer" data-event="click:openProductDetails" data-mock="true">
+                                    <td class="py-4 px-4">
+                                        <div class="flex items-center space-x-3">
+                                            <!-- High-tech portable jump starter with LED indicator lights -->
+                                            <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100" alt="NOCO GB40 Jump Starter" class="w-12 h-12 rounded-lg object-cover border border-slate-200">
+                                            <div>
+                                                <p class="font-medium text-slate-900">NOCO GB40 1000A Jump Starter</p>
+                                                <p class="text-sm text-slate-500">Portable lithium-ion jump starter</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="py-4 px-4">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">NOCO</span>
+                                    </td>
+                                    <td class="py-4 px-4 text-slate-600">Total Tools</td>
+                                    <td class="py-4 px-4 text-right font-semibold text-slate-900">$139.00</td>
+                                    <td class="py-4 px-4 text-right text-sm text-slate-500">$139 / $159</td>
+                                    <td class="py-4 px-4 text-center">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">In Stock</span>
+                                    </td>
+                                    <td class="py-4 px-4 text-center text-xs text-slate-500">2h ago</td>
+                                    <td class="py-4 px-4 text-center">
+                                        <button class="text-primary-600 hover:text-primary-700 text-sm font-medium">View</button>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-slate-50 cursor-pointer" data-event="click:openProductDetails" data-mock="true">
+                                    <td class="py-4 px-4">
+                                        <div class="flex items-center space-x-3">
+                                            <!-- Professional grade automotive jump starter with heavy duty cables -->
+                                            <img src="https://images.unsplash.com/photo-1581092160562-40aa08e78837?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100" alt="DEWALT DXAEJ14 Jump Starter" class="w-12 h-12 rounded-lg object-cover border border-slate-200">
+                                            <div>
+                                                <p class="font-medium text-slate-900">DEWALT DXAEJ14 Jump Starter</p>
+                                                <p class="text-sm text-slate-500">Professional 1400 peak amp unit</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="py-4 px-4">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">DEWALT</span>
+                                    </td>
+                                    <td class="py-4 px-4 text-slate-600">Sydney Tools</td>
+                                    <td class="py-4 px-4 text-right font-semibold text-slate-900">$329.00</td>
+                                    <td class="py-4 px-4 text-right text-sm text-slate-500">$329 / $369</td>
+                                    <td class="py-4 px-4 text-center">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">In Stock</span>
+                                    </td>
+                                    <td class="py-4 px-4 text-center text-xs text-slate-500">1d ago</td>
+                                    <td class="py-4 px-4 text-center">
+                                        <button class="text-primary-600 hover:text-primary-700 text-sm font-medium">View</button>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-slate-50 cursor-pointer" data-event="click:openProductDetails" data-mock="true">
+                                    <td class="py-4 px-4">
+                                        <div class="flex items-center space-x-3">
+                                            <!-- Compact emergency car jump starter with digital display -->
+                                            <img src="https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100" alt="Projecta IS2500 Jump Starter" class="w-12 h-12 rounded-lg object-cover border border-slate-200">
+                                            <div>
+                                                <p class="font-medium text-slate-900">Projecta IS2500 Intelli-Start</p>
+                                                <p class="text-sm text-slate-500">12V 2500A intelligent jump starter</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="py-4 px-4">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Projecta</span>
+                                    </td>
+                                    <td class="py-4 px-4 text-slate-600">Tool Kit Depot</td>
+                                    <td class="py-4 px-4 text-right font-semibold text-slate-900">$219.00</td>
+                                    <td class="py-4 px-4 text-right text-sm text-slate-500">$199 / $249</td>
+                                    <td class="py-4 px-4 text-center">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Out of Stock</span>
+                                    </td>
+                                    <td class="py-4 px-4 text-center text-xs text-slate-500">6h ago</td>
+                                    <td class="py-4 px-4 text-center">
+                                        <button class="text-primary-600 hover:text-primary-700 text-sm font-medium">View</button>
+                                    </td>
+                                </tr>
+                                <tr class="hover:bg-slate-50 cursor-pointer" data-event="click:openProductDetails" data-mock="true">
+                                    <td class="py-4 px-4">
+                                        <div class="flex items-center space-x-3">
+                                            <!-- Industrial grade Milwaukee cordless jump starter with rugged design -->
+                                            <img src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=100&h=100" alt="Milwaukee M18 Jump Starter" class="w-12 h-12 rounded-lg object-cover border border-slate-200">
+                                            <div>
+                                                <p class="font-medium text-slate-900">Milwaukee M18 FUEL Jump Starter</p>
+                                                <p class="text-sm text-slate-500 flex items-center">
+                                                    M18 battery compatible unit
+                                                    <span class="ml-2 text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full">15% Off</span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="py-4 px-4">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Milwaukee</span>
+                                    </td>
+                                    <td class="py-4 px-4 text-slate-600">TradeTools</td>
+                                    <td class="py-4 px-4 text-right font-semibold text-slate-900">$449.00</td>
+                                    <td class="py-4 px-4 text-right text-sm text-slate-500">$449 / $529</td>
+                                    <td class="py-4 px-4 text-center">
+                                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">In Stock</span>
+                                    </td>
+                                    <td class="py-4 px-4 text-center text-xs text-slate-500">8h ago</td>
+                                    <td class="py-4 px-4 text-center">
+                                        <button class="text-primary-600 hover:text-primary-700 text-sm font-medium">View</button>
+                                    </td>
+                                </tr>
+                                <!-- @END_MAP )) -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="px-6 py-4 border-t border-slate-200 flex items-center justify-between">
+                        <p class="text-sm text-slate-600">Showing 1-4 of 150 products</p>
+                        <div class="flex items-center space-x-2">
+                            <button class="px-3 py-2 text-sm font-medium text-slate-500 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50" disabled>Previous</button>
+                            <button class="px-3 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700">Next</button>
+                        </div>
+                    </div>
+                </div>
+                <!-- @END_COMPONENT: ProductCatalogSection -->
+            </div>
+            <!-- @END_COMPONENT: DashboardContent -->
+        </main>
+        <!-- @END_COMPONENT: MainContent -->
+    </div>
+    <!-- @END_COMPONENT: App -->
+
+    <!-- @COMPONENT: ProductDetailModal [product detail overlay] -->
+    <!-- @STATE: isProductModalOpen:boolean = false -->
+    <div id="product-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-auto">
+            <div class="p-6 border-b border-slate-200">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-semibold text-slate-900">Product Details</h2>
+                    <button class="text-slate-400 hover:text-slate-600" onclick="document.getElementById('product-modal').classList.add('hidden')">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div>
+                        <!-- Professional automotive jump starter with LED display and safety features -->
+                        <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=500&h=500" alt="NOCO GB40 Jump Starter Product Detail" class="w-full h-80 object-cover rounded-lg border border-slate-200">
+                        <div class="mt-4 grid grid-cols-3 gap-2">
+                            <!-- Additional product angle showing portable design -->
+                            <img src="https://images.unsplash.com/photo-1581092160562-40aa08e78837?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=150&h=150" alt="Jump starter side view" class="w-full h-20 object-cover rounded border border-slate-200 cursor-pointer">
+                            <!-- Product packaging and accessories view -->
+                            <img src="https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=150&h=150" alt="Jump starter with accessories" class="w-full h-20 object-cover rounded border border-slate-200 cursor-pointer">
+                            <!-- Jump starter in use demonstrating functionality -->
+                            <img src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=150&h=150" alt="Jump starter connected to car battery" class="w-full h-20 object-cover rounded border border-slate-200 cursor-pointer">
+                        </div>
+                    </div>
+                    <div>
+                        <div class="mb-6">
+                            <h3 class="text-2xl font-bold text-slate-900" data-bind="product.title">NOCO GB40 1000A Jump Starter</h3>
+                            <p class="text-slate-600 mt-2" data-bind="product.description">Portable lithium-ion jump starter with USB charging capability and LED flashlight</p>
+                        </div>
+                        
+                        <div class="space-y-6">
+                            <div>
+                                <h4 class="text-lg font-semibold text-slate-900 mb-3">Price History</h4>
+                                <div class="bg-slate-50 p-4 rounded-lg">
+                                    <!-- @FUNCTIONALITY: This should display a price history chart using Chart.js or similar -->
+                                    <div class="h-32 flex items-center justify-center text-slate-500">
+                                        <i class="fas fa-chart-line text-2xl mr-3"></i>
+                                        <span>Price history chart would be displayed here</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h4 class="text-lg font-semibold text-slate-900 mb-3">Specifications</h4>
+                                <div class="space-y-2">
+                                    <div class="flex justify-between py-2 border-b border-slate-200">
+                                        <span class="text-slate-600">Peak Amps</span>
+                                        <span class="font-medium text-slate-900" data-bind="product.specs.peakAmps">1000A</span>
+                                    </div>
+                                    <div class="flex justify-between py-2 border-b border-slate-200">
+                                        <span class="text-slate-600">Battery Type</span>
+                                        <span class="font-medium text-slate-900" data-bind="product.specs.batteryType">Lithium-Ion</span>
+                                    </div>
+                                    <div class="flex justify-between py-2 border-b border-slate-200">
+                                        <span class="text-slate-600">Capacity</span>
+                                        <span class="font-medium text-slate-900" data-bind="product.specs.capacity">12V</span>
+                                    </div>
+                                    <div class="flex justify-between py-2 border-b border-slate-200">
+                                        <span class="text-slate-600">USB Ports</span>
+                                        <span class="font-medium text-slate-900" data-bind="product.specs.usbPorts">2</span>
+                                    </div>
+                                    <div class="flex justify-between py-2 border-b border-slate-200">
+                                        <span class="text-slate-600">Weight</span>
+                                        <span class="font-medium text-slate-900" data-bind="product.specs.weight">2.4 lbs</span>
+                                    </div>
+                                    <div class="flex justify-between py-2">
+                                        <span class="text-slate-600">Warranty</span>
+                                        <span class="font-medium text-slate-900" data-bind="product.specs.warranty">3 years</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <h4 class="text-lg font-semibold text-slate-900 mb-3">Competitor Pricing</h4>
+                                <div class="space-y-2">
+                                    <!-- @MAP: competitorPrices.map(price => ( -->
+                                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg" data-mock="true">
+                                        <div class="flex items-center space-x-3">
+                                            <span class="font-medium text-slate-900">Total Tools</span>
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">In Stock</span>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="font-bold text-slate-900">$139.00</p>
+                                            <p class="text-xs text-slate-500">Updated 2h ago</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg" data-mock="true">
+                                        <div class="flex items-center space-x-3">
+                                            <span class="font-medium text-slate-900">Sydney Tools</span>
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">In Stock</span>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="font-bold text-slate-900">$149.00</p>
+                                            <p class="text-xs text-slate-500">Updated 1d ago</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg" data-mock="true">
+                                        <div class="flex items-center space-x-3">
+                                            <span class="font-medium text-slate-900">Bunnings</span>
+                                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">In Stock</span>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="font-bold text-slate-900">$159.00</p>
+                                            <p class="text-xs text-slate-500">Updated 12h ago</p>
+                                        </div>
+                                    </div>
+                                    <!-- @END_MAP )) -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- @END_COMPONENT: ProductDetailModal -->
+
+    <script>
+        (function() {
+            // TODO: Implement business logic, API calls, or state management
+            
+            // Mock data for demonstration
+            const mockData = {
+                kpi: {
+                    brandCoverage: "8/12",
+                    priceUndercuts: 23,
+                    priceChanges: 16,
+                    stockChanges: 7
+                }
+            };
+            
+            // Simple navigation handling
+            document.querySelectorAll('[data-event]').forEach(element => {
+                const [event, handler] = element.getAttribute('data-event').split(':');
+                element.addEventListener(event, function() {
+                    console.log(`Handler: ${handler} triggered`);
+                    
+                    // Example: Open product detail modal
+                    if (handler === 'openProductDetails') {
+                        document.getElementById('product-modal').classList.remove('hidden');
+                        document.getElementById('product-modal').classList.add('flex');
+                    }
+                    
+                    // Example: Handle scrape all action
+                    if (handler === 'handleScrapeAll') {
+                        // Show loading state
+                        this.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Scraping...';
+                        this.disabled = true;
+                        
+                        // Simulate API call
+                        setTimeout(() => {
+                            this.innerHTML = '<i class="fas fa-sync mr-2"></i>Run Scrape';
+                            this.disabled = false;
+                        }, 3000);
+                    }
+                });
+            });
+            
+            // Filter handling
+            const filters = document.querySelectorAll('#brand-filter, #competitor-filter');
+            filters.forEach(filter => {
+                filter.addEventListener('change', function() {
+                    console.log(`Filter changed: ${this.id} = ${this.value}`);
+                    // TODO: Implement table filtering logic
+                });
+            });
+            
+            // Close modal when clicking outside
+            document.getElementById('product-modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.add('hidden');
+                    this.classList.remove('flex');
+                }
+            });
+        })();
+    </script>
+</body>
+</html>
