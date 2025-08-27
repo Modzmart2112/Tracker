@@ -1,14 +1,231 @@
-import { 
-  type User, type InsertUser, type Competitor, type InsertCompetitor,
-  type Category, type InsertCategory, type ProductType, type InsertProductType,
-  type BrandAlias, type InsertBrandAlias, type Page, type InsertPage,
-  type Product, type InsertProduct, type ProductSpec, type InsertProductSpec,
-  type PriceSnapshot, type InsertPriceSnapshot, type PriceBand, type InsertPriceBand,
-  type Task, type InsertTask,
-  type Brand, type InsertBrand, type CatalogProduct, type InsertCatalogProduct,
-  type CompetitorListing, type InsertCompetitorListing, type ListingSnapshot,
-  type InsertListingSnapshot, type ListingImage, type InsertListingImage
-} from "@shared/schema";
+// Local type definitions to replace @shared/schema imports
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  createdAt: Date;
+}
+
+export interface InsertUser {
+  username: string;
+  email: string;
+}
+
+export interface Competitor {
+  id: number;
+  name: string;
+  website: string;
+  createdAt: Date;
+}
+
+export interface InsertCompetitor {
+  name: string;
+  website: string;
+  status: string;
+}
+
+export interface Category {
+  id: number;
+  name: string;
+  description?: string;
+  createdAt: Date;
+}
+
+export interface InsertCategory {
+  name: string;
+  description?: string;
+}
+
+export interface ProductType {
+  id: number;
+  name: string;
+  description?: string;
+  createdAt: Date;
+}
+
+export interface InsertProductType {
+  name: string;
+  description?: string;
+}
+
+export interface BrandAlias {
+  id: number;
+  brandId: number;
+  alias: string;
+  createdAt: Date;
+}
+
+export interface InsertBrandAlias {
+  brandId: number;
+  alias: string;
+}
+
+export interface Page {
+  id: number;
+  url: string;
+  title: string;
+  content: string;
+  createdAt: Date;
+}
+
+export interface InsertPage {
+  url: string;
+  title: string;
+  content: string;
+}
+
+export interface Product {
+  id: number;
+  name: string;
+  description?: string;
+  categoryId: number;
+  brandId: number;
+  createdAt: Date;
+}
+
+export interface InsertProduct {
+  name: string;
+  description?: string;
+  categoryId: number;
+  brandId: number;
+}
+
+export interface ProductSpec {
+  id: number;
+  productId: number;
+  name: string;
+  value: string;
+  createdAt: Date;
+}
+
+export interface InsertProductSpec {
+  productId: number;
+  name: string;
+  value: string;
+}
+
+export interface PriceSnapshot {
+  id: number;
+  productId: number;
+  price: number;
+  currency: string;
+  timestamp: Date;
+  createdAt: Date;
+}
+
+export interface InsertPriceSnapshot {
+  productId: number;
+  price: number;
+  currency: string;
+  timestamp: Date;
+}
+
+export interface PriceBand {
+  id: number;
+  productId: number;
+  minPrice: number;
+  maxPrice: number;
+  currency: string;
+  createdAt: Date;
+}
+
+export interface InsertPriceBand {
+  productId: number;
+  minPrice: number;
+  maxPrice: number;
+  currency: string;
+}
+
+export interface Task {
+  id: number;
+  name: string;
+  description?: string;
+  status: string;
+  createdAt: Date;
+}
+
+export interface InsertTask {
+  name: string;
+  description?: string;
+  status: string;
+}
+
+export interface Brand {
+  id: number;
+  name: string;
+  description?: string;
+  createdAt: Date;
+}
+
+export interface InsertBrand {
+  name: string;
+  description?: string;
+}
+
+export interface CatalogProduct {
+  id: number;
+  name: string;
+  description?: string;
+  categoryId: number;
+  brandId: number;
+  createdAt: Date;
+}
+
+export interface InsertCatalogProduct {
+  name: string;
+  description?: string;
+  categoryId: number;
+  brandId: number;
+}
+
+export interface CompetitorListing {
+  id: number;
+  competitorId: number;
+  productId: number;
+  url: string;
+  price: number;
+  currency: string;
+  createdAt: Date;
+}
+
+export interface InsertCompetitorListing {
+  competitorId: number;
+  productId: number;
+  url: string;
+  price: number;
+  currency: string;
+}
+
+export interface ListingSnapshot {
+  id: number;
+  listingId: number;
+  price: number;
+  currency: string;
+  timestamp: Date;
+  createdAt: Date;
+}
+
+export interface InsertListingSnapshot {
+  listingId: number;
+  price: number;
+  currency: string;
+  timestamp: Date;
+}
+
+export interface ListingImage {
+  id: number;
+  listingId: number;
+  url: string;
+  altText?: string;
+  createdAt: Date;
+}
+
+export interface InsertListingImage {
+  listingId: number;
+  url: string;
+  altText?: string;
+}
+
 import { randomUUID } from "crypto";
 
 export interface IStorage {
