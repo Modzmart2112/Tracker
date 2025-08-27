@@ -3,8 +3,8 @@ import session from 'express-session';
 import MemoryStore from 'memorystore';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import routes from './routes.js';
-import workflowRoutes from './workflow-routes.js';
+import routes from './routes';
+import workflowRoutes from './workflow-routes';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

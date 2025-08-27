@@ -1,6 +1,6 @@
 // Local type definitions to replace @shared/schema imports
 export interface User {
-  id: number;
+  id: string;
   username: string;
   email: string;
   createdAt: Date;
@@ -12,9 +12,11 @@ export interface InsertUser {
 }
 
 export interface Competitor {
-  id: number;
+  id: string;
   name: string;
   website: string;
+  status: string;
+  isUs: boolean;
   createdAt: Date;
 }
 
@@ -22,10 +24,11 @@ export interface InsertCompetitor {
   name: string;
   website: string;
   status: string;
+  isUs: boolean;
 }
 
 export interface Category {
-  id: number;
+  id: string;
   name: string;
   description?: string;
   createdAt: Date;
