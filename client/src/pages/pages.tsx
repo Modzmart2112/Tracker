@@ -9,7 +9,12 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertPageSchema } from "@shared/schema";
+// Schema defined locally for now
+export const insertPageSchema = {
+  url: "",
+  title: "",
+  content: ""
+};
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Plus, Globe, Trash2, Play, Clock } from "lucide-react";

@@ -10,7 +10,11 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertBrandAliasSchema } from "@shared/schema";
+// Schema defined locally for now
+export const insertBrandAliasSchema = {
+  brandId: 0,
+  alias: ""
+};
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Plus, Settings, Tag, Code, Upload, Download } from "lucide-react";

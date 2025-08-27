@@ -11,7 +11,32 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { Plus, Package, Tag, Edit, Trash2, ExternalLink } from "lucide-react";
-import type { Brand, CatalogProduct, Category, ProductType } from "@shared/schema";
+// Types defined locally for now
+export interface Brand {
+  id: number;
+  name: string;
+  description?: string;
+}
+
+export interface CatalogProduct {
+  id: number;
+  name: string;
+  description?: string;
+  brandId: number;
+  categoryId: number;
+}
+
+export interface Category {
+  id: number;
+  name: string;
+  description?: string;
+}
+
+export interface ProductType {
+  id: number;
+  name: string;
+  description?: string;
+}
 
 export function CatalogPage() {
   const { toast } = useToast();
