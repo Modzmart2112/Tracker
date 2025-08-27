@@ -18,29 +18,63 @@ export class WorkflowScraper {
   private browser: Browser | null = null;
 
   async initialize(): Promise<void> {
-    // For production (Render), let Puppeteer find Chrome automatically
-    // The build command installs Chrome to the default Puppeteer location
-    const launchOptions: any = {
-      headless: process.env.NODE_ENV === 'production' ? true : false,
-      args: [
-        '--no-sandbox', 
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--no-first-run',
-        '--no-zygote',
-        '--single-process',
-        '--disable-web-security',
-        '--disable-features=VizDisplayCompositor'
-      ]
-    };
+    try {
+      const launchOptions: PuppeteerLaunchOptions = {
+        headless: process.env.NODE_ENV === 'production' ? true : false,
+        args: [
+          '--no-sandbox', 
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--no-first-run',
+          '--no-zygote',
+          '--single-process',
+          '--disable-web-security',
+          '--disable-features=VizDisplayCompositor'
+        ]
+      };
 
-    // Only set executablePath for local development if needed
-    if (process.env.NODE_ENV !== 'production' && process.env.CHROME_PATH) {
-      launchOptions.executablePath = process.env.CHROME_PATH;
+      // Set executable path for production (Render)
+      if (process.env.NODE_ENV === 'production') {
+        // Use the environment variable if set, otherwise try to find Chrome
+        if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+          launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+          console.log(`Using Chrome from PUPPETEER_EXECUTABLE_PATH: ${launchOptions.executablePath}`);
+        } else {
+          // Try to find Chrome in the Puppeteer cache directory
+          const possiblePaths = [
+            '/opt/render/.cache/puppeteer/chrome/linux-139.0.7258.138/chrome-linux64/chrome',
+            '/opt/render/.cache/puppeteer/chrome-linux64/chrome',
+            '/usr/bin/google-chrome-stable',
+            '/usr/bin/chromium-browser'
+          ];
+          
+          for (const path of possiblePaths) {
+            try {
+              const fs = await import('fs/promises');
+              await fs.access(path);
+              launchOptions.executablePath = path;
+              console.log(`Found Chrome at: ${path}`);
+              break;
+            } catch {
+              // Path doesn't exist, try next one
+            }
+          }
+          
+          if (!launchOptions.executablePath) {
+            console.warn('Chrome executable not found, letting Puppeteer find it automatically');
+          }
+        }
+      } else if (process.env.CHROME_PATH) {
+        launchOptions.executablePath = process.env.CHROME_PATH;
+      }
+
+      this.browser = await puppeteer.launch(launchOptions);
+      console.log('Puppeteer browser initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize Puppeteer browser:', error);
+      throw error;
     }
-
-    this.browser = await puppeteer.launch(launchOptions);
   }
 
   async close(): Promise<void> {
