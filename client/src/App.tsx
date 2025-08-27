@@ -1,82 +1,200 @@
-import { Switch, Route, useLocation } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { Header } from "@/components/layout/header";
-import { Navbar } from "@/components/layout/navbar";
-import Dashboard from "@/pages/dashboard";
-import Competitors from "@/pages/competitors";
-import Changes from "@/pages/changes";
-import Admin from "@/pages/admin";
-import NotFound from "@/pages/not-found";
-import ProductsPage from "./pages/products-new";
-import BrandDetailPage from "./pages/brand-detail";
-import PriceComparison from "./pages/price-comparison";
-import CategoriesPage from "./pages/categories";
-import CompetitorsPage from "./pages/competitors";
-import PagesPage from "./pages/pages";
-import ChangesPage from "./pages/changes";
-import AdminPage from "./pages/admin";
-import NotFoundPage from "./pages/not-found";
+import React, { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { Button } from './components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card';
+import { Badge } from './components/ui/badge';
+import { 
+  BarChart3, 
+  TrendingUp, 
+  Database, 
+  Settings, 
+  Home,
+  Workflow,
+  BarChart,
+  Users,
+  FileText
+} from 'lucide-react';
+import WorkflowDashboard from './components/WorkflowDashboard';
 
-function Router() {
-  const [location] = useLocation();
+function App() {
+  const [activeTab, setActiveTab] = useState('workflows');
 
-  // Determine page title and subtitle based on route
-  const getPageInfo = () => {
-    switch(location) {
-      case '/':
-        return { title: 'Competitor Overview', subtitle: 'Real-time monitoring of all competitors and market dynamics' };
-      case '/products':
-        return { title: 'Product Management', subtitle: 'Add products and track competitor prices' };
-      case '/competitors':
-        return { title: 'Competitors Management', subtitle: 'Manage competitor websites and monitoring' };
-      case '/changes':
-        return { title: 'Recent Changes', subtitle: 'Track price and stock updates across all competitors' };
-      case '/admin':
-        return { title: 'Administration', subtitle: 'Manage system configuration and data' };
-      case '/price-comparison':
-        return { title: 'Price Comparison', subtitle: 'Compare prices across competitors' };
-      default:
-        return { title: 'Page Not Found', subtitle: 'The requested page could not be found' };
-    }
-  };
+  const navigationItems = [
+    { id: 'workflows', label: 'Workflows', icon: Workflow, component: WorkflowDashboard },
+    { id: 'analytics', label: 'Analytics', icon: BarChart, component: AnalyticsDashboard },
+    { id: 'data', label: 'Data', icon: Database, component: DataViewer },
+    { id: 'reports', label: 'Reports', icon: FileText, component: ReportsViewer },
+    { id: 'users', label: 'Users', icon: Users, component: UsersManagement },
+    { id: 'settings', label: 'Settings', icon: Settings, component: SettingsPanel }
+  ];
 
-  const { title, subtitle } = getPageInfo();
+  const ActiveComponent = navigationItems.find(item => item.id === activeTab)?.component || WorkflowDashboard;
 
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
-      <Header 
-        title={title}
-        subtitle={subtitle}
-        showActions={location === '/products'}
-      />
-      <Navbar />
-      <div className="flex-1 overflow-auto">
-        <Switch>
-          <Route path="/" component={Dashboard} />
-          <Route path="/products" component={ProductsPage} />
-          <Route path="/brands/:brandName" component={BrandDetailPage} />
-          <Route path="/competitors" component={Competitors} />
-          <Route path="/changes" component={Changes} />
-          <Route path="/price-comparison" component={PriceComparison} />
-          <Route path="/admin" component={Admin} />
-          <Route component={NotFound} />
-        </Switch>
+    <Router>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <header className="bg-white shadow-sm border-b">
+          <div className="container mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2">
+                  <BarChart3 className="w-8 h-8 text-blue-600" />
+                  <h1 className="text-2xl font-bold text-gray-900">Tracker Pro</h1>
+                </div>
+                <Badge variant="secondary" className="ml-2">Beta</Badge>
+              </div>
+              <div className="flex items-center space-x-4">
+                <Button variant="outline" size="sm">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Settings
+                </Button>
+                <Button size="sm">
+                  <Users className="w-4 h-4 mr-2" />
+                  Profile
+                </Button>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Navigation */}
+        <nav className="bg-white border-b">
+          <div className="container mx-auto px-6">
+            <div className="flex space-x-8">
+              {navigationItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    activeTab === item.id
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <item.icon className="w-4 h-4" />
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </nav>
+
+        {/* Main Content */}
+        <main className="container mx-auto py-6">
+          <ActiveComponent />
+        </main>
+      </div>
+    </Router>
+  );
+}
+
+// Placeholder components for other tabs
+function AnalyticsDashboard() {
+  return (
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Total Workflows</CardTitle>
+            <CardDescription>Active scraping workflows</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-blue-600">12</div>
+            <p className="text-sm text-gray-600 mt-2">+2 from last week</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Products Tracked</CardTitle>
+            <CardDescription>Total products being monitored</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-green-600">1,247</div>
+            <p className="text-sm text-gray-600 mt-2">+89 from last week</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>Data Points</CardTitle>
+            <CardDescription>Scraped data records</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-purple-600">45,892</div>
+            <p className="text-sm text-gray-600 mt-2">+3,421 from last week</p>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
 }
 
-function App() {
+function DataViewer() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold">Data Viewer</h1>
+      <Card>
+        <CardHeader>
+          <CardTitle>Scraped Data</CardTitle>
+          <CardDescription>View and analyze collected data</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-gray-600">Data viewing functionality coming soon...</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function ReportsViewer() {
+  return (
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold">Reports</h1>
+      <Card>
+        <CardHeader>
+          <CardTitle>Generated Reports</CardTitle>
+          <CardDescription>View and download reports</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-gray-600">Reporting functionality coming soon...</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function UsersManagement() {
+  return (
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold">User Management</h1>
+      <Card>
+        <CardHeader>
+          <CardTitle>Users</CardTitle>
+          <CardDescription>Manage system users and permissions</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-gray-600">User management functionality coming soon...</p>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function SettingsPanel() {
+  return (
+    <div className="space-y-6">
+      <h1 className="text-3xl font-bold">Settings</h1>
+      <Card>
+        <CardHeader>
+          <CardTitle>System Settings</CardTitle>
+          <CardDescription>Configure system preferences</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-gray-600">Settings functionality coming soon...</p>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 

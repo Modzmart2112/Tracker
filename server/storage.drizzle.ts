@@ -17,6 +17,62 @@ import {
 } from "@shared/schema";
 import type { IStorage } from "./storage";
 
+// New tables for scraping workflow system
+export const scrapingWorkflows = pgTable('scraping_workflows', {
+  id: serial('id').primaryKey(),
+  name: varchar('name', { length: 255 }).notNull(),
+  description: text('description'),
+  categoryUrl: varchar('category_url', { length: 1000 }).notNull(),
+  competitorName: varchar('competitor_name', { length: 255 }).notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  userId: integer('user_id').references(() => users.id),
+});
+
+export const scrapingElements = pgTable('scraping_elements', {
+  id: serial('id').primaryKey(),
+  workflowId: integer('workflow_id').references(() => scrapingWorkflows.id).notNull(),
+  name: varchar('name', { length: 255 }).notNull(), // e.g., "Title", "Price", "Description"
+  selector: varchar('selector', { length: 1000 }).notNull(), // CSS selector or XPath
+  selectorType: varchar('selector_type', { length: 50 }).default('css').notNull(), // 'css' or 'xpath'
+  attribute: varchar('attribute', { length: 255 }), // e.g., 'textContent', 'href', 'src'
+  isRequired: boolean('is_required').default(true).notNull(),
+  order: integer('order').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+export const productUrls = pgTable('product_urls', {
+  id: serial('id').primaryKey(),
+  workflowId: integer('workflow_id').references(() => scrapingWorkflows.id).notNull(),
+  url: varchar('url', { length: 1000 }).notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
+  lastScraped: timestamp('last_scraped'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const scrapingResults = pgTable('scraping_results', {
+  id: serial('id').primaryKey(),
+  workflowId: integer('workflow_id').references(() => scrapingWorkflows.id).notNull(),
+  productUrlId: integer('product_url_id').references(() => productUrls.id).notNull(),
+  scrapedData: jsonb('scraped_data').notNull(), // Stores the actual scraped data
+  scrapedAt: timestamp('scraped_at').defaultNow().notNull(),
+  status: varchar('status', { length: 50 }).default('success').notNull(), // 'success', 'error', 'partial'
+  errorMessage: text('error_message'),
+});
+
+export const scheduledTasks = pgTable('scheduled_tasks', {
+  id: serial('id').primaryKey(),
+  workflowId: integer('workflow_id').references(() => scrapingWorkflows.id).notNull(),
+  cronExpression: varchar('cron_expression', { length: 100 }).default('0 0 * * *').notNull(), // Default: daily at midnight
+  isActive: boolean('is_active').default(true).notNull(),
+  lastRun: timestamp('last_run'),
+  nextRun: timestamp('next_run'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
 export class DrizzleStorage implements IStorage {
   private db: ReturnType<typeof getDb>;
 
