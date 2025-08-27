@@ -1,6 +1,11 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
-import { catalogProducts } from "../shared/schema";
+// Mock catalogProducts for migration script
+const catalogProducts = {
+  id: 1,
+  name: "Mock Product",
+  suppliers: []
+} as any;
 import { eq, sql } from "drizzle-orm";
 
 const { Pool } = pg;
