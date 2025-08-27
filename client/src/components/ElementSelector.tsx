@@ -15,7 +15,7 @@ import {
   AlertCircle,
   X
 } from 'lucide-react';
-import { toast } from './ui/use-toast';
+import { toast } from '../hooks/use-toast';
 
 interface ScrapingElement {
   name: string;

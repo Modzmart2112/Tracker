@@ -19,7 +19,7 @@ import {
   AlertCircle,
   Loader2
 } from 'lucide-react';
-import { toast } from './ui/use-toast';
+import { toast } from '../hooks/use-toast';
 
 interface Workflow {
   id: number;
