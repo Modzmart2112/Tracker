@@ -1,4 +1,5 @@
-import puppeteer, { Browser, Page } from 'puppeteer';
+import puppeteer from 'puppeteer';
+import type { Browser, Page } from 'puppeteer';
 import { getDb } from './db';
 import { scrapingWorkflows, scrapingElements, productUrls, scrapingResults } from './storage.drizzle';
 import { eq, and } from 'drizzle-orm';
@@ -19,7 +20,7 @@ export class WorkflowScraper {
 
   async initialize(): Promise<void> {
     try {
-      const launchOptions: PuppeteerLaunchOptions = {
+      const launchOptions: any = {
         headless: process.env.NODE_ENV === 'production' ? true : false,
         args: [
           '--no-sandbox', 
