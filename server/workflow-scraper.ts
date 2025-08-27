@@ -1,5 +1,5 @@
 import puppeteer, { Browser, Page } from 'puppeteer';
-import { db } from './db';
+import { getDb } from './db';
 import { scrapingWorkflows, scrapingElements, productUrls, scrapingResults } from './storage.drizzle';
 import { eq, and } from 'drizzle-orm';
 
@@ -183,6 +183,7 @@ export class WorkflowScraper {
   async scrapeProducts(workflowId: number): Promise<void> {
     if (!this.browser) throw new Error('Browser not initialized');
     
+    const db = getDb();
     // Get workflow and elements
     const workflow = await db.select().from(scrapingWorkflows).where(eq(scrapingWorkflows.id, workflowId)).limit(1);
     const elements = await db.select().from(scrapingElements).where(eq(scrapingElements.workflowId, workflowId)).orderBy(scrapingElements.order);
@@ -231,6 +232,7 @@ export class WorkflowScraper {
     competitorName: string,
     userId: number
   ): Promise<number> {
+    const db = getDb();
     const [workflow] = await db.insert(scrapingWorkflows).values({
       name,
       description,
@@ -243,6 +245,7 @@ export class WorkflowScraper {
   }
 
   async addScrapingElements(workflowId: number, elements: ScrapingElement[]): Promise<void> {
+    const db = getDb();
     const elementsToInsert = elements.map((element, index) => ({
       workflowId,
       name: element.name,
@@ -256,6 +259,7 @@ export class WorkflowScraper {
   }
 
   async addProductUrls(workflowId: number, urls: string[]): Promise<void> {
+    const db = getDb();
     const urlsToInsert = urls.map(url => ({
       workflowId,
       url
