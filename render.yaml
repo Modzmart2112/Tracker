@@ -16,6 +16,8 @@ services:
         fromDatabase:
           name: tracker-db
           property: connectionString
+      - key: OPENAI_API_KEY
+        value: "YOUR_OPENAI_API_KEY_HERE"
     healthCheckPath: /health
 
 databases:
