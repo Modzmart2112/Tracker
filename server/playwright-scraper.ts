@@ -53,6 +53,54 @@ function extractCategoryFromUrl(url: string): { category: string, productType: s
   }
 }
 
+export async function scrapeProductDetails(url: string) {
+  const execPath = await whichChromium();
+  const browser = await chromium.launch({
+    headless: true,
+    executablePath: execPath,
+    args: ["--no-sandbox","--disable-setuid-sandbox","--disable-dev-shm-usage"]
+  });
+
+  try {
+    const ctx = await browser.newContext({
+      userAgent:
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115 Safari/537.36",
+      viewport: { width: 1366, height: 900 }
+    });
+
+    const page = await ctx.newPage();
+    await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
+    
+    // Wait for the page to load
+    await page.waitForLoadState("networkidle").catch(() => {});
+    
+    // Extract product details
+    const productData = await page.evaluate(() => {
+      const title = document.querySelector('h1, .product-title, .product-name')?.textContent?.trim() || '';
+      const price = document.querySelector('.price, .product-price, [data-price]')?.textContent?.trim() || '';
+      const originalPrice = document.querySelector('.original-price, .was-price, .old-price')?.textContent?.trim() || '';
+      
+      // Extract numeric price
+      const priceMatch = price.match(/[\d,]+\.?\d*/);
+      const priceValue = priceMatch ? parseFloat(priceMatch[0].replace(/,/g, '')) : 0;
+      
+      const originalPriceMatch = originalPrice.match(/[\d,]+\.?\d*/);
+      const originalPriceValue = originalPriceMatch ? parseFloat(originalPriceMatch[0].replace(/,/g, '')) : 0;
+      
+      return {
+        title,
+        price: priceValue,
+        originalPrice: originalPriceValue > 0 ? originalPriceValue : null,
+        url: window.location.href
+      };
+    });
+    
+    return productData;
+  } finally {
+    await browser.close();
+  }
+}
+
 export const playwrightScraper = {
   async scrapeTotalTools(url: string) {
     const execPath = await whichChromium();

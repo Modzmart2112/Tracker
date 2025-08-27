@@ -22,6 +22,9 @@ export function getDb() {
   return db;
 }
 
+// Export the db instance for direct use
+export { db };
+
 export function closeDb() {
   if (pool) {
     pool.end();
