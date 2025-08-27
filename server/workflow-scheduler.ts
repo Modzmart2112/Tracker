@@ -63,7 +63,7 @@ export class WorkflowScheduler {
     return nextRun;
   }
 
-  async runWorkflow(workflowId: number): Promise<void> {
+  async runWorkflow(workflowId: string): Promise<void> {
     try {
       // Check if workflow is active
       const workflow = await db.select()
@@ -87,7 +87,7 @@ export class WorkflowScheduler {
     }
   }
 
-  async scheduleWorkflow(workflowId: number, cronExpression: string = '0 0 * * *'): Promise<void> {
+  async scheduleWorkflow(workflowId: string, cronExpression: string = '0 0 * * *'): Promise<void> {
     // Check if task already exists
     const existingTask = await db.select()
       .from(scheduledTasks)
@@ -120,7 +120,7 @@ export class WorkflowScheduler {
     }
   }
 
-  async pauseWorkflow(workflowId: number): Promise<void> {
+  async pauseWorkflow(workflowId: string): Promise<void> {
     await db.update(scheduledTasks)
       .set({ isActive: false, updatedAt: new Date() })
       .where(eq(scheduledTasks.workflowId, workflowId));
@@ -137,7 +137,7 @@ export class WorkflowScheduler {
     }
   }
 
-  async resumeWorkflow(workflowId: number): Promise<void> {
+  async resumeWorkflow(workflowId: string): Promise<void> {
     await db.update(scheduledTasks)
       .set({ isActive: true, updatedAt: new Date() })
       .where(eq(scheduledTasks.workflowId, workflowId));

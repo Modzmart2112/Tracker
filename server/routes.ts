@@ -18,8 +18,8 @@ export interface InsertPageSchema {
 export interface InsertProductSchema {
   name: string;
   description?: string;
-  categoryId: number;
-  brandId: number;
+  categoryId: string;
+  brandId: string;
 }
 
 export interface InsertTaskSchema {
@@ -36,20 +36,20 @@ export interface InsertBrandSchema {
 export interface InsertCatalogProductSchema {
   name: string;
   description?: string;
-  categoryId: number;
-  brandId: number;
+  categoryId: string;
+  brandId: string;
 }
 
 export interface InsertCompetitorListingSchema {
-  competitorId: number;
-  productId: number;
+  competitorId: string;
+  productId: string;
   url: string;
   price: number;
   currency: string;
 }
 
 export interface InsertListingSnapshotSchema {
-  listingId: number;
+  listingId: string;
   price: number;
   currency: string;
   timestamp: Date;

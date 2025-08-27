@@ -188,7 +188,7 @@ export class WorkflowScraper {
     return results;
   }
 
-  async scrapeProducts(workflowId: number): Promise<void> {
+  async scrapeProducts(workflowId: string): Promise<void> {
     if (!this.browser) throw new Error('Browser not initialized');
     
     const db = getDb();
@@ -238,8 +238,8 @@ export class WorkflowScraper {
     description: string,
     categoryUrl: string,
     competitorName: string,
-    userId: number
-  ): Promise<number> {
+    userId: string
+  ): Promise<string> {
     const db = getDb();
     const [workflow] = await db.insert(scrapingWorkflows).values({
       name,
@@ -252,7 +252,7 @@ export class WorkflowScraper {
     return workflow.id;
   }
 
-  async addScrapingElements(workflowId: number, elements: ScrapingElement[]): Promise<void> {
+  async addScrapingElements(workflowId: string, elements: ScrapingElement[]): Promise<void> {
     const db = getDb();
     const elementsToInsert = elements.map((element, index) => ({
       workflowId,
@@ -266,7 +266,7 @@ export class WorkflowScraper {
     await db.insert(scrapingElements).values(elementsToInsert);
   }
 
-  async addProductUrls(workflowId: number, urls: string[]): Promise<void> {
+  async addProductUrls(workflowId: string, urls: string[]): Promise<void> {
     const db = getDb();
     const urlsToInsert = urls.map(url => ({
       workflowId,
