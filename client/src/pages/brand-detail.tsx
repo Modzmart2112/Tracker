@@ -204,7 +204,7 @@ export default function BrandDetailPage() {
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.3 }}
               >
-                <Card className="bg-white border border-neutral-200 shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden">
+                <Card className="bg-white border border-gray-200 shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden">
                   {/* Product Image */}
                   <div className="h-48 w-full bg-white p-4 flex items-center justify-center">
                     {product.image ? (

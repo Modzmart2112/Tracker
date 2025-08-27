@@ -18,9 +18,10 @@ export class WorkflowScraper {
   private browser: Browser | null = null;
 
   async initialize(): Promise<void> {
-    this.browser = await puppeteer.launch({
+    // For production (Render), let Puppeteer find Chrome automatically
+    // The build command installs Chrome to the default Puppeteer location
+    const launchOptions: any = {
       headless: process.env.NODE_ENV === 'production' ? true : false,
-      executablePath: process.env.NODE_ENV === 'production' ? '/usr/bin/google-chrome-stable' : undefined,
       args: [
         '--no-sandbox', 
         '--disable-setuid-sandbox',
@@ -32,7 +33,14 @@ export class WorkflowScraper {
         '--disable-web-security',
         '--disable-features=VizDisplayCompositor'
       ]
-    });
+    };
+
+    // Only set executablePath for local development if needed
+    if (process.env.NODE_ENV !== 'production' && process.env.CHROME_PATH) {
+      launchOptions.executablePath = process.env.CHROME_PATH;
+    }
+
+    this.browser = await puppeteer.launch(launchOptions);
   }
 
   async close(): Promise<void> {
