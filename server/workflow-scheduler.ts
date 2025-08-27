@@ -1,5 +1,5 @@
 import cron from 'node-cron';
-import { db } from './db';
+import { getDb } from './db';
 import { scrapingWorkflows, scheduledTasks, scrapingResults, productUrls } from './storage.drizzle';
 import { eq, and, lt } from 'drizzle-orm';
 import { WorkflowScraper } from './workflow-scraper';
@@ -18,6 +18,7 @@ export class WorkflowScheduler {
   }
 
   async loadScheduledTasks(): Promise<void> {
+    const db = getDb();
     const tasks = await db.select().from(scheduledTasks).where(eq(scheduledTasks.isActive, true));
     
     for (const task of tasks) {
@@ -39,6 +40,7 @@ export class WorkflowScheduler {
         
         // Update last run and next run
         const nextRun = this.calculateNextRun(task.cronExpression);
+        const db = getDb();
         await db.update(scheduledTasks)
           .set({ 
             lastRun: new Date(),
@@ -65,6 +67,7 @@ export class WorkflowScheduler {
 
   async runWorkflow(workflowId: string): Promise<void> {
     try {
+      const db = getDb();
       // Check if workflow is active
       const workflow = await db.select()
         .from(scrapingWorkflows)
@@ -88,6 +91,7 @@ export class WorkflowScheduler {
   }
 
   async scheduleWorkflow(workflowId: string, cronExpression: string = '0 0 * * *'): Promise<void> {
+    const db = getDb();
     // Check if task already exists
     const existingTask = await db.select()
       .from(scheduledTasks)
@@ -121,6 +125,7 @@ export class WorkflowScheduler {
   }
 
   async pauseWorkflow(workflowId: string): Promise<void> {
+    const db = getDb();
     await db.update(scheduledTasks)
       .set({ isActive: false, updatedAt: new Date() })
       .where(eq(scheduledTasks.workflowId, workflowId));
@@ -138,6 +143,7 @@ export class WorkflowScheduler {
   }
 
   async resumeWorkflow(workflowId: string): Promise<void> {
+    const db = getDb();
     await db.update(scheduledTasks)
       .set({ isActive: true, updatedAt: new Date() })
       .where(eq(scheduledTasks.workflowId, workflowId));
@@ -154,6 +160,7 @@ export class WorkflowScheduler {
   }
 
   async runAllActiveWorkflows(): Promise<void> {
+    const db = getDb();
     const activeWorkflows = await db.select()
       .from(scrapingWorkflows)
       .where(eq(scrapingWorkflows.isActive, true));
