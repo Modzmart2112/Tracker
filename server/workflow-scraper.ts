@@ -20,6 +20,7 @@ export class WorkflowScraper {
   async initialize(): Promise<void> {
     this.browser = await puppeteer.launch({
       headless: process.env.NODE_ENV === 'production' ? true : false,
+      executablePath: process.env.NODE_ENV === 'production' ? '/usr/bin/google-chrome-stable' : undefined,
       args: [
         '--no-sandbox', 
         '--disable-setuid-sandbox',
@@ -27,7 +28,9 @@ export class WorkflowScraper {
         '--disable-gpu',
         '--no-first-run',
         '--no-zygote',
-        '--single-process'
+        '--single-process',
+        '--disable-web-security',
+        '--disable-features=VizDisplayCompositor'
       ]
     });
   }

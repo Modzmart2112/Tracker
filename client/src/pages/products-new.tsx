@@ -1062,7 +1062,7 @@ export default function ProductsPage() {
                 </div>
               </div>
               
-              <div className="mt-4 pt-4 border-t border-gray-200">
+              <div className="mt-4 pt-4 border-t border-neutral-200">
                 <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
                   <span>Action Required</span>
                   <span>High priority</span>
@@ -1701,7 +1701,7 @@ export default function ProductsPage() {
                             window.location.href = `/brands/${encodeURIComponent(brand)}`;
                           }}
                         >
-                          <Card className="aspect-square bg-white hover:shadow-lg transition-all duration-300 border border-gray-200 hover:border-red-300 relative group">
+                          <Card className="aspect-square bg-white hover:shadow-lg transition-all duration-300 border border-neutral-200 hover:border-red-300 relative group">
                       {/* Product count badge */}
                       <div className="absolute -top-2 -right-2 z-10">
                         <Badge className="bg-red-600 text-white text-xs font-bold shadow-lg">
@@ -1800,10 +1800,10 @@ export default function ProductsPage() {
                       window.location.href = `/categories/${encodeURIComponent(category)}`;
                     }}
                   >
-                    <Card className="aspect-square bg-white hover:shadow-lg transition-all duration-300 border border-gray-200 hover:border-red-300 relative group">
+                    <Card className="aspect-square bg-white hover:shadow-lg transition-all duration-300 border border-neutral-200 hover:border-red-300 relative group">
                       {/* Product count badge */}
                       <div className="absolute -top-2 -right-2 z-10">
-                        <Badge className="bg-red-600 text-white text-xs font-bold shadow-lg">
+                        <Badge className="bg-red-200 text-white text-xs font-bold shadow-lg">
                           {categoryProducts.length}
                         </Badge>
                       </div>
@@ -1871,7 +1871,7 @@ export default function ProductsPage() {
                       window.location.href = `/competitors/${encodeURIComponent(competitor)}`;
                     }}
                   >
-                    <Card className="aspect-square bg-white hover:shadow-lg transition-all duration-300 border border-gray-200 hover:border-red-300 relative group">
+                    <Card className="aspect-square bg-white hover:shadow-lg transition-all duration-300 border border-neutral-200 hover:border-red-300 relative group">
                       {/* Product count badge */}
                       <div className="absolute -top-2 -right-2 z-10">
                         <Badge className="bg-red-600 text-white text-xs font-bold shadow-lg">
@@ -2018,7 +2018,7 @@ export default function ProductsPage() {
                 </div>
                 
                 {editingCard.logoUrl && (
-                  <div className="w-24 h-24 border-2 border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+                  <div className="w-24 h-24 border-2 border-neutral-200 rounded-lg overflow-hidden bg-gray-50">
                     <img 
                       src={editingCard.logoUrl.startsWith('/objects/') 
                         ? editingCard.logoUrl 

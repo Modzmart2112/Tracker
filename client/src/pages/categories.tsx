@@ -26,7 +26,7 @@ export default function Categories() {
             const categoryProductTypes = getCategoryProductTypes(category.id);
             
             return (
-              <Card key={category.id} className="border-gray-200 shadow-sm hover:shadow-lg transition-all hover:border-[#CB0000]/30">
+              <Card key={category.id} className="border-neutral-200 shadow-sm hover:shadow-lg transition-all hover:border-[#CB0000]/30">
                 <CardHeader className="pb-4">
                   <div className="flex items-center space-x-3">
                     <div className="w-12 h-12 bg-gradient-to-br from-[#CB0000] to-red-800 rounded-lg flex items-center justify-center shadow-md">
@@ -46,7 +46,7 @@ export default function Categories() {
                 <CardContent>
                   <div className="space-y-3">
                     {categoryProductTypes.map((productType: any) => (
-                      <div key={productType.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <div key={productType.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-neutral-200">
                         <div className="flex items-center space-x-3">
                           <Package className="text-gray-600" size={16} />
                           <span className="font-medium text-black">{productType.name}</span>
@@ -64,7 +64,7 @@ export default function Categories() {
                     )}
                   </div>
                   
-                  <div className="mt-4 pt-4 border-t border-gray-200">
+                  <div className="mt-4 pt-4 border-t border-neutral-200">
                     <Button variant="outline" className="w-full border-gray-300 hover:bg-[#CB0000] hover:text-white hover:border-[#CB0000]" size="sm">
                       View Dashboard
                     </Button>

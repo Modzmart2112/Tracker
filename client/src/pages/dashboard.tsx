@@ -136,7 +136,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* All Competitors */}
           <Card className="border-0 shadow-xl bg-white">
-            <CardHeader className="border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+            <CardHeader className="border-b border-neutral-200 bg-gradient-to-r from-gray-50 to-white">
               <CardTitle className="text-lg font-semibold text-black">
                 Your Competitors
               </CardTitle>
@@ -148,7 +148,7 @@ export default function Dashboard() {
               {competitorStats.length > 0 ? (
                 <div className="space-y-3">
                   {competitorStats.map((comp: any) => (
-                    <div key={comp.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                    <div key={comp.id} className="p-4 bg-gray-50 rounded-lg border border-neutral-200">
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium text-black">{comp.name}</h4>
                         <Link href={`/competitors/${comp.id}`}>
@@ -191,7 +191,7 @@ export default function Dashboard() {
 
           {/* Important Price Changes */}
           <Card className="border-0 shadow-xl bg-white">
-            <CardHeader className="border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
+            <CardHeader className="border-b border-neutral-200 bg-gradient-to-r from-gray-50 to-white">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-lg font-semibold text-black">
@@ -212,7 +212,7 @@ export default function Dashboard() {
               {importantPriceChanges.length > 0 ? (
                 <div className="space-y-2 max-h-96 overflow-y-auto">
                   {importantPriceChanges.map((change: any) => (
-                    <div key={change.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                    <div key={change.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-neutral-200">
                       <div className="flex-1">
                         <p className="font-medium text-black text-sm">{change.productTitle}</p>
                         <p className="text-xs text-gray-500">{change.competitorName}</p>

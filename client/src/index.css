@@ -121,7 +121,7 @@ nav a {
 
 @layer base {
   * {
-    @apply border-gray-200;
+    @apply border-neutral-200;
   }
 
   body {
