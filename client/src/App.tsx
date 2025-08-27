@@ -2,14 +2,14 @@ import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { WorkflowDashboard } from './components/WorkflowDashboard';
 import { ElementSelector } from './components/ElementSelector';
-import { Dashboard } from './pages/dashboard';
-import { ProductsPage as Products } from './pages/products-new';
-import { Categories } from './pages/categories';
-import { Competitors } from './pages/competitors';
-import { BrandDetailPage as BrandDetail } from './pages/brand-detail';
-import { Catalog } from './pages/catalog';
-import { Pages } from './pages/pages';
-import { Admin } from './pages/admin';
+import Dashboard from './pages/dashboard';
+import ProductsPage from './pages/products-new';
+import Categories from './pages/categories';
+import Competitors from './pages/competitors';
+import BrandDetailPage from './pages/brand-detail';
+import { CatalogPage as Catalog } from './pages/catalog';
+import Pages from './pages/pages';
+import Admin from './pages/admin';
 
 // Modern Icon Components
 const Icon = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
@@ -146,10 +146,10 @@ function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/workflows" element={<WorkflowDashboard />} />
-            <Route path="/products" element={<Products />} />
+            <Route path="/products" element={<ProductsPage />} />
             <Route path="/categories" element={<Categories />} />
             <Route path="/competitors" element={<Competitors />} />
-            <Route path="/brand/:id" element={<BrandDetail />} />
+            <Route path="/brand/:id" element={<BrandDetailPage />} />
             <Route path="/catalog" element={<Catalog />} />
             <Route path="/pages" element={<Pages />} />
             <Route path="/admin" element={<Admin />} />

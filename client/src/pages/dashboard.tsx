@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-const Dashboard = () => {
+export default function Dashboard() {
   const stats = [
     {
       title: 'Active Workflows',
@@ -209,6 +209,4 @@ const Dashboard = () => {
       </div>
     </div>
   );
-};
-
-export default Dashboard;
+}
