@@ -20,6 +20,12 @@ export class WorkflowScraper {
 
   async initialize(): Promise<void> {
     try {
+      // Temporarily skip Puppeteer initialization for Render deployment debugging
+      if (process.env.NODE_ENV === 'production') {
+        console.log('Skipping Puppeteer initialization in production for debugging');
+        return;
+      }
+
       // Use minimal configuration to let Puppeteer handle everything automatically
       const launchOptions: any = {
         headless: process.env.NODE_ENV === 'production' ? true : false
