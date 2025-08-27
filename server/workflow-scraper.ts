@@ -20,19 +20,9 @@ export class WorkflowScraper {
 
   async initialize(): Promise<void> {
     try {
+      // Use minimal configuration to let Puppeteer handle everything automatically
       const launchOptions: any = {
-        headless: process.env.NODE_ENV === 'production' ? true : false,
-        args: [
-          '--no-sandbox', 
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu',
-          '--no-first-run',
-          '--no-zygote',
-          '--single-process',
-          '--disable-web-security',
-          '--disable-features=VizDisplayCompositor'
-        ]
+        headless: process.env.NODE_ENV === 'production' ? true : false
       };
 
       // Only set executablePath for local development if needed
