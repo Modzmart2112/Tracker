@@ -1,8 +1,6 @@
 import puppeteer from 'puppeteer';
 import type { Browser, Page } from 'puppeteer';
-import { getDb } from './db';
-import { scrapingWorkflows, scrapingElements, productUrls, scrapingResults } from './storage.drizzle';
-import { eq, and } from 'drizzle-orm';
+import { DrizzleStorage } from './storage.drizzle';
 
 export interface ScrapingElement {
   name: string;
@@ -17,6 +15,11 @@ export interface ScrapingResult {
 
 export class WorkflowScraper {
   private browser: Browser | null = null;
+  private storage: DrizzleStorage;
+
+  constructor() {
+    this.storage = new DrizzleStorage();
+  }
 
   async initialize(): Promise<void> {
     try {
@@ -192,24 +195,24 @@ export class WorkflowScraper {
   async scrapeProducts(workflowId: string): Promise<void> {
     if (!this.browser) throw new Error('Browser not initialized');
     
-    const db = getDb();
     // Get workflow and elements
-    const workflow = await db.select().from(scrapingWorkflows).where(eq(scrapingWorkflows.id, workflowId)).limit(1);
-    const elements = await db.select().from(scrapingElements).where(eq(scrapingElements.workflowId, workflowId)).orderBy(scrapingElements.order);
+    const workflows = await this.storage.getScrapingWorkflows();
+    const workflow = workflows.find(w => w.id === workflowId);
+    const elements = await this.storage.getScrapingElements(workflowId);
     
-    if (workflow.length === 0 || elements.length === 0) {
+    if (!workflow || elements.length === 0) {
       throw new Error('Workflow or elements not found');
     }
     
     // Get all product URLs for this workflow
-    const productUrlRecords = await db.select().from(productUrls).where(eq(productUrls.workflowId, workflowId));
+    const productUrlRecords = await this.storage.getProductUrls(workflowId);
     
     for (const productUrlRecord of productUrlRecords) {
       try {
         const scrapedData = await this.testElementSelection(productUrlRecord.url, elements);
         
         // Store the result
-        await db.insert(scrapingResults).values({
+        await this.storage.createScrapingResult({
           workflowId,
           productUrlId: productUrlRecord.id,
           scrapedData,
@@ -217,13 +220,13 @@ export class WorkflowScraper {
         });
         
         // Update last scraped timestamp
-        await db.update(productUrls)
-          .set({ lastScraped: new Date() })
-          .where(eq(productUrls.id, productUrlRecord.id));
+        await this.storage.updateProductUrl(productUrlRecord.id, {
+          lastScraped: new Date()
+        });
           
       } catch (error) {
         // Store error result
-        await db.insert(scrapingResults).values({
+        await this.storage.createScrapingResult({
           workflowId,
           productUrlId: productUrlRecord.id,
           scrapedData: {},
@@ -241,39 +244,36 @@ export class WorkflowScraper {
     competitorName: string,
     userId: string
   ): Promise<string> {
-    const db = getDb();
-    const [workflow] = await db.insert(scrapingWorkflows).values({
+    const workflow = await this.storage.createScrapingWorkflow({
       name,
       description,
       categoryUrl,
       competitorName,
       userId
-    }).returning({ id: scrapingWorkflows.id });
+    });
     
     return workflow.id;
   }
 
   async addScrapingElements(workflowId: string, elements: ScrapingElement[]): Promise<void> {
-    const db = getDb();
-    const elementsToInsert = elements.map((element, index) => ({
-      workflowId,
-      name: element.name,
-      selector: element.selector,
-      selectorType: element.selectorType,
-      attribute: element.attribute,
-      order: index + 1
-    }));
-    
-    await db.insert(scrapingElements).values(elementsToInsert);
+    for (const element of elements) {
+      await this.storage.createScrapingElement({
+        workflowId,
+        name: element.name,
+        selector: element.selector,
+        selectorType: element.selectorType,
+        attribute: element.attribute,
+        order: elements.indexOf(element) + 1
+      });
+    }
   }
 
   async addProductUrls(workflowId: string, urls: string[]): Promise<void> {
-    const db = getDb();
-    const urlsToInsert = urls.map(url => ({
-      workflowId,
-      url
-    }));
-    
-    await db.insert(productUrls).values(urlsToInsert);
+    for (const url of urls) {
+      await this.storage.createProductUrl({
+        workflowId,
+        url
+      });
+    }
   }
 }

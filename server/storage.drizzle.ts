@@ -255,6 +255,27 @@ export class DrizzleStorage implements IStorage {
   async updateCompetitorCarousels(): Promise<void> { }
   async getBrandCoverageMatrix(): Promise<any> { return { brands: [], competitors: [] }; }
   async getKPIMetrics(): Promise<any> { return { brandCoverage: '0/0', priceUndercuts: 0, priceChanges24h: 0, activeTasks: 0 }; }
+  
+  // Scraping workflow methods
+  async getScheduledTasks(): Promise<any[]> { return [scheduledTasks]; }
+  async getScrapingWorkflows(): Promise<any[]> { return [scrapingWorkflows]; }
+  async getScrapingElements(workflowId: string): Promise<any[]> { return [scrapingElements]; }
+  async getProductUrls(workflowId: string): Promise<any[]> { return [productUrls]; }
+  async getScrapingResults(workflowId: string): Promise<any[]> { return [scrapingResults]; }
+  
+  async createScheduledTask(task: any): Promise<any> { return { ...scheduledTasks, ...task, id: Date.now().toString() }; }
+  async updateScheduledTask(id: string, updates: any): Promise<any> { return { ...scheduledTasks, ...updates, id }; }
+  async deleteScheduledTask(id: string): Promise<void> { }
+  
+  async createScrapingWorkflow(workflow: any): Promise<any> { return { ...scrapingWorkflows, ...workflow, id: Date.now().toString() }; }
+  async updateScrapingWorkflow(id: string, updates: any): Promise<any> { return { ...scrapingWorkflows, ...updates, id }; }
+  async deleteScrapingWorkflow(id: string): Promise<void> { }
+  
+  async createScrapingElement(element: any): Promise<any> { return { ...scrapingElements, ...element, id: Date.now().toString() }; }
+  async createProductUrl(url: any): Promise<any> { return { ...productUrls, ...url, id: Date.now().toString() }; }
+  async createScrapingResult(result: any): Promise<any> { return { ...scrapingResults, ...result, id: Date.now().toString() }; }
+  
+  async updateProductUrl(id: string, updates: any): Promise<any> { return { ...productUrls, ...updates, id }; }
 }
 
 // Export a mock database instance for now

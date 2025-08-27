@@ -1,15 +1,15 @@
 import cron from 'node-cron';
-import { getDb } from './db';
-import { scrapingWorkflows, scheduledTasks, scrapingResults, productUrls } from './storage.drizzle';
-import { eq, and, lt } from 'drizzle-orm';
+import { DrizzleStorage } from './storage.drizzle';
 import { WorkflowScraper } from './workflow-scraper';
 
 export class WorkflowScheduler {
   private scraper: WorkflowScraper;
   private scheduledJobs: Map<number, cron.ScheduledTask> = new Map();
+  private storage: DrizzleStorage;
 
   constructor() {
     this.scraper = new WorkflowScraper();
+    this.storage = new DrizzleStorage();
   }
 
   async initialize(): Promise<void> {
@@ -18,10 +18,10 @@ export class WorkflowScheduler {
   }
 
   async loadScheduledTasks(): Promise<void> {
-    const db = getDb();
-    const tasks = await db.select().from(scheduledTasks).where(eq(scheduledTasks.isActive, true));
+    const tasks = await this.storage.getScheduledTasks();
+    const activeTasks = tasks.filter(task => task.isActive);
     
-    for (const task of tasks) {
+    for (const task of activeTasks) {
       this.scheduleTask(task);
     }
   }
@@ -40,13 +40,10 @@ export class WorkflowScheduler {
         
         // Update last run and next run
         const nextRun = this.calculateNextRun(task.cronExpression);
-        const db = getDb();
-        await db.update(scheduledTasks)
-          .set({ 
-            lastRun: new Date(),
-            nextRun: nextRun
-          })
-          .where(eq(scheduledTasks.id, task.id));
+        await this.storage.updateScheduledTask(task.id, {
+          lastRun: new Date(),
+          nextRun: nextRun
+        });
           
       } catch (error) {
         console.error(`Error running scheduled task ${task.id}:`, error);
@@ -67,14 +64,11 @@ export class WorkflowScheduler {
 
   async runWorkflow(workflowId: string): Promise<void> {
     try {
-      const db = getDb();
       // Check if workflow is active
-      const workflow = await db.select()
-        .from(scrapingWorkflows)
-        .where(eq(scrapingWorkflows.id, workflowId))
-        .limit(1);
+      const workflows = await this.storage.getScrapingWorkflows();
+      const workflow = workflows.find(w => w.id === workflowId);
 
-      if (workflow.length === 0 || !workflow[0].isActive) {
+      if (!workflow || !workflow.isActive) {
         console.log(`Workflow ${workflowId} is not active or not found`);
         return;
       }
@@ -91,79 +85,68 @@ export class WorkflowScheduler {
   }
 
   async scheduleWorkflow(workflowId: string, cronExpression: string = '0 0 * * *'): Promise<void> {
-    const db = getDb();
     // Check if task already exists
-    const existingTask = await db.select()
-      .from(scheduledTasks)
-      .where(eq(scheduledTasks.workflowId, workflowId))
-      .limit(1);
+    const tasks = await this.storage.getScheduledTasks();
+    const existingTask = tasks.find(t => t.workflowId === workflowId);
 
-    if (existingTask.length > 0) {
+    if (existingTask) {
       // Update existing task
-      await db.update(scheduledTasks)
-        .set({ 
-          cronExpression,
-          isActive: true,
-          nextRun: this.calculateNextRun(cronExpression),
-          updatedAt: new Date()
-        })
-        .where(eq(scheduledTasks.id, existingTask[0].id));
+      const updatedTask = await this.storage.updateScheduledTask(existingTask.id, {
+        cronExpression,
+        isActive: true,
+        nextRun: this.calculateNextRun(cronExpression),
+        updatedAt: new Date()
+      });
         
       // Reschedule the job
-      this.scheduleTask({ ...existingTask[0], cronExpression });
+      this.scheduleTask({ ...existingTask, cronExpression });
     } else {
       // Create new task
-      const [newTask] = await db.insert(scheduledTasks).values({
+      const newTask = await this.storage.createScheduledTask({
         workflowId,
         cronExpression,
         isActive: true,
         nextRun: this.calculateNextRun(cronExpression)
-      }).returning();
+      });
 
       this.scheduleTask(newTask);
     }
   }
 
   async pauseWorkflow(workflowId: string): Promise<void> {
-    const db = getDb();
-    await db.update(scheduledTasks)
-      .set({ isActive: false, updatedAt: new Date() })
-      .where(eq(scheduledTasks.workflowId, workflowId));
+    await this.storage.updateScheduledTask(workflowId, { 
+      isActive: false, 
+      updatedAt: new Date() 
+    });
 
     // Stop the scheduled job
-    const task = await db.select()
-      .from(scheduledTasks)
-      .where(eq(scheduledTasks.workflowId, workflowId))
-      .limit(1);
+    const tasks = await this.storage.getScheduledTasks();
+    const task = tasks.find(t => t.workflowId === workflowId);
 
-    if (task.length > 0 && this.scheduledJobs.has(task[0].id)) {
-      this.scheduledJobs.get(task[0].id)?.stop();
-      this.scheduledJobs.delete(task[0].id);
+    if (task && this.scheduledJobs.has(task.id)) {
+      this.scheduledJobs.get(task.id)?.stop();
+      this.scheduledJobs.delete(task.id);
     }
   }
 
   async resumeWorkflow(workflowId: string): Promise<void> {
-    const db = getDb();
-    await db.update(scheduledTasks)
-      .set({ isActive: true, updatedAt: new Date() })
-      .where(eq(scheduledTasks.workflowId, workflowId));
+    await this.storage.updateScheduledTask(workflowId, { 
+      isActive: true, 
+      updatedAt: new Date() 
+    });
 
     // Reload the task
-    const task = await db.select()
-      .from(scheduledTasks)
-      .where(eq(scheduledTasks.workflowId, workflowId))
-      .limit(1);
+    const tasks = await this.storage.getScheduledTasks();
+    const task = tasks.find(t => t.workflowId === workflowId);
 
-    if (task.length > 0) {
-      this.scheduleTask(task[0]);
+    if (task) {
+      this.scheduleTask(task);
     }
   }
 
   async runAllActiveWorkflows(): Promise<void> {
-    const db = getDb();
-    const activeWorkflows = await db.select()
-      .from(scrapingWorkflows)
-      .where(eq(scrapingWorkflows.isActive, true));
+    const workflows = await this.storage.getScrapingWorkflows();
+    const activeWorkflows = workflows.filter(w => w.isActive);
 
     for (const workflow of activeWorkflows) {
       try {
