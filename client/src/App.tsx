@@ -3,10 +3,10 @@ import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react
 import { WorkflowDashboard } from './components/WorkflowDashboard';
 import { ElementSelector } from './components/ElementSelector';
 import { Dashboard } from './pages/dashboard';
-import { Products } from './pages/products-new';
+import { ProductsPage as Products } from './pages/products-new';
 import { Categories } from './pages/categories';
 import { Competitors } from './pages/competitors';
-import { BrandDetail } from './pages/brand-detail';
+import { BrandDetailPage as BrandDetail } from './pages/brand-detail';
 import { Catalog } from './pages/catalog';
 import { Pages } from './pages/pages';
 import { Admin } from './pages/admin';
