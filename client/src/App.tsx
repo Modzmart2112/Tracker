@@ -1,200 +1,162 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import { Button } from './components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card';
-import { Badge } from './components/ui/badge';
-import { 
-  BarChart3, 
-  TrendingUp, 
-  Database, 
-  Settings, 
-  Home,
-  Workflow,
-  BarChart,
-  Users,
-  FileText
-} from 'lucide-react';
-import WorkflowDashboard from './components/WorkflowDashboard';
+import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
+import { WorkflowDashboard } from './components/WorkflowDashboard';
+import { ElementSelector } from './components/ElementSelector';
+import { Dashboard } from './pages/dashboard';
+import { Products } from './pages/products-new';
+import { Categories } from './pages/categories';
+import { Competitors } from './pages/competitors';
+import { BrandDetail } from './pages/brand-detail';
+import { Catalog } from './pages/catalog';
+import { Pages } from './pages/pages';
+import { Admin } from './pages/admin';
 
-function App() {
-  const [activeTab, setActiveTab] = useState('workflows');
+// Modern Icon Components
+const Icon = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
+  <div className={`w-6 h-6 flex items-center justify-center ${className}`}>
+    {children}
+  </div>
+);
 
-  const navigationItems = [
-    { id: 'workflows', label: 'Workflows', icon: Workflow, component: WorkflowDashboard },
-    { id: 'analytics', label: 'Analytics', icon: BarChart, component: AnalyticsDashboard },
-    { id: 'data', label: 'Data', icon: Database, component: DataViewer },
-    { id: 'reports', label: 'Reports', icon: FileText, component: ReportsViewer },
-    { id: 'users', label: 'Users', icon: Users, component: UsersManagement },
-    { id: 'settings', label: 'Settings', icon: Settings, component: SettingsPanel }
+const Sidebar = () => {
+  const location = useLocation();
+  
+  const navItems = [
+    { path: '/', label: 'Dashboard', icon: '📊' },
+    { path: '/workflows', label: 'Workflows', icon: '⚡' },
+    { path: '/products', label: 'Products', icon: '📦' },
+    { path: '/categories', label: 'Categories', icon: '🏷️' },
+    { path: '/competitors', label: 'Competitors', icon: '🎯' },
+    { path: '/catalog', label: 'Catalog', icon: '📚' },
+    { path: '/pages', label: 'Pages', icon: '📄' },
+    { path: '/admin', label: 'Admin', icon: '⚙️' },
   ];
 
-  const ActiveComponent = navigationItems.find(item => item.id === activeTab)?.component || WorkflowDashboard;
+  return (
+    <div className="fixed left-0 top-0 h-full w-64 bg-white/80 backdrop-blur-xl border-r border-gray-200/50 shadow-xl z-50">
+      {/* Logo Section */}
+      <div className="p-6 border-b border-gray-200/50">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+            <span className="text-white font-bold text-xl">T</span>
+          </div>
+          <div>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-gray-800 to-gray-600 bg-clip-text text-transparent">
+              Tracker Pro
+            </h1>
+            <p className="text-xs text-gray-500">Web Scraping Platform</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Navigation */}
+      <nav className="p-4 space-y-2">
+        {navItems.map((item) => (
+          <Link
+            key={item.path}
+            to={item.path}
+            className={`flex items-center space-x-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+              location.pathname === item.path
+                ? 'bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-200/50 text-blue-700 shadow-sm'
+                : 'text-gray-600 hover:bg-gray-50/80 hover:text-gray-800'
+            }`}
+          >
+            <span className="text-lg">{item.icon}</span>
+            <span className="font-medium">{item.label}</span>
+          </Link>
+        ))}
+      </nav>
+
+      {/* Bottom Section */}
+      <div className="absolute bottom-6 left-4 right-4">
+        <div className="bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-xl p-4 border border-blue-200/50">
+          <div className="flex items-center space-x-3 mb-2">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <span className="text-white text-sm">🚀</span>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-800">Pro Features</p>
+              <p className="text-xs text-gray-600">Unlock advanced scraping</p>
+            </div>
+          </div>
+          <button className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white text-sm font-medium py-2 px-3 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-md">
+            Upgrade Now
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Header = () => {
+  return (
+    <div className="fixed top-0 left-64 right-0 h-16 bg-white/80 backdrop-blur-xl border-b border-gray-200/50 shadow-sm z-40">
+      <div className="flex items-center justify-between h-full px-6">
+        <div className="flex items-center space-x-4">
+          <h2 className="text-xl font-semibold text-gray-800">Dashboard</h2>
+          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+        </div>
+        
+        <div className="flex items-center space-x-4">
+          {/* Search */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search workflows, products..."
+              className="w-64 px-4 py-2 pl-10 bg-gray-50/80 border border-gray-200/50 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500/50 transition-all duration-200"
+            />
+            <span className="absolute left-3 top-2.5 text-gray-400">🔍</span>
+          </div>
+          
+          {/* User Menu */}
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+              <span className="text-white text-sm font-medium">U</span>
+            </div>
+            <div className="text-sm">
+              <p className="font-medium text-gray-800">User</p>
+              <p className="text-gray-500">Admin</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const MainContent = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <div className="ml-64 pt-16 min-h-screen bg-gradient-to-br from-gray-50/50 to-blue-50/30">
+      <div className="p-6">
+        {children}
+      </div>
+    </div>
+  );
+};
+
+function App() {
+  const [activeTab, setActiveTab] = useState('dashboard');
 
   return (
     <Router>
-      <div className="min-h-screen bg-gray-50">
-        {/* Header */}
-        <header className="bg-white shadow-sm border-b">
-          <div className="container mx-auto px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <BarChart3 className="w-8 h-8 text-blue-600" />
-                  <h1 className="text-2xl font-bold text-gray-900">Tracker Pro</h1>
-                </div>
-                <Badge variant="secondary" className="ml-2">Beta</Badge>
-              </div>
-              <div className="flex items-center space-x-4">
-                <Button variant="outline" size="sm">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Settings
-                </Button>
-                <Button size="sm">
-                  <Users className="w-4 h-4 mr-2" />
-                  Profile
-                </Button>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {/* Navigation */}
-        <nav className="bg-white border-b">
-          <div className="container mx-auto px-6">
-            <div className="flex space-x-8">
-              {navigationItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                    activeTab === item.id
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <item.icon className="w-4 h-4" />
-                  <span>{item.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </nav>
-
-        {/* Main Content */}
-        <main className="container mx-auto py-6">
-          <ActiveComponent />
-        </main>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50/30">
+        <Sidebar />
+        <Header />
+        <MainContent>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/workflows" element={<WorkflowDashboard />} />
+            <Route path="/products" element={<Products />} />
+            <Route path="/categories" element={<Categories />} />
+            <Route path="/competitors" element={<Competitors />} />
+            <Route path="/brand/:id" element={<BrandDetail />} />
+            <Route path="/catalog" element={<Catalog />} />
+            <Route path="/pages" element={<Pages />} />
+            <Route path="/admin" element={<Admin />} />
+          </Routes>
+        </MainContent>
       </div>
     </Router>
-  );
-}
-
-// Placeholder components for other tabs
-function AnalyticsDashboard() {
-  return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Analytics Dashboard</h1>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Total Workflows</CardTitle>
-            <CardDescription>Active scraping workflows</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-blue-600">12</div>
-            <p className="text-sm text-gray-600 mt-2">+2 from last week</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Products Tracked</CardTitle>
-            <CardDescription>Total products being monitored</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-green-600">1,247</div>
-            <p className="text-sm text-gray-600 mt-2">+89 from last week</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Data Points</CardTitle>
-            <CardDescription>Scraped data records</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-purple-600">45,892</div>
-            <p className="text-sm text-gray-600 mt-2">+3,421 from last week</p>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-function DataViewer() {
-  return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Data Viewer</h1>
-      <Card>
-        <CardHeader>
-          <CardTitle>Scraped Data</CardTitle>
-          <CardDescription>View and analyze collected data</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-gray-600">Data viewing functionality coming soon...</p>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function ReportsViewer() {
-  return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Reports</h1>
-      <Card>
-        <CardHeader>
-          <CardTitle>Generated Reports</CardTitle>
-          <CardDescription>View and download reports</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-gray-600">Reporting functionality coming soon...</p>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function UsersManagement() {
-  return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">User Management</h1>
-      <Card>
-        <CardHeader>
-          <CardTitle>Users</CardTitle>
-          <CardDescription>Manage system users and permissions</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-gray-600">User management functionality coming soon...</p>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
-function SettingsPanel() {
-  return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold">Settings</h1>
-      <Card>
-        <CardHeader>
-          <CardTitle>System Settings</CardTitle>
-          <CardDescription>Configure system preferences</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-gray-600">Settings functionality coming soon...</p>
-        </CardContent>
-      </Card>
-    </div>
   );
 }
 

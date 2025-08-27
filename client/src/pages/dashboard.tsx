@@ -1,248 +1,214 @@
-import { useQuery } from "@tanstack/react-query";
-import { api } from "@/lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { TrendingUp, TrendingDown, Package, Store, Activity, AlertCircle, ArrowUpRight, ArrowDownRight, DollarSign } from "lucide-react";
-import { Link } from "wouter";
+import React from 'react';
+import { Link } from 'react-router-dom';
 
-export default function Dashboard() {
-  const { data: meta } = useQuery({
-    queryKey: ["/api/meta"],
-    queryFn: api.getMeta,
-  });
-
-  const { data: kpiMetrics } = useQuery({
-    queryKey: ["/api/kpi"],
-    queryFn: api.getKPIMetrics,
-  });
-
-  const { data: recentChanges = [] } = useQuery({
-    queryKey: ["/api/changes/recent"],
-    queryFn: () => api.getRecentChanges(48), // Last 48 hours for more context
-  });
-
-  const { data: allProducts = [] } = useQuery({
-    queryKey: ["/api/products"],
-    queryFn: () => api.getProducts({}),
-  });
-
-  // Group changes by competitor
-  const changesByCompetitor = recentChanges.reduce((acc: any, change: any) => {
-    if (!acc[change.competitorName]) {
-      acc[change.competitorName] = [];
+const Dashboard = () => {
+  const stats = [
+    {
+      title: 'Active Workflows',
+      value: '12',
+      change: '+2',
+      changeType: 'positive',
+      icon: '⚡',
+      color: 'from-blue-500 to-blue-600',
+      bgColor: 'from-blue-50 to-blue-100'
+    },
+    {
+      title: 'Products Tracked',
+      value: '1,247',
+      change: '+89',
+      changeType: 'positive',
+      icon: '📦',
+      color: 'from-green-500 to-green-600',
+      bgColor: 'from-green-50 to-green-100'
+    },
+    {
+      title: 'Data Points',
+      value: '45,892',
+      change: '+3,421',
+      changeType: 'positive',
+      icon: '📊',
+      color: 'from-purple-500 to-purple-600',
+      bgColor: 'from-purple-50 to-purple-100'
+    },
+    {
+      title: 'Competitors',
+      value: '8',
+      change: '+1',
+      changeType: 'positive',
+      icon: '🎯',
+      color: 'from-orange-500 to-orange-600',
+      bgColor: 'from-orange-50 to-orange-100'
     }
-    acc[change.competitorName].push(change);
-    return acc;
-  }, {});
+  ];
 
-  // Calculate competitor stats
-  const competitorStats = meta?.competitors?.map((comp: any) => {
-    const competitorProducts = allProducts.filter((p: any) => p.competitorId === comp.id);
-    const competitorChanges = changesByCompetitor[comp.name] || [];
-    const priceDrops = competitorChanges.filter((c: any) => c.changeType === 'price_drop').length;
-    const priceIncreases = competitorChanges.filter((c: any) => c.changeType === 'price_increase').length;
-    
-    return {
-      ...comp,
-      productCount: competitorProducts.length,
-      priceDrops,
-      priceIncreases,
-      totalChanges: competitorChanges.length,
-      lastActivity: competitorChanges[0]?.timestamp || null
-    };
-  }) || [];
+  const quickActions = [
+    {
+      title: 'Create Workflow',
+      description: 'Set up a new scraping workflow',
+      icon: '⚡',
+      color: 'from-blue-500 to-purple-600',
+      link: '/workflows'
+    },
+    {
+      title: 'Add Products',
+      description: 'Add new products to track',
+      icon: '📦',
+      color: 'from-green-500 to-teal-600',
+      link: '/products'
+    },
+    {
+      title: 'View Analytics',
+      description: 'Check scraping performance',
+      icon: '📊',
+      color: 'from-purple-500 to-pink-600',
+      link: '/workflows'
+    },
+    {
+      title: 'Manage Competitors',
+      description: 'Update competitor information',
+      icon: '🎯',
+      color: 'from-orange-500 to-red-600',
+      link: '/competitors'
+    }
+  ];
 
-  // Get recent important price changes
-  const importantPriceChanges = recentChanges
-    .filter((c: any) => c.changeType === 'price_drop' || c.changeType === 'price_increase')
-    .slice(0, 10);
+  const recentActivity = [
+    {
+      action: 'Workflow completed',
+      target: 'Electronics Scraping',
+      time: '2 minutes ago',
+      status: 'success'
+    },
+    {
+      action: 'New product added',
+      target: 'iPhone 15 Pro',
+      time: '15 minutes ago',
+      status: 'info'
+    },
+    {
+      action: 'Price change detected',
+      target: 'Samsung Galaxy S24',
+      time: '1 hour ago',
+      status: 'warning'
+    },
+    {
+      action: 'Competitor updated',
+      target: 'Amazon Electronics',
+      time: '2 hours ago',
+      status: 'info'
+    }
+  ];
 
   return (
-    <div className="bg-gradient-to-br from-gray-50 via-white to-gray-100">
-      <div className="p-8 space-y-8 animate-fade-up">
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="relative border-0 shadow-lg bg-gradient-to-br from-[#CB0000] to-red-800 text-white overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16" />
-            <CardContent className="p-6 relative">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-red-100 text-sm font-medium uppercase tracking-wider">Total Competitors</p>
-                  <p className="text-4xl font-bold mt-2">{meta?.competitors?.length || 0}</p>
-                  <div className="h-0.5 w-8 bg-white mt-2" />
-                </div>
-                <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
-                  <Store className="text-white" size={24} />
-                </div>
+    <div className="space-y-8">
+      {/* Welcome Section */}
+      <div className="bg-gradient-to-r from-white/80 to-blue-50/50 backdrop-blur-xl rounded-2xl p-8 border border-gray-200/50 shadow-xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-800 to-blue-600 bg-clip-text text-transparent mb-2">
+              Hi there! Ready to Achieve Great Things? 🚀
+            </h1>
+            <p className="text-lg text-gray-600 mb-4">
+              Your web scraping platform is running smoothly. Here's what's happening today.
+            </p>
+            <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-sm text-gray-600">System Status: Online</span>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="relative border-0 shadow-lg bg-gradient-to-br from-gray-800 to-black text-white overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16" />
-            <CardContent className="p-6 relative">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-300 text-sm font-medium uppercase tracking-wider">Products Tracked</p>
-                  <p className="text-4xl font-bold mt-2">{allProducts.length}</p>
-                  <div className="h-0.5 w-8 bg-gray-400 mt-2" />
-                </div>
-                <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
-                  <Package className="text-white" size={24} />
-                </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></div>
+                <span className="text-sm text-gray-600">Last Update: Just now</span>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="relative border-0 shadow-lg bg-gradient-to-br from-gray-700 to-gray-900 text-white overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16" />
-            <CardContent className="p-6 relative">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-300 text-sm font-medium uppercase tracking-wider">Price Changes</p>
-                  <p className="text-4xl font-bold mt-2">{recentChanges.length}</p>
-                  <p className="text-xs text-gray-400 mt-1">Last 48 hours</p>
-                </div>
-                <div className="p-3 bg-white/20 rounded-lg backdrop-blur-sm">
-                  <Activity className="text-white" size={24} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="relative border-0 shadow-lg bg-gradient-to-br from-white to-gray-100 text-black overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-[#CB0000]/10 rounded-full -mr-16 -mt-16" />
-            <CardContent className="p-6 relative">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-gray-700 text-sm font-medium uppercase tracking-wider">Average Price</p>
-                  <p className="text-4xl font-bold mt-2">
-                    ${allProducts.length > 0 
-                      ? (allProducts.reduce((sum: number, p: any) => sum + (p.currentPrice || 0), 0) / allProducts.length).toFixed(0)
-                      : '0'}
-                  </p>
-                  <div className="h-0.5 w-8 bg-[#CB0000] mt-2" />
-                </div>
-                <div className="p-3 bg-[#CB0000]/20 rounded-lg backdrop-blur-sm">
-                  <DollarSign className="text-[#CB0000]" size={24} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl">
+              <span className="text-3xl">🤖</span>
+            </div>
+            <p className="text-sm text-gray-500 mt-2">AI Assistant</p>
+          </div>
         </div>
+      </div>
 
-        {/* Competitor Overview Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* All Competitors */}
-          <Card className="border-0 shadow-xl bg-white">
-            <CardHeader className="border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
-              <CardTitle className="text-lg font-semibold text-black">
-                Your Competitors
-              </CardTitle>
-              <p className="text-gray-600 text-sm mt-1">
-                Activity summary for each competitor
-              </p>
-            </CardHeader>
-            <CardContent className="p-6">
-              {competitorStats.length > 0 ? (
-                <div className="space-y-3">
-                  {competitorStats.map((comp: any) => (
-                    <div key={comp.id} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-medium text-black">{comp.name}</h4>
-                        <Link href={`/competitors/${comp.id}`}>
-                          <Button variant="ghost" size="sm" className="hover:bg-[#CB0000]/10 hover:text-[#CB0000]">
-                            View Details
-                          </Button>
-                        </Link>
-                      </div>
-                      <div className="grid grid-cols-3 gap-4 text-sm">
-                        <div>
-                          <p className="text-gray-500">Products</p>
-                          <p className="font-semibold text-black">{comp.productCount}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-500">Price Drops</p>
-                          <p className="font-semibold text-green-600">{comp.priceDrops}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-500">Price Increases</p>
-                          <p className="font-semibold text-[#CB0000]">{comp.priceIncreases}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-12 text-gray-500">
-                  <Store size={48} className="mx-auto mb-4 text-gray-400" />
-                  <h3 className="text-lg font-medium text-black mb-2">No competitors added</h3>
-                  <p className="text-sm">Add competitors to start tracking their prices</p>
-                  <Link href="/competitors">
-                    <Button variant="outline" size="sm" className="mt-4 border-[#CB0000] text-[#CB0000] hover:bg-[#CB0000] hover:text-white">
-                      Add Competitors
-                    </Button>
-                  </Link>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Important Price Changes */}
-          <Card className="border-0 shadow-xl bg-white">
-            <CardHeader className="border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-lg font-semibold text-black">
-                    Important Price Changes
-                  </CardTitle>
-                  <p className="text-gray-600 text-sm mt-1">
-                    Last 48 hours activity
-                  </p>
-                </div>
-                <Link href="/changes">
-                  <Button variant="ghost" size="sm" className="hover:bg-[#CB0000]/10 hover:text-[#CB0000]">
-                    View All
-                  </Button>
-                </Link>
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {stats.map((stat, index) => (
+          <div key={index} className="bg-white/80 backdrop-blur-xl rounded-xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200">
+            <div className="flex items-center justify-between mb-4">
+              <div className={`w-12 h-12 bg-gradient-to-br ${stat.bgColor} rounded-xl flex items-center justify-center`}>
+                <span className="text-2xl">{stat.icon}</span>
               </div>
-            </CardHeader>
-            <CardContent className="p-6">
-              {importantPriceChanges.length > 0 ? (
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {importantPriceChanges.map((change: any) => (
-                    <div key={change.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                      <div className="flex-1">
-                        <p className="font-medium text-black text-sm">{change.productTitle}</p>
-                        <p className="text-xs text-gray-500">{change.competitorName}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {change.changeType === 'price_drop' ? (
-                          <ArrowDownRight className="text-red-500" size={16} />
-                        ) : (
-                          <ArrowUpRight className="text-green-500" size={16} />
-                        )}
-                        <Badge 
-                          variant={change.changeType === 'price_drop' ? 'destructive' : 'default'}
-                        >
-                          ${change.newValue}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <Activity size={32} className="mx-auto mb-3 text-gray-400" />
-                  <p>No price changes detected</p>
-                  <p className="text-sm mt-1">Price changes will appear here when detected</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+              <div className={`text-sm font-medium px-2 py-1 rounded-full ${
+                stat.changeType === 'positive' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+              }`}>
+                {stat.change}
+              </div>
+            </div>
+            <h3 className="text-sm font-medium text-gray-600 mb-1">{stat.title}</h3>
+            <p className={`text-2xl font-bold bg-gradient-to-r ${stat.color} bg-clip-text text-transparent`}>
+              {stat.value}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {quickActions.map((action, index) => (
+          <Link key={index} to={action.link} className="group">
+            <div className="bg-white/80 backdrop-blur-xl rounded-xl p-6 border border-gray-200/50 shadow-lg hover:shadow-xl transition-all duration-200 group-hover:scale-105">
+              <div className={`w-12 h-12 bg-gradient-to-br ${action.color} rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-200`}>
+                <span className="text-2xl text-white">{action.icon}</span>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">{action.title}</h3>
+              <p className="text-sm text-gray-600">{action.description}</p>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {/* Recent Activity */}
+      <div className="bg-white/80 backdrop-blur-xl rounded-2xl p-6 border border-gray-200/50 shadow-xl">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-gray-800">Recent Activity</h2>
+          <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">View All</button>
+        </div>
+        <div className="space-y-4">
+          {recentActivity.map((activity, index) => (
+            <div key={index} className="flex items-center space-x-4 p-4 bg-gray-50/50 rounded-xl border border-gray-200/30">
+              <div className={`w-3 h-3 rounded-full ${
+                activity.status === 'success' ? 'bg-green-500' :
+                activity.status === 'warning' ? 'bg-yellow-500' :
+                'bg-blue-500'
+              }`}></div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-800">{activity.action}</p>
+                <p className="text-xs text-gray-600">{activity.target}</p>
+              </div>
+              <span className="text-xs text-gray-500">{activity.time}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Bottom Action Bar */}
+      <div className="bg-gradient-to-r from-white/90 to-blue-50/70 backdrop-blur-xl rounded-2xl p-6 border border-gray-200/50 shadow-xl">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <span className="text-sm text-gray-600">💡</span>
+            <span className="text-sm text-gray-600">Unlock more with Pro Plan</span>
+          </div>
+          <div className="flex items-center space-x-4">
+            <span className="text-sm text-gray-500">⚙️ Powered by Tracker Pro v2.0</span>
+            <button className="bg-gradient-to-r from-blue-500 to-purple-600 text-white text-sm font-medium py-2 px-4 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-md">
+              Upgrade Now
+            </button>
+          </div>
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default Dashboard;
