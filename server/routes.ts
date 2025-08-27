@@ -1994,19 +1994,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get product price comparisons by model number (placeholder for future implementation)
+  // Get product price comparisons by model number
   app.get("/api/products/matches/:modelNumber", async (req, res) => {
     try {
       const { modelNumber } = req.params;
       
-      // TODO: Implement product matching logic
+      // Search for products with matching model numbers
+      const matchingProducts = await storage.getProducts({ model: modelNumber });
+      
+      if (matchingProducts.length === 0) {
+        return res.json({
+          modelNumber,
+          totalMatches: 0,
+          bestPrice: null,
+          bestPriceCompetitor: null,
+          matches: [],
+          message: "No products found with this model number"
+        });
+      }
+      
+      // Get competitor listings for these products
+      const matches = [];
+      let bestPrice = Infinity;
+      let bestPriceCompetitor = null;
+      
+      for (const product of matchingProducts) {
+        const listings = await storage.listListingsByProduct(product.id);
+        
+        for (const listing of listings) {
+          const competitor = await storage.getCompetitor(listing.competitorId);
+          if (competitor) {
+            matches.push({
+              productId: product.id,
+              productName: product.name,
+              competitorName: competitor.name,
+              competitorWebsite: competitor.website,
+              price: listing.price,
+              currency: listing.currency,
+              url: listing.url,
+              lastUpdated: listing.createdAt
+            });
+            
+            if (listing.price < bestPrice) {
+              bestPrice = listing.price;
+              bestPriceCompetitor = competitor.name;
+            }
+          }
+        }
+      }
+      
       res.json({
         modelNumber,
-        totalMatches: 0,
-        bestPrice: null,
-        bestPriceCompetitor: null,
-        matches: [],
-        message: "Product matching feature coming soon"
+        totalMatches: matches.length,
+        bestPrice: bestPrice === Infinity ? null : bestPrice,
+        bestPriceCompetitor,
+        matches,
+        message: `Found ${matches.length} price matches for model ${modelNumber}`
       });
       
     } catch (error: any) {

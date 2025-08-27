@@ -563,7 +563,7 @@ export class MemStorage implements IStorage {
   }
 
   // Product methods
-  async getProducts(filters?: { competitorId?: string; productTypeId?: string; brand?: string }): Promise<Product[]> {
+  async getProducts(filters?: { competitorId?: string; productTypeId?: string; brand?: string; model?: string }): Promise<Product[]> {
     let products = Array.from(this.products.values());
     
     if (filters?.competitorId) {
@@ -574,6 +574,9 @@ export class MemStorage implements IStorage {
     }
     if (filters?.brand) {
       products = products.filter(p => p.brand.toLowerCase().includes(filters.brand!.toLowerCase()));
+    }
+    if (filters?.model) {
+      products = products.filter(p => p.model && p.model.toLowerCase().includes(filters.model!.toLowerCase()));
     }
     
     return products;
