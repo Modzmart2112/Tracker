@@ -2062,89 +2062,121 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Website snapshot endpoint for element picker
-  app.get('/api/snapshot', async (req, res) => {
-    const { url } = req.query;
+app.get('/api/snapshot', async (req, res) => {
+  const url = String(req.query.url || "");
+  if (!/^https?:\/\//i.test(url)) return res.status(400).send("Invalid URL");
+
+  console.log(`Generating snapshot for: ${url}`);
+
+  let browser;
+  try {
+    // Import Puppeteer dynamically to avoid issues in production
+    const puppeteer = await import('puppeteer');
     
-    if (!url || typeof url !== 'string') {
-      return res.status(400).json({ error: 'URL parameter is required' });
-    }
+    console.log('Puppeteer imported successfully');
+    
+    // Render-friendly launch options (ChatGPT's proven solution)
+    browser = await puppeteer.default.launch({
+      headless: "new",
+      // Do NOT set executablePath on Render
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",   // /dev/shm is tiny in containers
+        "--no-zygote",
+        "--disable-gpu",
+        "--disable-features=IsolateOrigins,site-per-process",
+        "--js-flags=--max-old-space-size=256",
+      ],
+      // Optional: lower startup flakiness
+      protocolTimeout: 90_000,
+    });
+    
+    console.log('Browser launched successfully');
+    
+    const page = await browser.newPage();
+    console.log('New page created');
+    
+    // Reduce resource load & bot friction
+    await page.setUserAgent(
+      "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36"
+    );
+    await page.setViewport({ width: 1366, height: 900 });
+    
+    // Block unnecessary resources to reduce memory usage
+    await page.setRequestInterception(true);
+    page.on("request", r => {
+      const type = r.resourceType();
+      if (type === "image" || type === "media" || type === "font") return r.abort();
+      r.continue();
+    });
+    
+    console.log('Navigating to URL...');
+    
+    await page.goto(url, { waitUntil: "networkidle2", timeout: 60_000 });
+    
+    console.log('Page loaded, waiting for content...');
+    
+    // Give late JS a moment without hanging forever
+    await page.waitForTimeout(1000);
+    
+    // Get the rendered HTML
+    const html = await page.content();
+    console.log(`HTML content retrieved, length: ${html.length}`);
+    
+    // Make relative URLs work when you iframe our snapshot
+    const withBase = html.replace(
+      /<head([^>]*)>/i,
+      `<head$1><base href="${url}">`
+    );
+    
+    await browser.close();
+    console.log('Browser closed successfully');
+    
+    // Set headers for HTML content
+    res.set("content-type", "text/html; charset=utf-8");
+    res.setHeader('Cache-Control', 'public, max-age=300'); // Cache for 5 minutes
+    
+    console.log('Sending snapshot response');
+    res.send(withBase);
+    
+  } catch (err: any) {
+    console.error("Snapshot failed:", err?.stack || err);
+    res.status(502).send("Snapshot failed: 502");
+  } finally {
+    try { await browser?.close(); } catch {}
+  }
+});
 
-    console.log(`Generating snapshot for: ${url}`);
-
+  // Health check endpoint to test Puppeteer
+  app.get('/health', async (req, res) => {
     try {
-      // Import Puppeteer dynamically to avoid issues in production
+      // Test Puppeteer launch
       const puppeteer = await import('puppeteer');
-      
-      console.log('Puppeteer imported successfully');
-      
-      // Render-compatible browser launch options
-      const launchOptions = {
-        headless: true,
+      const browser = await puppeteer.default.launch({
+        headless: "new",
         args: [
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-          '--disable-dev-shm-usage',
-          '--disable-gpu',
-          '--no-first-run',
-          '--no-zygote',
-          '--single-process',
-          '--disable-extensions'
-        ]
-      };
-
-      console.log('Launching browser with options:', launchOptions);
-      
-      const browser = await puppeteer.default.launch(launchOptions);
-      console.log('Browser launched successfully');
-      
-      const page = await browser.newPage();
-      console.log('New page created');
-      
-      // Set a realistic user agent
-      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-      
-      console.log('Navigating to URL...');
-      
-      // Navigate to the URL with shorter timeout for Render
-      await page.goto(url, { 
-        waitUntil: 'domcontentloaded', // Changed from networkidle0 for faster loading
-        timeout: 15000 // Reduced timeout
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+          "--no-zygote",
+          "--disable-gpu",
+        ],
       });
-      
-      console.log('Page loaded, waiting for content...');
-      
-      // Wait a bit for any dynamic content
-      await page.waitForTimeout(1000);
-      
-      // Get the rendered HTML
-      const html = await page.content();
-      console.log(`HTML content retrieved, length: ${html.length}`);
-      
-      // Add base tag so relative URLs resolve correctly
-      const modifiedHtml = html.replace(
-        /<head([^>]*)>/i,
-        `<head$1><base href="${url}">`
-      );
-      
       await browser.close();
-      console.log('Browser closed successfully');
       
-      // Set headers for HTML content
-      res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      res.setHeader('Cache-Control', 'public, max-age=300'); // Cache for 5 minutes
-      
-      console.log('Sending snapshot response');
-      res.send(modifiedHtml);
-      
+      res.json({ 
+        status: 'healthy', 
+        puppeteer: 'working',
+        timestamp: new Date().toISOString() 
+      });
     } catch (error) {
-      console.error('Snapshot generation error:', error);
-      
-      // Send a more helpful error response
+      console.error('Health check failed:', error);
       res.status(500).json({ 
-        error: 'Failed to generate snapshot',
-        details: error instanceof Error ? error.message : 'Unknown error',
-        url: url,
-        timestamp: new Date().toISOString()
+        status: 'unhealthy', 
+        puppeteer: 'failed',
+        error: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString() 
       });
     }
   });
