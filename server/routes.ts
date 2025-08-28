@@ -2061,6 +2061,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Website snapshot endpoint for element picker
+  app.get('/api/snapshot', async (req, res) => {
+    const { url } = req.query;
+    
+    if (!url || typeof url !== 'string') {
+      return res.status(400).json({ error: 'URL parameter is required' });
+    }
+
+    try {
+      // Import Puppeteer dynamically to avoid issues in production
+      const puppeteer = await import('puppeteer');
+      
+      const browser = await puppeteer.default.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+      });
+      
+      const page = await browser.newPage();
+      
+      // Set a realistic user agent
+      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+      
+      // Navigate to the URL
+      await page.goto(url, { 
+        waitUntil: 'networkidle0', 
+        timeout: 30000 
+      });
+      
+      // Wait a bit for any dynamic content
+      await page.waitForTimeout(2000);
+      
+      // Get the rendered HTML
+      const html = await page.content();
+      
+      // Add base tag so relative URLs resolve correctly
+      const modifiedHtml = html.replace(
+        /<head([^>]*)>/i,
+        `<head$1><base href="${url}">`
+      );
+      
+      await browser.close();
+      
+      // Set headers for HTML content
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      res.setHeader('Cache-Control', 'public, max-age=300'); // Cache for 5 minutes
+      
+      res.send(modifiedHtml);
+      
+    } catch (error) {
+      console.error('Snapshot generation error:', error);
+      res.status(500).json({ 
+        error: 'Failed to generate snapshot',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

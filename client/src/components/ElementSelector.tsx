@@ -56,6 +56,45 @@ export const ElementSelector: React.FC<ElementSelectorProps> = ({ categoryUrl, o
     injectElementPicker();
   };
 
+  const handleIframeError = () => {
+    console.log('Iframe failed to load, switching to snapshot mode');
+    setPreviewMode('snapshot');
+    loadSnapshot();
+  };
+
+  const loadSnapshot = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/snapshot?url=${encodeURIComponent(categoryUrl)}`);
+      
+      if (!response.ok) {
+        throw new Error(`Snapshot failed: ${response.status}`);
+      }
+      
+      const html = await response.text();
+      
+      // Create a blob URL for the snapshot HTML
+      const blob = new Blob([html], { type: 'text/html' });
+      const snapshotUrl = URL.createObjectURL(blob);
+      
+      // Update the iframe src to use the snapshot
+      if (iframeRef.current) {
+        iframeRef.current.src = snapshotUrl;
+        setIframeLoaded(false); // Reset to show loading state
+      }
+      
+    } catch (error) {
+      console.error('Failed to load snapshot:', error);
+      toast({
+        title: "Snapshot Failed",
+        description: "Could not load website preview. Please check the URL and try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const injectElementPicker = () => {
     const iframe = iframeRef.current;
     if (!iframe || !iframe.contentDocument || !iframe.contentWindow) return;
@@ -247,7 +286,7 @@ export const ElementSelector: React.FC<ElementSelectorProps> = ({ categoryUrl, o
 
   const switchToSnapshot = () => {
     setPreviewMode('snapshot');
-    // You could implement a server-side snapshot endpoint here
+    loadSnapshot();
   };
 
   return (
@@ -400,6 +439,7 @@ export const ElementSelector: React.FC<ElementSelectorProps> = ({ categoryUrl, o
                   src={categoryUrl}
                   className="w-full h-full border border-gray-300 rounded-lg"
                   onLoad={handleIframeLoad}
+                  onError={handleIframeError}
                   title="Website Preview"
                 />
               ) : (
