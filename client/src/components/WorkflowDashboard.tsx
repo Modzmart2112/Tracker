@@ -28,11 +28,22 @@ interface ProductUrl {
   createdAt: string;
 }
 
+interface TestResult {
+  elementName: string;
+  selector: string;
+  extractedValue: string;
+  success: boolean;
+  error?: string;
+}
+
 const WorkflowDashboard = () => {
   const [workflows, setWorkflows] = useState<ScrapingWorkflow[]>([]);
   const [selectedWorkflow, setSelectedWorkflow] = useState<ScrapingWorkflow | null>(null);
   const [showElementSelector, setShowElementSelector] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showTestResults, setShowTestResults] = useState(false);
+  const [testResults, setTestResults] = useState<TestResult[]>([]);
+  const [isTesting, setIsTesting] = useState(false);
   const [newWorkflow, setNewWorkflow] = useState({
     name: '',
     description: '',
@@ -81,6 +92,59 @@ const WorkflowDashboard = () => {
 
   const deleteWorkflow = (id: string) => {
     setWorkflows(prev => prev.filter(w => w.id !== id));
+  };
+
+  const testWorkflow = async (workflow: ScrapingWorkflow) => {
+    setIsTesting(true);
+    try {
+      // Get the workflow's configured elements from localStorage
+      const workflowElements = localStorage.getItem(`workflowElements_${workflow.id}`);
+      if (!workflowElements) {
+        throw new Error('No elements configured for this workflow');
+      }
+
+      const elements = JSON.parse(workflowElements);
+      if (elements.length === 0) {
+        throw new Error('No elements configured for this workflow');
+      }
+
+      // Get a sample product URL from the workflow
+      const sampleUrl = workflow.categoryUrl; // For now, use the category URL as sample
+      
+      // Call the test API
+      const response = await fetch(`/api/workflows/${workflow.id}/test-elements`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          elements: elements,
+          testUrl: sampleUrl
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Test failed: ${response.status}`);
+      }
+
+      const result = await response.json();
+      setTestResults(result.results || []);
+      setShowTestResults(true);
+      
+    } catch (error) {
+      console.error('Test failed:', error);
+      // Show error in test results
+      setTestResults([{
+        elementName: 'Test Error',
+        selector: 'N/A',
+        extractedValue: 'N/A',
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }]);
+      setShowTestResults(true);
+    } finally {
+      setIsTesting(false);
+    }
   };
 
   return (
@@ -211,6 +275,22 @@ const WorkflowDashboard = () => {
                   Created: {new Date(workflow.createdAt).toLocaleDateString()}
                 </span>
               </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-500">⚙️</span>
+                <span className="text-sm text-gray-700">
+                  Elements: {(() => {
+                    const elements = localStorage.getItem(`workflowElements_${workflow.id}`);
+                    if (elements) {
+                      try {
+                        return JSON.parse(elements).length;
+                      } catch {
+                        return 0;
+                      }
+                    }
+                    return 0;
+                  })()}
+                </span>
+              </div>
             </div>
             
             <div className="flex items-center space-x-3">
@@ -222,6 +302,13 @@ const WorkflowDashboard = () => {
                 className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white py-2 px-4 rounded-lg font-medium hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-md"
               >
                 Configure Elements
+              </button>
+              <button 
+                onClick={() => testWorkflow(workflow)}
+                disabled={isTesting}
+                className="px-4 py-2 border border-gray-200/50 text-gray-600 rounded-lg font-medium hover:bg-gray-50 transition-all duration-200 disabled:opacity-50"
+              >
+                {isTesting ? 'Testing...' : 'Test Scraping'}
               </button>
               <button className="px-4 py-2 border border-gray-200/50 text-gray-600 rounded-lg font-medium hover:bg-gray-50 transition-all duration-200">
                 View Results
@@ -266,8 +353,78 @@ const WorkflowDashboard = () => {
             <div className="h-full overflow-hidden">
               <ElementSelector
                 categoryUrl={selectedWorkflow.categoryUrl}
+                workflowId={selectedWorkflow.id}
                 onClose={() => setShowElementSelector(false)}
               />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Test Results Modal */}
+      {showTestResults && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200/50">
+              <h2 className="text-2xl font-bold text-gray-800">Test Scraping Results</h2>
+              <button
+                onClick={() => setShowTestResults(false)}
+                className="w-8 h-8 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all duration-200 flex items-center justify-center"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              {testResults.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <div className="text-4xl mb-2">📊</div>
+                  <p>No test results available</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {testResults.map((result, index) => (
+                    <div key={index} className={`p-4 rounded-lg border ${
+                      result.success 
+                        ? 'bg-green-50 border-green-200' 
+                        : 'bg-red-50 border-red-200'
+                    }`}>
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-semibold text-gray-900">{result.elementName}</h3>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          result.success 
+                            ? 'bg-green-100 text-green-800' 
+                            : 'bg-red-100 text-red-800'
+                        }`}>
+                          {result.success ? 'Success' : 'Failed'}
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-600 mb-2">
+                        <strong>Selector:</strong> <code className="bg-gray-100 px-2 py-1 rounded">{result.selector}</code>
+                      </div>
+                      {result.success ? (
+                        <div className="text-sm text-gray-700">
+                          <strong>Extracted Value:</strong> 
+                          <div className="mt-1 p-2 bg-white border rounded">{result.extractedValue}</div>
+                        </div>
+                      ) : (
+                        <div className="text-sm text-red-600">
+                          <strong>Error:</strong> {result.error}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="p-6 border-t border-gray-200/50 bg-gray-50">
+              <div className="flex justify-end">
+                <button
+                  onClick={() => setShowTestResults(false)}
+                  className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
         </div>

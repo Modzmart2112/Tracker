@@ -93,7 +93,21 @@ router.post('/workflows/:workflowId/test-elements', async (req, res) => {
       return res.status(400).json({ error: 'Elements and test URL are required' });
     }
 
-    const results = await scraper.testElementSelection(testUrl, elements);
+    console.log(`Testing elements for workflow ${workflowId} on URL: ${testUrl}`);
+    console.log('Elements to test:', elements);
+
+    const rawResults = await scraper.testElementSelection(testUrl, elements);
+    
+    // Transform results to match the expected format
+    const results = Object.entries(rawResults).map(([elementName, value]) => ({
+      elementName,
+      selector: elements.find(el => el.name === elementName)?.selector || 'Unknown',
+      extractedValue: value || 'No value found',
+      success: value && value !== 'Element not found' && !value.toString().startsWith('Error:'),
+      error: value && value.toString().startsWith('Error:') ? value.toString() : undefined
+    }));
+
+    console.log('Test results:', results);
     
     res.json({ success: true, results });
   } catch (error) {

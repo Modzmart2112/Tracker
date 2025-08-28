@@ -145,29 +145,42 @@ export class WorkflowScraper {
     const results: ScrapingResult = {};
     
     try {
+      // Set a reasonable timeout and user agent
+      await page.setDefaultTimeout(30000);
+      await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36');
+      
+      console.log(`Testing elements on URL: ${url}`);
       await page.goto(url, { waitUntil: 'networkidle2' });
       
       for (const element of elements) {
         try {
           let value: string | null = null;
+          console.log(`Testing element: ${element.name} with selector: ${element.selector}`);
           
           if (element.selectorType === 'css') {
             const elementHandle = await page.$(element.selector);
             if (elementHandle) {
-              if (element.attribute === 'textContent') {
+              if (element.attribute === 'text') {
                 value = await page.evaluate(el => el.textContent?.trim() || null, elementHandle);
               } else if (element.attribute === 'href') {
                 value = await page.evaluate(el => el.getAttribute('href'), elementHandle);
               } else if (element.attribute === 'src') {
                 value = await page.evaluate(el => el.getAttribute('src'), elementHandle);
+              } else if (element.attribute === 'data-attribute') {
+                // Handle custom data attributes
+                const dataAttr = element.attribute.split(':')[1] || 'data-value';
+                value = await page.evaluate((el, attr) => el.getAttribute(attr), elementHandle, dataAttr);
               } else {
+                // Default to text content
                 value = await page.evaluate(el => el.textContent?.trim() || null, elementHandle);
               }
+            } else {
+              console.log(`Element not found with CSS selector: ${element.selector}`);
             }
           } else if (element.selectorType === 'xpath') {
             const [elementHandle] = await page.$x(element.selector);
             if (elementHandle) {
-              if (element.attribute === 'textContent') {
+              if (element.attribute === 'text') {
                 value = await page.evaluate(el => el.textContent?.trim() || null, elementHandle);
               } else if (element.attribute === 'href') {
                 value = await page.evaluate(el => el.getAttribute('href'), elementHandle);
@@ -176,15 +189,23 @@ export class WorkflowScraper {
               } else {
                 value = await page.evaluate(el => el.textContent?.trim() || null, elementHandle);
               }
+            } else {
+              console.log(`Element not found with XPath selector: ${element.selector}`);
             }
           }
           
-          results[element.name] = value;
+          results[element.name] = value || 'Element not found';
+          console.log(`Result for ${element.name}: ${value}`);
+          
         } catch (error) {
+          console.error(`Error testing element ${element.name}:`, error);
           results[element.name] = `Error: ${error instanceof Error ? error.message : 'Unknown error'}`;
         }
       }
       
+    } catch (error) {
+      console.error('Error during test scraping:', error);
+      throw error;
     } finally {
       await page.close();
     }

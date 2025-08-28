@@ -8,9 +8,11 @@ A comprehensive web scraping workflow system designed for tracking competitor pr
 - **Workflow Management**: Create and manage scraping workflows for different competitors and categories
 - **Product Discovery**: Automatically discover product URLs from category pages with pagination support
 - **Element Selection**: Visual element selector with live page preview and testing
+- **Test Scraping**: Test your configured elements on sample products before running full workflows
 - **Scheduled Scraping**: Automated daily scraping at configurable intervals (default: 12:00 AM)
 - **Data Storage**: Efficient PostgreSQL database with structured data storage
 - **Real-time Monitoring**: Track price changes, stock updates, and promotional offers
+- **Workflow Execution Monitoring**: Monitor running workflows with real-time progress tracking
 
 ### 🎯 Key Capabilities
 1. **Category URL Processing**: Input category URLs (e.g., `https://toolkitdepot.com.au/automotive/adjustable-wrenches/`)
@@ -27,6 +29,13 @@ A comprehensive web scraping workflow system designed for tracking competitor pr
 - **Scraping**: Puppeteer for headless browser automation
 - **Scheduling**: Node-cron for automated task execution
 - **UI Components**: Radix UI components with custom styling
+
+### 🔧 Advanced Features
+- **Resilient Element Selection**: Automatic fallback selector generation for robust scraping
+- **Confidence Scoring**: AI-powered confidence ratings for element selectors
+- **Multi-mode Preview**: Live iframe, server-side snapshot, and manual configuration modes
+- **Smart Selector Generation**: CSS and XPath selector generation with context awareness
+- **Workflow Testing**: Test element selection on sample products before deployment
 
 ## Quick Start
 
@@ -98,6 +107,18 @@ A comprehensive web scraping workflow system designed for tracking competitor pr
 4. **Select Scraping Elements**
    - Navigate to the "Elements" tab
    - Use the visual element selector to choose what data to scrape
+   - Configure fallback selectors for resilience
+   - Review confidence scores for each element
+
+5. **Test Your Configuration**
+   - Click "Test Scraping" to verify element selection
+   - Review test results and adjust selectors if needed
+   - Ensure all elements are extracting data correctly
+
+6. **Monitor Execution**
+   - Navigate to the "Monitor" tab to track workflow execution
+   - View real-time progress and error reports
+   - Export results when workflows complete
    - Common elements: Title, Price, Description, Stock Status, Images
 
 5. **Test and Save**
@@ -173,6 +194,23 @@ workflow → results (1:many)
 workflow → scheduled_task (1:1)
 ```
 
+## Deployment
+
+The application is configured for deployment on Render with the following features:
+- PostgreSQL database integration
+- Environment variable configuration
+- Health check endpoints
+- Static file serving
+- Browserless Chrome support for reliable scraping
+- Anti-bot detection measures
+- Resource optimization for production environments
+
+### Production Features
+- **Browser Management**: Automatic browser lifecycle management
+- **Error Handling**: Comprehensive error handling and retry mechanisms
+- **Performance Monitoring**: Built-in performance metrics and logging
+- **Scalability**: Designed for horizontal scaling with multiple worker instances
+
 ## Configuration
 
 ### Environment Variables
@@ -180,6 +218,8 @@ workflow → scheduled_task (1:1)
 - `SESSION_SECRET`: Session encryption key
 - `NODE_ENV`: Environment (development/production)
 - `PORT`: Server port (default: 3000)
+- `BROWSERLESS_WSS`: Optional browserless.io WebSocket URL
+- `BROWSERLESS_TOKEN`: Optional browserless.io authentication token
 
 ### Database Configuration
 - **Connection Pool**: Configurable connection limits

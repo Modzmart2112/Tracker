@@ -3,6 +3,7 @@ import { toast } from '../hooks/use-toast';
 
 interface ElementSelectorProps {
   categoryUrl: string;
+  workflowId?: string;
   onClose: () => void;
 }
 
@@ -15,6 +16,8 @@ interface ScrapingElement {
   dataAttribute?: string;
   sampleText?: string;
   tag?: string;
+  fallbackSelectors?: string[];
+  confidence?: number;
 }
 
 interface CapturedElement {
@@ -234,6 +237,9 @@ export const ElementSelector: React.FC<ElementSelectorProps> = ({ categoryUrl, o
   };
 
   const addCapturedElement = (captured: CapturedElement, label: string) => {
+    // Generate fallback selectors for resilience
+    const fallbackSelectors = generateFallbackSelectors(captured.element);
+    
     const newElement: ScrapingElement = {
       id: Date.now().toString(),
       name: label,
@@ -241,7 +247,9 @@ export const ElementSelector: React.FC<ElementSelectorProps> = ({ categoryUrl, o
       selectorType: 'css',
       attribute: captured.src ? 'src' : 'text',
       sampleText: captured.text,
-      tag: captured.tag
+      tag: captured.tag,
+      fallbackSelectors: fallbackSelectors,
+      confidence: calculateConfidence(captured.selector, fallbackSelectors)
     };
     
     setElements(prev => [...prev, newElement]);
@@ -249,8 +257,68 @@ export const ElementSelector: React.FC<ElementSelectorProps> = ({ categoryUrl, o
     
     toast({
       title: "Element Added!",
-      description: `${label} element configured with selector: ${captured.selector}`,
+      description: `${label} element configured with ${fallbackSelectors.length + 1} selectors for resilience.`,
     });
+  };
+
+  const generateFallbackSelectors = (element: Element): string[] => {
+    const fallbacks: string[] = [];
+    
+    // Try different approaches to find the element
+    try {
+      // 1. Try with fewer classes
+      const classes = Array.from(element.classList);
+      if (classes.length > 1) {
+        const selector = `${element.tagName.toLowerCase()}.${classes.slice(0, -1).join('.')}`;
+        fallbacks.push(selector);
+      }
+      
+      // 2. Try with tag and first class only
+      if (classes.length > 0) {
+        const selector = `${element.tagName.toLowerCase()}.${classes[0]}`;
+        fallbacks.push(selector);
+      }
+      
+      // 3. Try with tag and parent context
+      const parent = element.parentElement;
+      if (parent && parent.tagName !== 'BODY') {
+        const parentTag = parent.tagName.toLowerCase();
+        const parentClasses = Array.from(parent.classList).slice(0, 2);
+        const selector = `${parentTag}${parentClasses.map(c => `.${c}`).join('')} > ${element.tagName.toLowerCase()}`;
+        fallbacks.push(selector);
+      }
+      
+      // 4. Try with nth-child approach
+      const siblings = Array.from(element.parentElement?.children || []);
+      const index = siblings.indexOf(element) + 1;
+      const selector = `${element.tagName.toLowerCase()}:nth-child(${index})`;
+      fallbacks.push(selector);
+      
+    } catch (error) {
+      console.error('Error generating fallback selectors:', error);
+    }
+    
+    return fallbacks.slice(0, 3); // Limit to 3 fallbacks
+  };
+
+  const calculateConfidence = (primarySelector: string, fallbacks: string[]): number => {
+    // Base confidence on selector complexity and number of fallbacks
+    let confidence = 80; // Base confidence
+    
+    // Boost confidence for ID-based selectors
+    if (primarySelector.startsWith('#')) {
+      confidence += 15;
+    }
+    
+    // Boost confidence for data attributes
+    if (primarySelector.includes('[data-')) {
+      confidence += 10;
+    }
+    
+    // Boost confidence for each fallback
+    confidence += Math.min(fallbacks.length * 5, 15);
+    
+    return Math.min(confidence, 100);
   };
 
   const handleRemoveElement = (id: string) => {
@@ -269,11 +337,40 @@ export const ElementSelector: React.FC<ElementSelectorProps> = ({ categoryUrl, o
 
     setIsLoading(true);
     try {
-      // Here you would save to your backend
-      console.log('Saving elements:', elements);
+      // Use provided workflowId or generate a new one
+      const targetWorkflowId = workflowId || Date.now().toString();
+      
+      // Save elements to localStorage for this specific workflow
+      localStorage.setItem(`workflowElements_${targetWorkflowId}`, JSON.stringify(elements));
+      
+      // Also save to a general elements list
+      const existingElements = localStorage.getItem('allScrapingElements') || '[]';
+      const allElements = JSON.parse(existingElements);
+      
+      // Update existing entry or create new one
+      const existingIndex = allElements.findIndex((el: any) => el.id === targetWorkflowId);
+      if (existingIndex >= 0) {
+        allElements[existingIndex] = {
+          id: targetWorkflowId,
+          elements: elements,
+          categoryUrl: categoryUrl,
+          updatedAt: new Date().toISOString()
+        };
+      } else {
+        allElements.push({
+          id: targetWorkflowId,
+          elements: elements,
+          categoryUrl: categoryUrl,
+          createdAt: new Date().toISOString()
+        });
+      }
+      
+      localStorage.setItem('allScrapingElements', JSON.stringify(allElements));
+      
+      console.log('Saving elements for workflow:', targetWorkflowId, elements);
       toast({
         title: "Success!",
-        description: `${elements.length} elements saved for scraping.`,
+        description: `${elements.length} elements saved for scraping workflow.`,
       });
       onClose();
     } catch (error) {
@@ -386,7 +483,7 @@ export const ElementSelector: React.FC<ElementSelectorProps> = ({ categoryUrl, o
               <div className="space-y-3">
                 {elements.map((element) => (
                   <div key={element.id} className="bg-gray-50/50 rounded-lg p-4 border border-gray-200/50">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between mb-3">
                       <div className="flex-1">
                         <div className="font-medium text-gray-900">{element.name}</div>
                         <div className="text-sm text-gray-600">{element.selector}</div>
@@ -394,15 +491,36 @@ export const ElementSelector: React.FC<ElementSelectorProps> = ({ categoryUrl, o
                           <div className="text-xs text-gray-500 mt-1">Sample: "{element.sampleText}"</div>
                         )}
                       </div>
-                      <button
-                        onClick={() => handleRemoveElement(element.id)}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
+                      <div className="flex items-center space-x-2">
+                        {element.confidence && (
+                          <div className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                            {element.confidence}% confidence
+                          </div>
+                        )}
+                        <button
+                          onClick={() => handleRemoveElement(element.id)}
+                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
+                    
+                    {/* Fallback Selectors */}
+                    {element.fallbackSelectors && element.fallbackSelectors.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-gray-200/50">
+                        <div className="text-xs font-medium text-gray-700 mb-2">Fallback Selectors:</div>
+                        <div className="space-y-1">
+                          {element.fallbackSelectors.map((selector, index) => (
+                            <div key={index} className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                              {selector}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

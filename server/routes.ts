@@ -2061,7 +2061,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Website snapshot endpoint for element picker
+  // Octoparse-style scraping endpoints
+  app.post("/api/scrape/preview", async (req, res) => {
+    try {
+      const { ScraperEngine } = await import('./scraper-engine');
+      const engine = new ScraperEngine();
+      
+      const result = await engine.preview(req.body);
+      res.json(result);
+    } catch (error: any) {
+      console.error("Preview failed:", error);
+      res.status(500).json({ 
+        error: "Preview failed", 
+        details: error.message 
+      });
+    }
+  });
+
+  app.post("/api/scrape/run", async (req, res) => {
+    try {
+      const { ScraperEngine } = await import('./scraper-engine');
+      const engine = new ScraperEngine();
+      
+      const result = await engine.scrape(req.body);
+      res.json(result);
+    } catch (error: any) {
+      console.error("Scraping failed:", error);
+      res.status(500).json({ 
+        error: "Scraping failed", 
+        details: error.message 
+      });
+    }
+  });
+
+  app.get("/api/scrape/export/:runId.csv", async (req, res) => {
+    try {
+      const { runId } = req.params;
+      
+      // For now, return a placeholder CSV
+      // In a real implementation, you'd fetch the actual data
+      const csvContent = "Title,Price,Image,URL\nSample Product,$99.99,https://example.com/image.jpg,https://example.com/product";
+      
+      res.setHeader("Content-Type", "text/csv");
+      res.setHeader("Content-Disposition", `attachment; filename=scrape-${runId}.csv`);
+      res.send(csvContent);
+    } catch (error: any) {
+      console.error("Export failed:", error);
+      res.status(500).json({ 
+        error: "Export failed", 
+        details: error.message 
+      });
+    }
+  });
+
+  // Website snapshot endpoint for element picker (Octoparse-style)
 app.get('/api/snapshot', async (req, res) => {
   const url = String(req.query.url || "");
   if (!/^https?:\/\//i.test(url)) return res.status(400).send("Invalid URL");
@@ -2070,37 +2123,23 @@ app.get('/api/snapshot', async (req, res) => {
 
   let browser;
   try {
-    // Import Puppeteer dynamically to avoid issues in production
-    const puppeteer = await import('puppeteer');
+    // Use the bulletproof browser launcher
+    const { getBrowser } = await import('./browser');
+    browser = await getBrowser();
     
-    console.log('Puppeteer imported successfully');
-    
-    // Render-friendly launch options (ChatGPT's proven solution)
-    browser = await puppeteer.default.launch({
-      headless: "new",
-      // Do NOT set executablePath on Render
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",   // /dev/shm is tiny in containers
-        "--no-zygote",
-        "--disable-gpu",
-        "--disable-features=IsolateOrigins,site-per-process",
-        "--js-flags=--max-old-space-size=256",
-      ],
-      // Optional: lower startup flakiness
-      protocolTimeout: 90_000,
-    });
-    
-    console.log('Browser launched successfully');
+    console.log('Browser ready successfully');
     
     const page = await browser.newPage();
     console.log('New page created');
     
-    // Reduce resource load & bot friction
-    await page.setUserAgent(
+    // Anti-bot basics (Octoparse-style)
+    const userAgents = [
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36",
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_3) AppleWebKit/605.1.15 Version/16.4 Safari/605.1.15",
       "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36"
-    );
+    ];
+    
+    await page.setUserAgent(userAgents[Math.floor(Math.random() * userAgents.length)]);
     await page.setViewport({ width: 1366, height: 900 });
     
     // Block unnecessary resources to reduce memory usage
@@ -2118,7 +2157,7 @@ app.get('/api/snapshot', async (req, res) => {
     console.log('Page loaded, waiting for content...');
     
     // Give late JS a moment without hanging forever
-    await page.waitForTimeout(1000);
+    await page.waitForTimeout(800);
     
     // Get the rendered HTML
     const html = await page.content();
@@ -2129,9 +2168,6 @@ app.get('/api/snapshot', async (req, res) => {
       /<head([^>]*)>/i,
       `<head$1><base href="${url}">`
     );
-    
-    await browser.close();
-    console.log('Browser closed successfully');
     
     // Set headers for HTML content
     res.set("content-type", "text/html; charset=utf-8");
@@ -2144,42 +2180,54 @@ app.get('/api/snapshot', async (req, res) => {
     console.error("Snapshot failed:", err?.stack || err);
     res.status(502).send("Snapshot failed: 502");
   } finally {
-    try { await browser?.close(); } catch {}
+    try { 
+      if (browser && !process.env.BROWSERLESS_WSS) {
+        await browser.close();
+        console.log('Local browser closed successfully');
+      } else if (browser) {
+        await browser.disconnect();
+        console.log('Remote browser disconnected successfully');
+      }
+    } catch {}
   }
 });
 
-  // Health check endpoint to test Puppeteer
-  app.get('/health', async (req, res) => {
-    try {
-      // Test Puppeteer launch
-      const puppeteer = await import('puppeteer');
-      const browser = await puppeteer.default.launch({
-        headless: "new",
-        args: [
-          "--no-sandbox",
-          "--disable-setuid-sandbox",
-          "--disable-dev-shm-usage",
-          "--no-zygote",
-          "--disable-gpu",
-        ],
-      });
+  // Health check endpoint to test browser (Octoparse-style)
+app.get('/health', async (req, res) => {
+  try {
+    // Test browser using the bulletproof launcher
+    const { getBrowser } = await import('./browser');
+    const browser = await getBrowser();
+    
+    // Test basic page operations
+    const page = await browser.newPage();
+    await page.setContent('<html><body>Test</body></html>');
+    const content = await page.content();
+    await page.close();
+    
+    // Clean up browser
+    if (!process.env.BROWSERLESS_WSS) {
       await browser.close();
-      
-      res.json({ 
-        status: 'healthy', 
-        puppeteer: 'working',
-        timestamp: new Date().toISOString() 
-      });
-    } catch (error) {
-      console.error('Health check failed:', error);
-      res.status(500).json({ 
-        status: 'unhealthy', 
-        puppeteer: 'failed',
-        error: error instanceof Error ? error.message : 'Unknown error',
-        timestamp: new Date().toISOString() 
-      });
+    } else {
+      await browser.disconnect();
     }
-  });
+    
+    res.json({ 
+      status: 'healthy', 
+      browser: 'working',
+      mode: process.env.BROWSERLESS_WSS ? 'remote' : 'local',
+      timestamp: new Date().toISOString() 
+    });
+  } catch (error) {
+    console.error('Health check failed:', error);
+    res.status(500).json({ 
+      status: 'unhealthy', 
+      browser: 'failed',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      timestamp: new Date().toISOString() 
+    });
+  }
+});
 
   const httpServer = createServer(app);
   return httpServer;

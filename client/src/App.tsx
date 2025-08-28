@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { WorkflowDashboard } from './components/WorkflowDashboard';
+import { WorkflowMonitor } from './components/WorkflowMonitor';
 import { ElementSelector } from './components/ElementSelector';
 import Dashboard from './pages/dashboard';
 import ProductsPage from './pages/products-new';
@@ -24,6 +25,7 @@ const Sidebar = () => {
   const navItems = [
     { path: '/', label: 'Dashboard', icon: '📊' },
     { path: '/workflows', label: 'Workflows', icon: '⚡' },
+    { path: '/monitor', label: 'Monitor', icon: '📈' },
     { path: '/products', label: 'Products', icon: '📦' },
     { path: '/categories', label: 'Categories', icon: '🏷️' },
     { path: '/competitors', label: 'Competitors', icon: '🎯' },
@@ -146,6 +148,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/workflows" element={<WorkflowDashboard />} />
+            <Route path="/monitor" element={<WorkflowMonitor />} />
             <Route path="/products" element={<ProductsPage />} />
             <Route path="/categories" element={<Categories />} />
             <Route path="/competitors" element={<Competitors />} />
