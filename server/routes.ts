@@ -2069,31 +2069,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(400).json({ error: 'URL parameter is required' });
     }
 
+    console.log(`Generating snapshot for: ${url}`);
+
     try {
       // Import Puppeteer dynamically to avoid issues in production
       const puppeteer = await import('puppeteer');
       
-      const browser = await puppeteer.default.launch({
+      console.log('Puppeteer imported successfully');
+      
+      // Render-compatible browser launch options
+      const launchOptions = {
         headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
-      });
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--no-first-run',
+          '--no-zygote',
+          '--single-process',
+          '--disable-extensions'
+        ]
+      };
+
+      console.log('Launching browser with options:', launchOptions);
+      
+      const browser = await puppeteer.default.launch(launchOptions);
+      console.log('Browser launched successfully');
       
       const page = await browser.newPage();
+      console.log('New page created');
       
       // Set a realistic user agent
       await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
       
-      // Navigate to the URL
+      console.log('Navigating to URL...');
+      
+      // Navigate to the URL with shorter timeout for Render
       await page.goto(url, { 
-        waitUntil: 'networkidle0', 
-        timeout: 30000 
+        waitUntil: 'domcontentloaded', // Changed from networkidle0 for faster loading
+        timeout: 15000 // Reduced timeout
       });
       
+      console.log('Page loaded, waiting for content...');
+      
       // Wait a bit for any dynamic content
-      await page.waitForTimeout(2000);
+      await page.waitForTimeout(1000);
       
       // Get the rendered HTML
       const html = await page.content();
+      console.log(`HTML content retrieved, length: ${html.length}`);
       
       // Add base tag so relative URLs resolve correctly
       const modifiedHtml = html.replace(
@@ -2102,18 +2127,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       );
       
       await browser.close();
+      console.log('Browser closed successfully');
       
       // Set headers for HTML content
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
       res.setHeader('Cache-Control', 'public, max-age=300'); // Cache for 5 minutes
       
+      console.log('Sending snapshot response');
       res.send(modifiedHtml);
       
     } catch (error) {
       console.error('Snapshot generation error:', error);
+      
+      // Send a more helpful error response
       res.status(500).json({ 
         error: 'Failed to generate snapshot',
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : 'Unknown error',
+        url: url,
+        timestamp: new Date().toISOString()
       });
     }
   });

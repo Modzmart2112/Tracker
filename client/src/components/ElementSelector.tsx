@@ -30,7 +30,7 @@ export const ElementSelector: React.FC<ElementSelectorProps> = ({ categoryUrl, o
   const [elements, setElements] = useState<ScrapingElement[]>([]);
   const [capturedElements, setCapturedElements] = useState<CapturedElement[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [previewMode, setPreviewMode] = useState<'iframe' | 'snapshot'>('iframe');
+  const [previewMode, setPreviewMode] = useState<'iframe' | 'snapshot' | 'manual'>('iframe');
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [iframeLoaded, setIframeLoaded] = useState(false);
 
@@ -87,9 +87,12 @@ export const ElementSelector: React.FC<ElementSelectorProps> = ({ categoryUrl, o
       console.error('Failed to load snapshot:', error);
       toast({
         title: "Snapshot Failed",
-        description: "Could not load website preview. Please check the URL and try again.",
+        description: "Could not load website preview. You can still manually configure elements below.",
         variant: "destructive"
       });
+      
+      // Show manual configuration option
+      setPreviewMode('manual');
     } finally {
       setIsLoading(false);
     }
@@ -289,6 +292,10 @@ export const ElementSelector: React.FC<ElementSelectorProps> = ({ categoryUrl, o
     loadSnapshot();
   };
 
+  const switchToManual = () => {
+    setPreviewMode('manual');
+  };
+
   return (
     <div className="h-full flex flex-col bg-white">
       {/* Header */}
@@ -429,6 +436,16 @@ export const ElementSelector: React.FC<ElementSelectorProps> = ({ categoryUrl, o
                 >
                   Snapshot
                 </button>
+                <button
+                  onClick={switchToManual}
+                  className={`px-3 py-1 rounded-lg text-sm transition-colors ${
+                    previewMode === 'manual' 
+                      ? 'bg-blue-500 text-white' 
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  Manual
+                </button>
               </div>
             </div>
             
@@ -442,12 +459,50 @@ export const ElementSelector: React.FC<ElementSelectorProps> = ({ categoryUrl, o
                   onError={handleIframeError}
                   title="Website Preview"
                 />
-              ) : (
+              ) : previewMode === 'snapshot' ? (
                 <div className="w-full h-full bg-gray-100 rounded-lg flex items-center justify-center">
                   <div className="text-center text-gray-500">
                     <div className="text-4xl mb-2">📸</div>
                     <p>Snapshot mode</p>
                     <p className="text-sm">Server-side rendering for blocked sites</p>
+                    {isLoading && (
+                      <div className="mt-4">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                        <p>Generating snapshot...</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="w-full h-full bg-gray-100 rounded-lg p-6">
+                  <div className="text-center text-gray-500 mb-6">
+                    <div className="text-4xl mb-2">✏️</div>
+                    <p>Manual Configuration Mode</p>
+                    <p className="text-sm">Enter CSS selectors manually when preview fails</p>
+                  </div>
+                  
+                  <div className="bg-white/80 rounded-lg p-4 border border-gray-200/50">
+                    <h4 className="font-medium text-gray-900 mb-3">Quick Element Setup</h4>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="text"
+                          placeholder="Element Name (e.g., Title)"
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        />
+                        <input
+                          type="text"
+                          placeholder="CSS Selector (e.g., h1, .product-title)"
+                          className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        />
+                        <button className="px-3 py-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600 transition-colors">
+                          Add
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      💡 Tip: Use browser dev tools to inspect elements and copy selectors
+                    </p>
                   </div>
                 </div>
               )}
